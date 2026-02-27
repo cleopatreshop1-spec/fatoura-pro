@@ -29,7 +29,7 @@ export function CreateCompanyCard() {
 
       const { error: insertError } = await supabase
         .from('companies')
-        .insert({ owner_id: user.id, name: defaultName, plan: 'free' })
+        .insert({ owner_id: user.id, name: defaultName, current_plan: 'trialing' })
 
       if (insertError) throw insertError
 

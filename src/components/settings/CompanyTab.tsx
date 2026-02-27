@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useCompany } from '@/contexts/CompanyContext'
 import { createClient } from '@/lib/supabase/client'
+import { CreateCompanyCard } from '@/components/company/CreateCompanyCard'
 
 const GOUVERNORATS = ['Tunis','Ariana','Ben Arous','Manouba','Nabeul','Zaghouan','Bizerte','Beja','Jendouba','Kef','Siliana','Sousse','Monastir','Mahdia','Sfax','Kairouan','Kasserine','Sidi Bouzid','Gabes','Medenine','Tataouine','Gafsa','Tozeur','Kebili']
 
@@ -38,6 +39,21 @@ export function CompanyTab() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  // Show create company card if no active company
+  if (!activeCompany) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-lg font-bold text-white mb-2">Créer votre entreprise</h3>
+          <p className="text-sm text-gray-400 mb-4">
+            Vous devez créer une entreprise pour commencer à utiliser Fatoura Pro.
+          </p>
+        </div>
+        <CreateCompanyCard />
+      </div>
+    )
+  }
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<F>({
     resolver: zodResolver(schema),

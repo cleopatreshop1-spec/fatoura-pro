@@ -10,7 +10,7 @@ interface Company {
   id: string
   name: string
   mf: string | null
-  plan: string
+  current_plan: string
   owner_id: string
   is_fiduciaire?: boolean
   matricule_fiscal?: string | null
@@ -62,7 +62,7 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
     // Own company
     const { data: ownList, error: ownError } = await supabase
       .from('companies')
-      .select('id, name, plan, owner_id, is_fiduciaire, matricule_fiscal, invoice_prefix')
+      .select('id, name, current_plan, owner_id, is_fiduciaire, matricule_fiscal, invoice_prefix')
       .eq('owner_id', user.id)
       .order('created_at', { ascending: true })
       .limit(1)
@@ -78,7 +78,7 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
     // User-level accountant links (legacy)
     const { data: userLinks } = await supabase
       .from('accountant_links')
-      .select('company:companies(id, name, plan, owner_id, is_fiduciaire, matricule_fiscal, invoice_prefix)')
+      .select('company:companies(id, name, current_plan, owner_id, is_fiduciaire, matricule_fiscal, invoice_prefix)')
       .eq('accountant_id', user.id)
       .not('accepted_at', 'is', null)
 
@@ -93,7 +93,7 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
         .from('fiduciaire_clients')
         .select(`
           id, client_company_id, invited_email, client_name, status, accepted_at, invited_at,
-          clientCompany:companies!client_company_id(id, name, plan, owner_id, is_fiduciaire, matricule_fiscal, invoice_prefix)
+          clientCompany:companies!client_company_id(id, name, current_plan, owner_id, is_fiduciaire, matricule_fiscal, invoice_prefix)
         `)
         .eq('fiduciaire_company_id', own.id)
         .order('invited_at', { ascending: false })
