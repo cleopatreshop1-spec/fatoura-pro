@@ -59,7 +59,10 @@ export default function NewInvoicePage() {
   const autoSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const loadData = useCallback(async () => {
-    if (!activeCompany?.id) return
+    if (!activeCompany?.id) {
+      setLoading(false)
+      return
+    }
     const [
       { data: cls },
       { data: lastInv },
@@ -224,6 +227,26 @@ export default function NewInvoicePage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-sm text-gray-500">Chargement...</div>
+      </div>
+    )
+  }
+
+  // No active company
+  if (!activeCompany?.id) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-6 text-center">
+        <div className="w-16 h-16 rounded-2xl bg-[#1a1b22] border border-[#252830] flex items-center justify-center">
+          <AlertTriangle size={28} className="text-yellow-500" />
+        </div>
+        <div>
+          <h2 className="text-lg font-black text-white mb-2">Aucune entreprise sélectionnée</h2>
+          <p className="text-sm text-gray-400 max-w-sm">
+            Vous devez avoir une entreprise active pour créer des factures.
+          </p>
+          <Link href="/dashboard/settings" className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-[#d4a843] hover:bg-[#f0c060] text-black font-bold rounded-lg transition-colors">
+            Paramètres
+          </Link>
+        </div>
       </div>
     )
   }
