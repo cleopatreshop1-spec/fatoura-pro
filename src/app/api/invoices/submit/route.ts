@@ -1,0 +1,113 @@
+﻿import { NextRequest } from 'next/server'
+import { getAuthenticatedCompany, success, err, logActivity, insertNotification } from '@/lib/api-helpers'
+
+export async function POST(request: NextRequest) {
+  try {
+    const { user, company, supabase } = await getAuthenticatedCompany(request)
+    const body = await request.json()
+    const invoiceId: string = body.invoiceId ?? body.invoice_id
+
+    if (!invoiceId) return err('invoiceId requis', 400)
+
+    // Fetch full invoice with relations
+    const { data: invoice, error: fetchErr } = await (supabase as any)
+      .from('invoices')
+      .select('*, clients(*), invoice_line_items(*)')
+      .eq('id', invoiceId)
+      .eq('company_id', company.id)
+      .single()
+
+    if (fetchErr || !invoice) return err('Facture introuvable ou acces refuse', 404)
+
+    const allowedStatuses = ['draft', 'rejected', 'queued']
+    if (!allowedStatuses.includes((invoice as any).status)) {
+      return err(`Statut "${(invoice as any).status}" ne permet pas la soumission`, 409)
+    }
+
+    // Update to pending immediately
+    await (supabase as any).from('invoices').update({
+      status: 'pending',
+      submitted_at: new Date().toISOString(),
+    }).eq('id', invoiceId)
+
+    // Try to load TTN modules (they may not be implemented yet)
+    let getSigningStrategy: ((company: any) => Promise<any>) | null = null
+    let buildTEIF: ((invoice: any, company: any, client: any) => Promise<string>) | null = null
+    let submitToTTN: ((xml: string, signer: any, company: any) => Promise<{ ttnId: string; rawResponse: string }>) | null = null
+
+    try {
+      const mandateSigner = await import('@/lib/ttn/mandate-signer' as any)
+      getSigningStrategy = mandateSigner.getSigningStrategy
+      const teifBuilder = await import('@/lib/ttn/teif-builder' as any)
+      buildTEIF = teifBuilder.buildTEIF
+      const ttnGateway = await import('@/lib/ttn/ttn-gateway' as any)
+      submitToTTN = ttnGateway.submitToTTN
+    } catch {
+      // TTN modules not yet implemented  queue for later
+      const nextRetry = new Date(Date.now() + 5 * 60 * 1000).toISOString()
+      await (supabase as any).from('ttn_queue').upsert(
+        { invoice_id: invoiceId, attempts: 0, max_attempts: 5, next_retry_at: nextRetry, last_error: 'TTN modules not implemented' },
+        { onConflict: 'invoice_id' }
+      )
+      await (supabase as any).from('invoices').update({ status: 'queued' }).eq('id', invoiceId)
+      return success({ success: true, status: 'queued', message: 'Facture mise en file d\'attente TTN' })
+    }
+
+    try {
+      // Build TEIF XML
+      const signer = await getSigningStrategy!(company)
+      const xml = await buildTEIF!(invoice, company, (invoice as any).clients)
+      const { ttnId, rawResponse } = await submitToTTN!(xml, signer, company)
+
+      // TTN success
+      await (supabase as any).from('invoices').update({
+        status: 'valid',
+        ttn_id: ttnId,
+        validated_at: new Date().toISOString(),
+        ttn_xml: xml,
+        ttn_response: rawResponse,
+        ttn_rejection_reason: null,
+      }).eq('id', invoiceId)
+
+      // Remove from queue if present
+      await (supabase as any).from('ttn_queue').delete().eq('invoice_id', invoiceId)
+
+      await insertNotification(supabase as any, company.id, 'invoice_validated',
+        `Facture ${(invoice as any).number} validee par TTN`, `TTN_ID: ${ttnId}`)
+      await logActivity(supabase as any, company.id, user.id,
+        'invoice_validated', 'invoice', invoiceId,
+        `Facture ${(invoice as any).number} validee  TTN_ID: ${ttnId}`)
+
+      return success({ success: true, status: 'valid', ttnId })
+
+    } catch (ttnError: any) {
+      const message = ttnError?.message ?? 'Erreur TTN inconnue'
+      const isTimeout = message.toLowerCase().includes('timeout') || message.toLowerCase().includes('network')
+
+      if (isTimeout) {
+        // Network / timeout  queue with backoff
+        const nextRetry = new Date(Date.now() + 15 * 60 * 1000).toISOString()
+        await (supabase as any).from('invoices').update({ status: 'queued' }).eq('id', invoiceId)
+        await (supabase as any).from('ttn_queue').upsert(
+          { invoice_id: invoiceId, attempts: 1, max_attempts: 5, next_retry_at: nextRetry, last_error: message },
+          { onConflict: 'invoice_id' }
+        )
+        return success({ success: false, status: 'queued', error: message })
+      } else {
+        // TTN rejection
+        await (supabase as any).from('invoices').update({
+          status: 'rejected',
+          ttn_rejection_reason: message,
+        }).eq('id', invoiceId)
+
+        await insertNotification(supabase as any, company.id, 'invoice_rejected',
+          `Facture ${(invoice as any).number} rejetee par TTN`, message)
+        await logActivity(supabase as any, company.id, user.id,
+          'invoice_rejected', 'invoice', invoiceId,
+          `Facture ${(invoice as any).number} rejetee: ${message}`)
+
+        return success({ success: false, status: 'rejected', error: message }, 200)
+      }
+    }
+  } catch (e: any) { return err(e.message, e.status ?? 500) }
+}

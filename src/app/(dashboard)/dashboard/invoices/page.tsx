@@ -1,0 +1,434 @@
+﻿'use client'
+
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { Plus, Search, MoreVertical, FileText, ChevronUp, ChevronDown } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { useCompany } from '@/contexts/CompanyContext'
+import { InvoiceStatusBadge } from '@/components/invoice/InvoiceStatusBadge'
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
+import { fmtTND } from '@/lib/utils/tva-calculator'
+import { nextInvoiceNumber } from '@/lib/utils/invoice-number'
+
+type InvRow = {
+  id: string; number: string | null; status: string
+  issue_date: string | null; due_date: string | null
+  ht_amount: number; tva_amount: number; ttc_amount: number
+  ttn_id: string | null; ttn_rejection_reason: string | null
+  payment_status: string | null; created_at: string
+  clients: { id: string; name: string; type: string; matricule_fiscal: string | null } | null
+}
+type SortField = 'number' | 'issue_date' | 'due_date' | 'ttc_amount' | 'status'
+type ClientRow = { id: string; name: string }
+const PAGE_SIZE = 25
+
+function getPeriodRange(p: string): { from: string; to: string } {
+  const now = new Date(); const y = now.getFullYear(); const m = now.getMonth()
+  const today = now.toISOString().slice(0, 10)
+  if (p === 'this_month')   return { from: `${y}-${String(m+1).padStart(2,'0')}-01`, to: today }
+  if (p === 'this_quarter') { const q=Math.floor(m/3); return { from: `${y}-${String(q*3+1).padStart(2,'0')}-01`, to: today } }
+  if (p === 'this_year')    return { from: `${y}-01-01`, to: today }
+  return { from: '', to: '' }
+}
+
+export default function InvoicesPage() {
+  const { activeCompany } = useCompany()
+  const router = useRouter()
+  const supabase = useMemo(() => createClient(), [])
+
+  const [invoices, setInvoices] = useState<InvRow[]>([])
+  const [clients, setClients] = useState<ClientRow[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchInput, setSearchInput] = useState('')
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [period, setPeriod] = useState('all')
+  const [customFrom, setCustomFrom] = useState('')
+  const [customTo, setCustomTo] = useState('')
+  const [clientFilter, setClientFilter] = useState('')
+  const [sort, setSort] = useState<{ field: SortField; dir: 'asc'|'desc' }>({ field: 'issue_date', dir: 'desc' })
+  const [page, setPage] = useState(1)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [dropdown, setDropdown] = useState<string | null>(null)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const [toast, setToast] = useState('')
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const load = useCallback(async () => {
+    if (!activeCompany?.id) return
+    setLoading(true)
+    const { data: cls } = await supabase.from('clients').select('id, name').eq('company_id', activeCompany.id).order('name')
+    setClients((cls ?? []) as ClientRow[])
+    const { data } = await supabase
+      .from('invoices')
+      .select('id, number, status, issue_date, due_date, ht_amount, tva_amount, ttc_amount, ttn_id, ttn_rejection_reason, payment_status, created_at, clients(id, name, type, matricule_fiscal)')
+      .eq('company_id', activeCompany.id)
+      .order('created_at', { ascending: false })
+    setInvoices((data ?? []) as unknown as InvRow[])
+    setLoading(false)
+  }, [activeCompany?.id, supabase])
+
+  useEffect(() => { load() }, [load])
+
+  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(''), 3000) }
+
+  // Debounced search
+  function handleSearchInput(v: string) {
+    setSearchInput(v)
+    if (searchTimer.current) clearTimeout(searchTimer.current)
+    searchTimer.current = setTimeout(() => { setSearch(v); setPage(1) }, 300)
+  }
+
+  // Sort toggle
+  function toggleSort(field: SortField) {
+    setSort(s => s.field === field ? { field, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { field, dir: 'desc' })
+    setPage(1)
+  }
+
+  function SortIcon({ field }: { field: SortField }) {
+    if (sort.field !== field) return <ChevronDown size={11} className="text-gray-700 ml-0.5" />
+    return sort.dir === 'asc' ? <ChevronUp size={11} className="text-[#d4a843] ml-0.5" /> : <ChevronDown size={11} className="text-[#d4a843] ml-0.5" />
+  }
+
+  // Filtered + sorted data
+  const filtered = useMemo(() => {
+    let list = invoices
+    if (search) {
+      const q = search.toLowerCase()
+      list = list.filter(i => (i.number ?? '').toLowerCase().includes(q) || (i.clients?.name ?? '').toLowerCase().includes(q))
+    }
+    if (statusFilter !== 'all') list = list.filter(i => i.status === statusFilter)
+    if (clientFilter) list = list.filter(i => i.clients?.id === clientFilter)
+    if (period !== 'all' && period !== 'custom') {
+      const { from, to } = getPeriodRange(period)
+      if (from) list = list.filter(i => (i.issue_date ?? '') >= from)
+      if (to)   list = list.filter(i => (i.issue_date ?? '') <= to)
+    } else if (period === 'custom') {
+      if (customFrom) list = list.filter(i => (i.issue_date ?? '') >= customFrom)
+      if (customTo)   list = list.filter(i => (i.issue_date ?? '') <= customTo)
+    }
+    // Sort
+    list = [...list].sort((a, b) => {
+      let av: any = a[sort.field as keyof InvRow] ?? ''
+      let bv: any = b[sort.field as keyof InvRow] ?? ''
+      if (typeof av === 'number') return sort.dir === 'asc' ? av - bv : bv - av
+      return sort.dir === 'asc' ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av))
+    })
+    return list
+  }, [invoices, search, statusFilter, clientFilter, period, customFrom, customTo, sort])
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const paginated = filtered.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE)
+  const summary = useMemo(() => ({
+    ht:  filtered.reduce((s,i) => s + Number(i.ht_amount ?? 0), 0),
+    tva: filtered.reduce((s,i) => s + Number(i.tva_amount ?? 0), 0),
+    ttc: filtered.reduce((s,i) => s + Number(i.ttc_amount ?? 0), 0),
+  }), [filtered])
+  const hasFilters = search || statusFilter !== 'all' || period !== 'all' || clientFilter
+
+  // Selection
+  const allPageSelected = paginated.length > 0 && paginated.every(i => selected.has(i.id))
+  function toggleAll() {
+    if (allPageSelected) setSelected(s => { const n=new Set(s); paginated.forEach(i=>n.delete(i.id)); return n })
+    else setSelected(s => { const n=new Set(s); paginated.forEach(i=>n.add(i.id)); return n })
+  }
+  function toggleRow(id: string) {
+    setSelected(s => { const n=new Set(s); n.has(id)?n.delete(id):n.add(id); return n })
+  }
+  const selectedInvs = invoices.filter(i => selected.has(i.id))
+
+  // Actions
+  async function handleDuplicate(inv: InvRow) {
+    setDropdown(null)
+    const { data: lastInv } = await supabase.from('invoices').select('number').eq('company_id', activeCompany!.id).order('created_at', { ascending: false }).limit(1).maybeSingle()
+    const { data: co } = await supabase.from('companies').select('invoice_prefix').eq('id', activeCompany!.id).single()
+    const prefix = (co as any)?.invoice_prefix ?? 'FP'
+    const num = nextInvoiceNumber((lastInv as any)?.number, prefix)
+    const { data: newInv } = await supabase.from('invoices').insert({
+      company_id: activeCompany!.id, client_id: inv.clients?.id ?? null,
+      number: num, issue_date: new Date().toISOString().slice(0,10),
+      status: 'draft', ht_amount: inv.ht_amount, tva_amount: inv.tva_amount,
+      stamp_amount: 0.6, ttc_amount: inv.ttc_amount,
+    }).select('id').single()
+    if (newInv) {
+      const { data: lines } = await supabase.from('invoice_line_items').select('*').eq('invoice_id', inv.id).order('sort_order')
+      if (lines?.length) {
+        await supabase.from('invoice_line_items').insert(
+          lines.map(({ id: _id, ...l }: any) => ({ ...l, invoice_id: (newInv as any).id }))
+        )
+      }
+      router.push(`/dashboard/invoices/${(newInv as any).id}`)
+    }
+  }
+
+  async function handleResubmit(inv: InvRow) {
+    setDropdown(null)
+    const res = await fetch('/api/invoices/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ invoice_id: inv.id }) })
+    const d = await res.json()
+    showToast(res.ok ? 'Facture remise en file TTN' : (d.error ?? 'Erreur'))
+    if (res.ok) load()
+  }
+
+  async function handleDelete() {
+    if (!deleteId) return
+    setDeleting(true)
+    await supabase.from('invoices').delete().eq('id', deleteId)
+    setDeleteId(null); setDeleting(false); showToast('Facture supprimee.')
+    load()
+  }
+
+  function exportCSV() {
+    const headers = ['N Facture','Client','Date','Echeance','HT','TVA','TTC','Statut','TTN_ID']
+    const rows = selectedInvs.map(i => [
+      i.number??'',i.clients?.name??'',i.issue_date??'',i.due_date??'',
+      i.ht_amount,i.tva_amount,i.ttc_amount,i.status,i.ttn_id??''
+    ].map(v=>String(v).replace(/,/g,' ')))
+    const csv = [headers, ...rows].map(r=>r.join(',')).join('\n')
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}))
+    a.download = 'factures.csv'; a.click()
+  }
+
+  async function copyTTN(id: string) {
+    await navigator.clipboard.writeText(id); showToast('TTN_ID copie !')
+  }
+
+  function isOverdue(inv: InvRow) {
+    return inv.due_date && new Date(inv.due_date) < new Date() && !['valid','paid'].includes(inv.status)
+  }
+
+  const STATUS_OPTS = [
+    { value: 'all', label: 'Tous les statuts' },
+    { value: 'draft', label: 'Brouillon' },
+    { value: 'queued', label: 'File attente' },
+    { value: 'pending', label: 'En attente TTN' },
+    { value: 'valid', label: 'Validee' },
+    { value: 'rejected', label: 'Rejetee' },
+  ]
+
+  const SEL = 'bg-[#0f1118] border border-[#1a1b22] rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-[#d4a843] transition-colors'
+
+  return (
+    <div className="space-y-4">
+      {toast && <div className="fixed top-20 right-4 z-50 bg-[#0f1118] border border-[#2dd4a0]/40 text-[#2dd4a0] text-sm px-4 py-3 rounded-xl shadow-2xl">{toast}</div>}
+
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-white flex items-center gap-2">
+            Factures <span className="text-sm text-gray-500 font-normal">({filtered.length})</span>
+          </h1>
+          <p className="text-gray-500 text-sm">Gestion et suivi de vos factures</p>
+        </div>
+        <Link href="/dashboard/invoices/new"
+          className="flex items-center gap-2 px-4 py-2.5 bg-[#d4a843] hover:bg-[#f0c060] text-black text-sm font-bold rounded-xl transition-colors">
+          <Plus size={15} strokeWidth={2.5} />Nouvelle facture
+        </Link>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap gap-2">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+          <input value={searchInput} onChange={e => handleSearchInput(e.target.value)}
+            placeholder="N° facture, client..."
+            className="w-full bg-[#0f1118] border border-[#1a1b22] rounded-xl pl-9 pr-4 py-2 text-sm text-white placeholder-gray-600 outline-none focus:border-[#d4a843] transition-colors" />
+        </div>
+        <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1) }} className={SEL}>
+          {STATUS_OPTS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+        <select value={period} onChange={e => { setPeriod(e.target.value); setPage(1) }} className={SEL}>
+          <option value="all">Toute periode</option>
+          <option value="this_month">Ce mois</option>
+          <option value="this_quarter">Ce trimestre</option>
+          <option value="this_year">Cette annee</option>
+          <option value="custom">Personnalise</option>
+        </select>
+        {period === 'custom' && <>
+          <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)} className={SEL} />
+          <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)} className={SEL} />
+        </>}
+        <select value={clientFilter} onChange={e => { setClientFilter(e.target.value); setPage(1) }} className={SEL}>
+          <option value="">Tous les clients</option>
+          {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+        {hasFilters && (
+          <button onClick={() => { setSearchInput(''); setSearch(''); setStatusFilter('all'); setPeriod('all'); setClientFilter(''); setCustomFrom(''); setCustomTo(''); setPage(1) }}
+            className="px-3 py-2 text-xs text-gray-400 hover:text-white border border-[#1a1b22] rounded-xl transition-colors">
+            Reinitialiser
+          </button>
+        )}
+      </div>
+
+      {/* Summary */}
+      {filtered.length > 0 && (
+        <div className="text-xs text-gray-500 flex flex-wrap gap-3">
+          <span className="font-medium text-gray-400">{filtered.length} facture{filtered.length!==1?'s':''}</span>
+          <span> HT: <span className="text-gray-300 font-mono">{fmtTND(summary.ht)} TND</span></span>
+          <span> TVA: <span className="text-gray-300 font-mono">{fmtTND(summary.tva)} TND</span></span>
+          <span> TTC: <span className="text-gray-200 font-mono font-bold">{fmtTND(summary.ttc)} TND</span></span>
+        </div>
+      )}
+
+      {/* Bulk action bar */}
+      {selected.size > 0 && (
+        <div className="bg-[#161b27] border border-[#d4a843]/30 rounded-xl px-4 py-2.5 flex items-center gap-4">
+          <span className="text-sm text-[#d4a843] font-bold">{selected.size} selectionnee{selected.size>1?'s':''}</span>
+          <div className="flex gap-2">
+            <button onClick={exportCSV} className="text-xs text-gray-300 hover:text-white border border-[#252830] px-3 py-1.5 rounded-lg transition-colors">Exporter CSV</button>
+            <button onClick={() => setSelected(new Set())} className="text-xs text-gray-500 hover:text-white px-2 py-1.5 transition-colors">Annuler</button>
+          </div>
+        </div>
+      )}
+
+      {/* Table */}
+      <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl overflow-hidden">
+        {loading ? (
+          <div className="py-16 text-center text-sm text-gray-600">Chargement...</div>
+        ) : filtered.length === 0 ? (
+          <div className="py-16 flex flex-col items-center gap-3 text-center">
+            <FileText size={40} className="text-gray-700" />
+            <p className="text-sm font-medium text-gray-400">
+              {hasFilters ? 'Aucune facture ne correspond a vos filtres' : 'Aucune facture encore'}
+            </p>
+            {!hasFilters && (
+              <Link href="/dashboard/invoices/new" className="text-xs text-[#d4a843] hover:underline">
+                Creer votre premiere facture 
+              </Link>
+            )}
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[#1a1b22]">
+                    <th className="px-4 py-3 w-8">
+                      <input type="checkbox" checked={allPageSelected} onChange={toggleAll}
+                        className="w-3.5 h-3.5 rounded accent-[#d4a843] cursor-pointer" />
+                    </th>
+                    {([['number','N Facture'],['','Client'],['issue_date','Date'],['due_date','Echeance'],
+                       ['ht_amount','HT'],['tva_amount','TVA'],['ttc_amount','TTC'],['status','Statut'],['','TTN_ID'],['','']
+                    ] as [SortField|'',string][]).map(([field, label]) => (
+                      <th key={label} onClick={() => field && toggleSort(field as SortField)}
+                        className={`px-4 py-3 text-left text-[10px] text-gray-600 uppercase tracking-wider font-semibold whitespace-nowrap ${field?'cursor-pointer hover:text-gray-400 select-none':''}`}>
+                        <span className="flex items-center">
+                          {label}
+                          {field && <SortIcon field={field as SortField} />}
+                        </span>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#1a1b22]">
+                  {paginated.map(inv => (
+                    <tr key={inv.id} className={`hover:bg-[#161b27]/50 transition-colors ${selected.has(inv.id)?'bg-[#d4a843]/5':''}`}>
+                      <td className="px-4 py-3">
+                        <input type="checkbox" checked={selected.has(inv.id)} onChange={() => toggleRow(inv.id)}
+                          className="w-3.5 h-3.5 rounded accent-[#d4a843] cursor-pointer" />
+                      </td>
+                      <td className="px-4 py-3">
+                        <Link href={`/dashboard/invoices/${inv.id}`}
+                          className="font-mono text-xs text-[#d4a843] hover:text-[#f0c060] transition-colors">
+                          {inv.number ?? <span className="text-gray-600 italic">Brouillon</span>}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-gray-300 text-xs">{inv.clients?.name ?? <span className="text-gray-600"></span>}</span>
+                        {inv.clients?.type && (
+                          <span className={`ml-1.5 text-[9px] font-bold px-1 py-0.5 rounded border ${inv.clients.type==='B2B'?'text-[#d4a843] border-[#d4a843]/20':'text-[#4a9eff] border-[#4a9eff]/20'}`}>
+                            {inv.clients.type}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">
+                        {inv.issue_date ? new Date(inv.issue_date).toLocaleDateString('fr-FR') : ''}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className="text-xs text-gray-400">
+                          {inv.due_date ? new Date(inv.due_date).toLocaleDateString('fr-FR') : ''}
+                        </span>
+                        {isOverdue(inv) && (
+                          <span className="ml-1.5 text-[9px] font-bold px-1 py-0.5 rounded bg-red-950/40 text-red-400 border border-red-900/30">Retard</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-xs text-gray-400 whitespace-nowrap text-right">{fmtTND(Number(inv.ht_amount??0))}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-gray-500 whitespace-nowrap text-right">{fmtTND(Number(inv.tva_amount??0))}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-gray-200 font-bold whitespace-nowrap text-right">{fmtTND(Number(inv.ttc_amount??0))}</td>
+                      <td className="px-4 py-3"><InvoiceStatusBadge status={inv.status} /></td>
+                      <td className="px-4 py-3">
+                        {inv.ttn_id ? (
+                          <button onClick={() => copyTTN(inv.ttn_id!)}
+                            className="font-mono text-[10px] text-[#d4a843] hover:text-[#f0c060] truncate max-w-[80px] block transition-colors" title="Copier TTN_ID">
+                            {inv.ttn_id.slice(0,12)}
+                          </button>
+                        ) : <span className="text-gray-700"></span>}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="relative">
+                          <button onClick={() => setDropdown(dropdown===inv.id?null:inv.id)}
+                            className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-500 hover:text-white hover:bg-[#252830] transition-colors">
+                            <MoreVertical size={14} />
+                          </button>
+                          {dropdown === inv.id && (
+                            <>
+                              <div className="fixed inset-0 z-10" onClick={() => setDropdown(null)} />
+                              <div className="absolute right-0 top-8 z-20 w-48 bg-[#161b27] border border-[#252830] rounded-xl shadow-2xl overflow-hidden py-1">
+                                <Link href={`/dashboard/invoices/${inv.id}`} onClick={()=>setDropdown(null)}
+                                  className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-300 hover:bg-[#252830] hover:text-white transition-colors">
+                                  Voir le detail
+                                </Link>
+                                <button onClick={() => handleDuplicate(inv)}
+                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-300 hover:bg-[#252830] hover:text-white transition-colors text-left">
+                                  Dupliquer
+                                </button>
+                                {['rejected','draft'].includes(inv.status) && (
+                                  <button onClick={() => handleResubmit(inv)}
+                                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-300 hover:bg-[#252830] hover:text-white transition-colors text-left">
+                                    Resoumettre a TTN
+                                  </button>
+                                )}
+                                {inv.status === 'draft' && <>
+                                  <div className="my-1 border-t border-[#252830]" />
+                                  <button onClick={() => { setDeleteId(inv.id); setDropdown(null) }}
+                                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-400 hover:bg-red-950/20 transition-colors text-left">
+                                    Supprimer
+                                  </button>
+                                </>}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-4 py-3 border-t border-[#1a1b22]">
+                <span className="text-xs text-gray-500">
+                  Affichage {(page-1)*PAGE_SIZE+1}{Math.min(page*PAGE_SIZE,filtered.length)} sur {filtered.length} factures
+                </span>
+                <div className="flex gap-2">
+                  <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1}
+                    className="px-3 py-1.5 text-xs border border-[#1a1b22] rounded-lg text-gray-400 hover:text-white disabled:opacity-40 transition-colors"> Precedent</button>
+                  <span className="px-3 py-1.5 text-xs text-gray-400">{page} / {totalPages}</span>
+                  <button onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page===totalPages}
+                    className="px-3 py-1.5 text-xs border border-[#1a1b22] rounded-lg text-gray-400 hover:text-white disabled:opacity-40 transition-colors">Suivant </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      <ConfirmDialog open={!!deleteId} title="Supprimer cette facture ?"
+        description="Cette action est irreversible." confirmLabel="Supprimer" dangerous
+        loading={deleting} onConfirm={handleDelete} onCancel={() => setDeleteId(null)} />
+    </div>
+  )
+}

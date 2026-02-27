@@ -1,26 +1,98 @@
 @import "tailwindcss";
 
+/* ── Fatoura Pro Design System ─────────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Brand */
+  --fp-gold:         #d4a843;
+  --fp-gold-light:   #f0c060;
+  --fp-gold-dim:     rgba(212, 168, 67, 0.15);
+
+  /* Surfaces */
+  --fp-bg:           #080a0f;
+  --fp-surface:      #0f1118;
+  --fp-surface-2:    #161b27;
+  --fp-border:       #1a1b22;
+  --fp-border-2:     #252830;
+
+  /* Text */
+  --fp-text-primary:   #ffffff;
+  --fp-text-secondary: #9ca3af;
+  --fp-text-muted:     #6b7280;
+  --fp-text-dim:       #374151;
+
+  /* Status */
+  --fp-success:   #2dd4a0;
+  --fp-warning:   #f59e0b;
+  --fp-error:     #e05a5a;
+  --fp-info:      #4a9eff;
+
+  /* App */
+  --background: var(--fp-bg);
+  --foreground: var(--fp-text-primary);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  /* Map CSS vars to Tailwind utility classes */
+  --color-background:    var(--background);
+  --color-foreground:    var(--foreground);
+  --color-fp-gold:       var(--fp-gold);
+  --color-fp-gold-light: var(--fp-gold-light);
+  --color-fp-surface:    var(--fp-surface);
+  --color-fp-surface-2:  var(--fp-surface-2);
+  --color-fp-border:     var(--fp-border);
+  --color-fp-success:    var(--fp-success);
+  --color-fp-error:      var(--fp-error);
+  --color-fp-info:       var(--fp-info);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+body {
+  background: var(--fp-bg);
+  color: var(--fp-text-primary);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ── Scrollbar styling ─────────────────────────────────────────────── */
+::-webkit-scrollbar              { width: 6px; height: 6px; }
+::-webkit-scrollbar-track        { background: var(--fp-surface); }
+::-webkit-scrollbar-thumb        { background: var(--fp-border-2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover  { background: var(--fp-text-dim); }
+
+/* ── Selection ─────────────────────────────────────────────────────── */
+::selection { background: rgba(212, 168, 67, 0.25); color: #fff; }
+
+/* ── Focus ring ────────────────────────────────────────────────────── */
+:focus-visible { outline: 2px solid var(--fp-gold); outline-offset: 2px; }
+
+/* ── Numeric inputs — hide spin buttons ────────────────────────────── */
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
+
+/* ── Shimmer animation for skeleton loaders ────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
 }
+.animate-shimmer {
+  background: linear-gradient(90deg, #1a1b22 25%, #252830 50%, #1a1b22 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
+/* ── Range input (slider) — cross-browser ──────────────────────────── */
+input[type=range] { -webkit-appearance: none; appearance: none; cursor: pointer; height: 8px; border-radius: 4px; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #d4a843; box-shadow: 0 0 0 3px rgba(212,168,67,0.2); cursor: pointer; transition: box-shadow 0.15s; }
+input[type=range]::-webkit-slider-thumb:hover { box-shadow: 0 0 0 5px rgba(212,168,67,0.3); }
+input[type=range]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #d4a843; border: none; cursor: pointer; }
+
+/* ── Mobile scroll tables ───────────────────────────────────────────── */
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* ── Page transition fade ───────────────────────────────────────────── */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+.page-enter { animation: fadeIn 0.2s ease-out; }

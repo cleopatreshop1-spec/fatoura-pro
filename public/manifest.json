@@ -1,0 +1,20 @@
+﻿{
+  "name": "Fatoura Pro",
+  "short_name": "Fatoura Pro",
+  "description": "Gestion de facturation electronique conforme TTN/ElFatoora",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#0a0b0f",
+  "theme_color": "#0a0b0f",
+  "orientation": "portrait-primary",
+  "categories": ["finance", "business"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Nouvelle facture", "url": "/dashboard/invoices/new", "description": "Creer une nouvelle facture" },
+    { "name": "Mes factures",     "url": "/dashboard/invoices",     "description": "Liste des factures" },
+    { "name": "Mes clients",      "url": "/dashboard/clients",      "description": "Liste des clients" }
+  ]
+}
