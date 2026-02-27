@@ -100,6 +100,7 @@ function RegisterCompanyForm() {
       bank_rib: data.bank_rib || null,
       invoice_prefix: data.invoice_prefix || 'FP',
       invoice_counter: 0,
+      current_plan: 'trialing',
     })
 
     if (error) { setServerError(error.message); return }

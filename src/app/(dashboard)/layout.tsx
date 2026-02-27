@@ -26,7 +26,7 @@ export default async function DashboardLayout({
     await supabase.from('companies').insert({
       owner_id: user.id,
       name: defaultName,
-      plan: 'free',
+      current_plan: 'trialing',
     })
   }
 
