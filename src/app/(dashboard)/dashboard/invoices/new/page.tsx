@@ -194,7 +194,7 @@ export default function NewInvoicePage() {
     }
     if (id) {
       await supabase.from('invoice_line_items').delete().eq('invoice_id', id)
-      await supabase.from('invoice_line_items').insert(
+      const { error: lineErr } = await supabase.from('invoice_line_items').insert(
         lines.map((l, idx) => ({
           invoice_id: id, sort_order: idx,
           description: l.description, quantity: l.quantity, unit_price: l.unit_price,
@@ -202,6 +202,11 @@ export default function NewInvoicePage() {
           line_tva: round3(l.line_ht * l.tva_rate / 100), line_ttc: l.line_ttc,
         }))
       )
+      if (lineErr) {
+        console.error('[invoice_line_items insert]', lineErr)
+        showToast(`Erreur lignes: ${lineErr.message}`, 'error')
+        return null
+      }
     }
     return id
   }
