@@ -2,7 +2,7 @@
 
 import {
   createContext, useContext, useEffect,
-  useState, useCallback
+  useState, useCallback, useMemo
 } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -44,7 +44,7 @@ interface CompanyContextValue {
 const CompanyContext = createContext<CompanyContextValue | null>(null)
 
 export function CompanyProvider({ children }: { children: React.ReactNode }) {
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const [ownCompany, setOwnCompany] = useState<Company | null>(null)
   const [linkedCompanies, setLinkedCompanies] = useState<Company[]>([])
   const [fiduciaiireLinks, setFiduciaiireLinks] = useState<FiduciaiireLink[]>([])

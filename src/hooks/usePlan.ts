@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useCompany } from '@/contexts/CompanyContext'
 
@@ -91,7 +91,7 @@ function computePermissions(sub: any, plan: any): PlanPermissions {
 
 export function usePlan(): PlanPermissions & { loading: boolean; refresh: () => void } {
   const { activeCompany } = useCompany()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const [perms, setPerms] = useState<PlanPermissions>(DEFAULT_PERMISSIONS)
   const [loading, setLoading] = useState(true)
 
