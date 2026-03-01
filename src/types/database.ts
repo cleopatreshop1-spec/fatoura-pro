@@ -177,10 +177,10 @@ export interface Database {
           id: string
           company_id: string | null
           user_id: string | null
-          action: string
+          action_type: string
           entity_type: string | null
           entity_id: string | null
-          details: Json | null
+          description: string | null
           created_at: string
         }
         Insert: Omit<Database['public']['Tables']['activity_log']['Row'], 'id' | 'created_at'> & {
