@@ -63,6 +63,7 @@ export default function NewInvoicePage() {
       setLoading(false)
       return
     }
+    const editId = searchParams.get('edit')
     const [
       { data: cls },
       { data: lastInv },
@@ -76,13 +77,46 @@ export default function NewInvoicePage() {
     ])
     setClients((cls ?? []) as ComboClient[])
     const prefix = (co as any)?.invoice_prefix ?? 'FP'
-    setInvoiceNumber(nextInvoiceNumber((lastInv as any)?.number, prefix))
     setHasMandate(!!mdt)
     setHasCert(!!(co as any)?.own_cert_pem)
-    const preId = searchParams.get('client_id')
-    if (preId && cls) {
-      const pre = (cls as ComboClient[]).find(c => c.id === preId)
-      if (pre) setSelectedClient(pre)
+
+    if (editId) {
+      // Load existing draft for editing
+      setSavedId(editId)
+      const [{ data: inv }, { data: existingLines }] = await Promise.all([
+        supabase.from('invoices').select('*').eq('id', editId).eq('company_id', activeCompany.id).single(),
+        supabase.from('invoice_line_items').select('*').eq('invoice_id', editId).order('sort_order'),
+      ])
+      if (inv) {
+        setInvoiceNumber((inv as any).number ?? nextInvoiceNumber((lastInv as any)?.number, prefix))
+        setInvoiceDate((inv as any).issue_date ?? new Date().toISOString().slice(0, 10))
+        setDueDate((inv as any).due_date ?? '')
+        setNotes((inv as any).notes ?? '')
+        setReference((inv as any).reference ?? '')
+        const clientId = (inv as any).client_id
+        if (clientId && cls) {
+          const pre = (cls as ComboClient[]).find(c => c.id === clientId)
+          if (pre) setSelectedClient(pre)
+        }
+      }
+      if (existingLines?.length) {
+        setLines(existingLines.map((l: any) => ({
+          id: crypto.randomUUID(),
+          description: l.description,
+          quantity: Number(l.quantity),
+          unit_price: Number(l.unit_price),
+          tva_rate: Number(l.tva_rate) as TvaRate,
+          line_ht: Number(l.line_ht),
+          line_ttc: Number(l.line_ttc),
+        })))
+      }
+    } else {
+      setInvoiceNumber(nextInvoiceNumber((lastInv as any)?.number, prefix))
+      const preId = searchParams.get('client_id')
+      if (preId && cls) {
+        const pre = (cls as ComboClient[]).find(c => c.id === preId)
+        if (pre) setSelectedClient(pre)
+      }
     }
     setLoading(false)
   }, [activeCompany?.id, supabase, searchParams])
