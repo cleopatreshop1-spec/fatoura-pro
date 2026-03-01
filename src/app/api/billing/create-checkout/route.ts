@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
         orderId:   `fp_${company.id}_${planId}_${billingCycle}_${Date.now()}`,
         webhook:   `${appUrl}/api/billing/webhook`,
         successUrl: `${appUrl}/dashboard?payment=success&plan=${planId}`,
-        failUrl:    `${appUrl}/settings/billing?payment=failed`,
+        failUrl:    `${appUrl}/dashboard/settings?tab=billing&payment=failed`,
         theme: 'dark',
       }),
     })

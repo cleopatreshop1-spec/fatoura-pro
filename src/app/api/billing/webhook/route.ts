@@ -34,14 +34,14 @@ export async function GET(req: NextRequest) {
     })
 
     if (!verifyRes.ok) {
-      return NextResponse.redirect(new URL('/settings/billing?payment=failed', req.url))
+      return NextResponse.redirect(new URL('/dashboard/settings?tab=billing&payment=failed', req.url))
     }
 
     const paymentData = await verifyRes.json()
     const payment = paymentData.payment ?? paymentData
 
     if (payment.status !== 'completed') {
-      return NextResponse.redirect(new URL('/settings/billing?payment=failed', req.url))
+      return NextResponse.redirect(new URL('/dashboard/settings?tab=billing&payment=failed', req.url))
     }
 
     const orderId: string = payment.orderId ?? ''
@@ -122,7 +122,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL(`/dashboard?payment=success&plan=${planId}`, req.url))
   } catch (err) {
     console.error('[billing/webhook]', err)
-    return NextResponse.redirect(new URL('/settings/billing?payment=error', req.url))
+    return NextResponse.redirect(new URL('/dashboard/settings?tab=billing&payment=error', req.url))
   }
 }
 
