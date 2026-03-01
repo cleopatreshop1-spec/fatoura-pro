@@ -9,7 +9,6 @@ import { createClient } from '@/lib/supabase/client'
 interface Company {
   id: string
   name: string
-  mf: string | null
   current_plan: string
   owner_id: string
   is_fiduciaire?: boolean

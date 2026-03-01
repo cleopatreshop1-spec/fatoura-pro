@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/ttn-queue/process",
+      "schedule": "*/15 * * * *"
+    }
+  ]
+}
