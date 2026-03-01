@@ -1,4 +1,6 @@
-﻿import { notFound } from 'next/navigation'
+﻿export const dynamic = 'force-dynamic'
+
+import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { InvoiceDetailPanel } from '@/components/invoice/InvoiceDetailPanel'
 import { InvoiceStatusBadge } from '@/components/invoice/InvoiceStatusBadge'
