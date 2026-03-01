@@ -41,15 +41,8 @@ ALTER TABLE clients ADD COLUMN IF NOT EXISTS email            TEXT;
 ALTER TABLE clients ADD COLUMN IF NOT EXISTS bank_name        TEXT;
 ALTER TABLE clients ADD COLUMN IF NOT EXISTS bank_rib         TEXT;
 
--- ── invoice_line_items: drop generated columns, recreate as plain ──
--- line_ht/line_tva/line_ttc may have been created as GENERATED ALWAYS columns
--- which block explicit inserts. Drop and recreate as regular columns.
-ALTER TABLE invoice_line_items DROP COLUMN IF EXISTS line_ht;
-ALTER TABLE invoice_line_items DROP COLUMN IF EXISTS line_tva;
-ALTER TABLE invoice_line_items DROP COLUMN IF EXISTS line_ttc;
-ALTER TABLE invoice_line_items ADD COLUMN IF NOT EXISTS line_ht   NUMERIC(12,3) NOT NULL DEFAULT 0;
-ALTER TABLE invoice_line_items ADD COLUMN IF NOT EXISTS line_tva  NUMERIC(12,3) NOT NULL DEFAULT 0;
-ALTER TABLE invoice_line_items ADD COLUMN IF NOT EXISTS line_ttc  NUMERIC(12,3) NOT NULL DEFAULT 0;
+-- ── invoice_line_items: add missing non-generated columns ──
+-- line_ht/line_tva/line_ttc are GENERATED ALWAYS columns — do NOT touch them
 ALTER TABLE invoice_line_items ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
 ALTER TABLE invoice_line_items ADD COLUMN IF NOT EXISTS sort_order INTEGER NOT NULL DEFAULT 0;
 

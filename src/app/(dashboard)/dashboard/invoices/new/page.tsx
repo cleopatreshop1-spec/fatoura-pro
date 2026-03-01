@@ -195,19 +195,13 @@ export default function NewInvoicePage() {
     if (id) {
       await supabase.from('invoice_line_items').delete().eq('invoice_id', id)
       const { error: lineErr } = await supabase.from('invoice_line_items').insert(
-        lines.map((l, idx) => {
-          const qty      = Number(l.quantity)
-          const price    = Number(l.unit_price)
-          const rate     = Number(l.tva_rate)
-          const line_ht  = round3(qty * price)
-          const line_tva = round3(line_ht * rate / 100)
-          const line_ttc = round3(line_ht + line_tva)
-          return {
-            invoice_id: id, sort_order: idx,
-            description: l.description, quantity: qty, unit_price: price,
-            tva_rate: rate, line_ht, line_tva, line_ttc,
-          }
-        })
+        lines.map((l, idx) => ({
+          invoice_id: id, sort_order: idx,
+          description: l.description,
+          quantity: Number(l.quantity),
+          unit_price: Number(l.unit_price),
+          tva_rate: Number(l.tva_rate),
+        }))
       )
       if (lineErr) {
         console.error('[invoice_line_items insert]', lineErr)

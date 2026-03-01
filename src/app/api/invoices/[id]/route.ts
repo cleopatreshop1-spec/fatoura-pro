@@ -69,11 +69,8 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
     await (supabase as any).from('invoice_line_items').insert(
       parsed.data.map((l, idx) => ({
         invoice_id: id, sort_order: idx,
-        description: l.description, quantity: l.quantity, unit_price: l.unit_price,
-        tva_rate: l.tva_rate,
-        line_ht:  Math.round(l.quantity * l.unit_price * 1000) / 1000,
-        line_tva: Math.round(l.quantity * l.unit_price * l.tva_rate / 100 * 1000) / 1000,
-        line_ttc: Math.round(l.quantity * l.unit_price * (1 + l.tva_rate / 100) * 1000) / 1000,
+        description: l.description, quantity: l.quantity,
+        unit_price: l.unit_price, tva_rate: l.tva_rate,
       }))
     )
 
