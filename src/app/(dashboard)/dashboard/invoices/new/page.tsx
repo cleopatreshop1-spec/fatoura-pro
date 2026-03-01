@@ -205,6 +205,7 @@ export default function NewInvoicePage() {
       )
       if (lineErr) {
         console.error('[invoice_line_items insert]', lineErr)
+        alert(`ERREUR LIGNES: ${lineErr.message} | code: ${lineErr.code} | details: ${lineErr.details}`)
         showToast(`Erreur lignes: ${lineErr.message}`, 'error')
         return null
       }
