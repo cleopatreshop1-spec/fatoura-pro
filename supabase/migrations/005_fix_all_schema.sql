@@ -41,6 +41,11 @@ ALTER TABLE clients ADD COLUMN IF NOT EXISTS email            TEXT;
 ALTER TABLE clients ADD COLUMN IF NOT EXISTS bank_name        TEXT;
 ALTER TABLE clients ADD COLUMN IF NOT EXISTS bank_rib         TEXT;
 
+-- ── invoice_line_items: ensure all columns exist ───────────
+ALTER TABLE invoice_line_items ADD COLUMN IF NOT EXISTS created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW();
+ALTER TABLE invoice_line_items ADD COLUMN IF NOT EXISTS sort_order  INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE invoice_line_items ADD COLUMN IF NOT EXISTS line_ttc    NUMERIC(12,3) NOT NULL DEFAULT 0;
+
 -- ── invoices: ensure all columns exist ─────────────────────
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS number               TEXT;
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS issue_date           DATE;
