@@ -54,6 +54,14 @@ UPDATE companies SET is_fiduciaire  = FALSE      WHERE is_fiduciaire IS NULL;
 UPDATE companies SET current_plan   = 'trialing' WHERE current_plan IS NULL;
 UPDATE companies SET notification_preferences = '{}' WHERE notification_preferences IS NULL;
 
+-- ── clients: extra columns ─────────────────────────────────
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS gouvernorat  TEXT;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS postal_code  TEXT;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS bank_name    TEXT;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS bank_rib     TEXT;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS phone2       TEXT;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS website      TEXT;
+
 -- ── invoices: safety columns ───────────────────────────────
 -- The app uses: number, issue_date, due_date, ht_amount, tva_amount,
 -- stamp_amount, ttc_amount, total_in_words, ttn_id, ttn_xml,
