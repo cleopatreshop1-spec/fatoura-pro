@@ -55,6 +55,7 @@ UPDATE companies SET current_plan   = 'trialing' WHERE current_plan IS NULL;
 UPDATE companies SET notification_preferences = '{}' WHERE notification_preferences IS NULL;
 
 -- ── clients: extra columns ─────────────────────────────────
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS matricule_fiscal TEXT;
 ALTER TABLE clients ADD COLUMN IF NOT EXISTS gouvernorat  TEXT;
 ALTER TABLE clients ADD COLUMN IF NOT EXISTS postal_code  TEXT;
 ALTER TABLE clients ADD COLUMN IF NOT EXISTS bank_name    TEXT;
