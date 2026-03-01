@@ -46,15 +46,13 @@ export function SignatureTab() {
   async function handleAcceptMandate() {
     if (!activeCompany?.id) return
     setAccepting(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    const validUntil = new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString().slice(0, 10)
-    await supabase.from('mandates').insert({
-      company_id: activeCompany.id, accepted_by: user!.id,
-      accepted_at: new Date().toISOString(),
-      seal_identifier: 'FATOURA-PRO-SEAL-2026',
-      seal_valid_until: validUntil, scope: 'all_invoices', is_active: true,
-    })
-    await load(); setAccepting(false); showToast('Mandat active !')
+    try {
+      const res = await fetch('/api/mandate/accept', { method: 'POST' })
+      const d = await res.json()
+      if (!res.ok) { showToast(d.error ?? 'Erreur activation mandat'); setAccepting(false); return }
+      await load(); showToast('Mandat active !')
+    } catch { showToast('Erreur reseau') }
+    setAccepting(false)
   }
 
   async function handleRevoke() {
