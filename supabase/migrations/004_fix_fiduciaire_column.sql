@@ -76,6 +76,7 @@ ALTER TABLE invoices ADD COLUMN IF NOT EXISTS submitted_at         TIMESTAMPTZ;
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS validated_at         TIMESTAMPTZ;
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS paid_at              TIMESTAMPTZ;
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS created_by           UUID REFERENCES auth.users(id);
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS reference            TEXT;
 
 -- ── Ensure payment_status default exists ──────────────────
 UPDATE invoices SET payment_status = 'unpaid' WHERE payment_status IS NULL;

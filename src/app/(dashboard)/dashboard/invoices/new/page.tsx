@@ -142,6 +142,7 @@ export default function NewInvoicePage() {
       issue_date: invoiceDate,
       due_date: dueDate || null,
       notes: notes || null,
+      reference: reference || null,
       status,
       ht_amount: totals.total_ht,
       tva_amount: totals.total_tva,

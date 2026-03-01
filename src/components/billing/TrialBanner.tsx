@@ -24,7 +24,7 @@ export function TrialBanner() {
             Votre essai gratuit est terminé — la création de factures est suspendue.
           </span>
           <button
-            onClick={() => router.push('/settings/billing')}
+            onClick={() => router.push('/dashboard/settings?tab=billing')}
             className="text-[#d4a843] font-bold underline underline-offset-2 hover:text-[#f0c060] transition-colors"
           >
             Choisir un plan →

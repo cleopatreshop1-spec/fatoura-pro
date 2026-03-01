@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useCompany } from '@/contexts/CompanyContext'
@@ -59,7 +59,7 @@ export function BillingTab() {
   const router = useRouter()
   const { activeCompany } = useCompany()
   const plan = usePlan()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   const [payments, setPayments] = useState<Payment[]>([])
   const [loadingPayments, setLoadingPayments] = useState(true)
