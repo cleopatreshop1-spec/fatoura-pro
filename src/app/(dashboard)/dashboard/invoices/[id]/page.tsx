@@ -14,7 +14,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
 
   const { data: inv } = await supabase
     .from('invoices')
-    .select('*, clients(*), companies(*), invoice_line_items(*)')
+    .select('*, clients(*), companies(*), invoice_line_items(id, sort_order, description, quantity, unit_price, tva_rate, line_ht, line_tva, line_ttc)')
     .eq('id', id).single()
 
   const lines = inv
