@@ -10,13 +10,14 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
   const { id } = await params
   const supabase = await createClient()
 
-  const [{ data: inv }, { data: lines }] = await Promise.all([
-    supabase.from('invoices')
-      .select('*, clients(*), companies(*)')
-      .eq('id', id).single(),
-    supabase.from('invoice_line_items')
-      .select('*').eq('invoice_id', id).order('sort_order'),
-  ])
+  const { data: inv } = await supabase
+    .from('invoices')
+    .select('*, clients(*), companies(*), invoice_line_items(*)')
+    .eq('id', id).single()
+
+  const lines = inv
+    ? ((inv as any).invoice_line_items ?? []).sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    : []
 
   if (!inv) notFound()
 
