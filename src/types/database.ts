@@ -88,6 +88,7 @@ export interface Database {
       invoice_line_items: {
         Row: {
           id: string
+          created_at: string
           invoice_id: string
           sort_order: number
           description: string
@@ -98,7 +99,16 @@ export interface Database {
           line_tva: number
           line_ttc: number
         }
-        Insert: Omit<Database['public']['Tables']['invoice_line_items']['Row'], 'id'> & { id?: string }
+        Insert: {
+          id?: string
+          created_at?: string
+          invoice_id: string
+          sort_order?: number
+          description: string
+          quantity: number
+          unit_price: number
+          tva_rate: number
+        }
         Update: Partial<Database['public']['Tables']['invoice_line_items']['Insert']>
       }
       mandates: {
