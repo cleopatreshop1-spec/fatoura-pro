@@ -1,6 +1,7 @@
 ﻿'use client'
 
-import { useState } from 'react'
+import { Suspense, useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Building2, Shield, Key, Bell, Lock, CreditCard } from 'lucide-react'
 import { CompanyTab } from '@/components/settings/CompanyTab'
 import { SignatureTab } from '@/components/settings/SignatureTab'
@@ -20,8 +21,19 @@ const TABS: { id: TabId; label: string; Icon: any; desc: string }[] = [
   { id: 'security',      label: 'Securite',               Icon: Lock,       desc: 'Mot de passe, sessions' },
 ]
 
-export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<TabId>('company')
+const VALID_TABS = TABS.map(t => t.id)
+
+function SettingsContent() {
+  const searchParams = useSearchParams()
+  const tabParam = searchParams.get('tab') as TabId | null
+  const initialTab: TabId = tabParam && VALID_TABS.includes(tabParam) ? tabParam : 'company'
+  const [activeTab, setActiveTab] = useState<TabId>(initialTab)
+
+  useEffect(() => {
+    const tab = searchParams.get('tab') as TabId | null
+    if (tab && VALID_TABS.includes(tab)) setActiveTab(tab)
+  }, [searchParams])
+
   const active = TABS.find(t => t.id === activeTab)!
 
   return (
@@ -76,5 +88,13 @@ export default function SettingsPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={<div className="py-12 text-center text-sm text-gray-600">Chargement...</div>}>
+      <SettingsContent />
+    </Suspense>
   )
 }
