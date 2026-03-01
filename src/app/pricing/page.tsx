@@ -3,8 +3,6 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Check, X, ChevronDown, ChevronUp, Zap, Building2, Phone } from 'lucide-react'
-import type { Metadata } from 'next'
-
 const FAQ = [
   {
     q: 'Puis-je changer de plan à tout moment ?',
