@@ -126,9 +126,6 @@ export async function POST(request: NextRequest) {
       quantity:    l.quantity,
       unit_price:  l.unit_price,
       tva_rate:    l.tva_rate,
-      line_ht:     Math.round(l.quantity * l.unit_price * 1000) / 1000,
-      line_tva:    Math.round(l.quantity * l.unit_price * l.tva_rate / 100 * 1000) / 1000,
-      line_ttc:    Math.round(l.quantity * l.unit_price * (1 + l.tva_rate / 100) * 1000) / 1000,
     }))
 
     const { error: lineErr } = await (supabase as any)
