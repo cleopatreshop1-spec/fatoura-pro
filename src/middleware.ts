@@ -42,9 +42,10 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Auth routes (/login, /register, /register/company) → redirect if already logged in
-  const authPaths = ['/login', '/register']
-  if (user && authPaths.some(p => pathname === p || pathname.startsWith('/register'))) {
+  // Auth routes (/login, /register) → redirect if already logged in
+  // NOTE: /register/company is intentionally kept accessible while authenticated (onboarding)
+  const strictAuthPaths = ['/login', '/register']
+  if (user && strictAuthPaths.includes(pathname)) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
