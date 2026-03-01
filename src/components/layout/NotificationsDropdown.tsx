@@ -164,7 +164,7 @@ export function NotificationsDropdown() {
 
           <div className="border-t border-[#1a1b22] px-4 py-2.5">
             <a
-              href="/dashboard/settings/notifications"
+              href="/dashboard/settings?tab=notifications"
               onClick={() => setOpen(false)}
               className="text-xs text-gray-500 hover:text-[#d4a843] transition-colors"
             >

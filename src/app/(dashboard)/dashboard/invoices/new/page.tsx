@@ -503,7 +503,7 @@ export default function NewInvoicePage() {
                     <AlertTriangle size={12} className="shrink-0" />
                     Signature non configuree
                   </div>
-                  <Link href="/dashboard/settings/mandate"
+                  <Link href="/dashboard/settings?tab=signature"
                     className="block text-xs text-center text-gray-500 hover:text-[#d4a843] transition-colors">
                     Configurer la signature 
                   </Link>
@@ -557,7 +557,7 @@ export default function NewInvoicePage() {
                 className="flex-1 py-2.5 rounded-xl border border-[#1a1b22] text-sm text-gray-300 hover:bg-white/5">
                 Annuler
               </button>
-              <Link href="/dashboard/settings/mandate" onClick={() => setShowSigWarning(false)}
+              <Link href="/dashboard/settings?tab=signature" onClick={() => setShowSigWarning(false)}
                 className="flex-1 py-2.5 rounded-xl bg-[#d4a843] hover:bg-[#f0c060] text-black text-sm font-bold text-center">
                 Configurer
               </Link>

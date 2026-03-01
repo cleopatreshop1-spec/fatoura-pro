@@ -114,7 +114,7 @@ function RegisterCompanyForm() {
       })
     }
 
-    router.push('/dashboard/settings/mandate')
+    router.push('/dashboard/settings?tab=signature')
   }
 
   return (

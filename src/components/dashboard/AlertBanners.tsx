@@ -54,7 +54,7 @@ export function AlertBanners({ rejectedCount, hasMandate, mandateExpiringDays, q
     alerts.push(
       <Alert key="no-mandate" color="yellow" icon=""
         text="Aucune signature configuree  vos factures ne peuvent pas etre soumises a TTN"
-        action={{ label: 'Configurer maintenant', href: '/dashboard/settings/mandate' }}
+        action={{ label: 'Configurer maintenant', href: '/dashboard/settings?tab=signature' }}
       />
     )
   }
@@ -63,7 +63,7 @@ export function AlertBanners({ rejectedCount, hasMandate, mandateExpiringDays, q
     alerts.push(
       <Alert key="expiring" color="yellow" icon=""
         text={`Votre mandat de signature expire dans ${mandateExpiringDays} jour${mandateExpiringDays > 1 ? 's' : ''}`}
-        action={{ label: 'Renouveler', href: '/dashboard/settings/mandate' }}
+        action={{ label: 'Renouveler', href: '/dashboard/settings?tab=signature' }}
       />
     )
   }
