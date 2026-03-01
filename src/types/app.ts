@@ -8,7 +8,7 @@ export type TvaRegime = 'reel' | 'forfait' | 'exonere'
 export interface InvoiceWithRelations extends Invoice {
   clients: Client | null
   companies: Company | null
-  invoice_lines: InvoiceLine[]
+  invoice_line_items: InvoiceLine[]
 }
 
 export interface InvoiceListItem {

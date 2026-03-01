@@ -56,19 +56,20 @@ export interface Database {
           id: string
           company_id: string
           client_id: string | null
-          invoice_number: string
-          invoice_date: string
+          number: string
+          issue_date: string
           due_date: string | null
           status: 'draft' | 'pending' | 'valid' | 'rejected' | 'queued'
-          total_ht: number
-          total_tva: number
-          stamp_duty: number
-          total_ttc: number
+          ht_amount: number
+          tva_amount: number
+          stamp_amount: number
+          ttc_amount: number
           total_in_words: string | null
           ttn_id: string | null
           ttn_xml: string | null
           ttn_response: Json | null
           ttn_rejection_reason: string | null
+          reference: string | null
           submitted_at: string | null
           validated_at: string | null
           notes: string | null
@@ -84,7 +85,7 @@ export interface Database {
         }
         Update: Partial<Database['public']['Tables']['invoices']['Insert']>
       }
-      invoice_lines: {
+      invoice_line_items: {
         Row: {
           id: string
           invoice_id: string
@@ -97,8 +98,8 @@ export interface Database {
           line_tva: number
           line_ttc: number
         }
-        Insert: Omit<Database['public']['Tables']['invoice_lines']['Row'], 'id'> & { id?: string }
-        Update: Partial<Database['public']['Tables']['invoice_lines']['Insert']>
+        Insert: Omit<Database['public']['Tables']['invoice_line_items']['Row'], 'id'> & { id?: string }
+        Update: Partial<Database['public']['Tables']['invoice_line_items']['Insert']>
       }
       mandates: {
         Row: {
@@ -208,7 +209,7 @@ export interface Database {
 export type Company = Database['public']['Tables']['companies']['Row']
 export type Client = Database['public']['Tables']['clients']['Row']
 export type Invoice = Database['public']['Tables']['invoices']['Row']
-export type InvoiceLine = Database['public']['Tables']['invoice_lines']['Row']
+export type InvoiceLine = Database['public']['Tables']['invoice_line_items']['Row']
 export type Mandate = Database['public']['Tables']['mandates']['Row']
 export type Notification = Database['public']['Tables']['notifications']['Row']
 export type ApiKey = Database['public']['Tables']['api_keys']['Row']
