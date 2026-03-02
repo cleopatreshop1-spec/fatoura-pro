@@ -110,6 +110,8 @@ export function AIChatPanel({ onClose, proactiveSuggestions = [] }: Props) {
   const [input, setInput]               = useState('')
   const [loading, setLoading]           = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(true)
+  const [voicePending, setVoicePending]   = useState(false)
+  const voiceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Gemini conversation history (role: 'user' | 'model')
   const [geminiHistory, setGeminiHistory] = useState<GeminiMessage[]>([])
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -289,19 +291,44 @@ export function AIChatPanel({ onClose, proactiveSuggestions = [] }: Props) {
             />
             <VoiceInput
               disabled={loading}
-              onTranscript={(text) => { setInput(text); setTimeout(() => sendMessage(text), 150) }}
+              onTranscript={(text) => {
+                setInput(text)
+                setVoicePending(true)
+                if (voiceTimerRef.current) clearTimeout(voiceTimerRef.current)
+                voiceTimerRef.current = setTimeout(() => {
+                  setVoicePending(false)
+                  sendMessage(text)
+                }, 3000)
+              }}
             />
-            <button onClick={() => sendMessage(input)}
-              disabled={loading || !input.trim()}
+            <button
+              onClick={() => {
+                if (voicePending) {
+                  if (voiceTimerRef.current) clearTimeout(voiceTimerRef.current)
+                  setVoicePending(false)
+                  sendMessage(input)
+                } else {
+                  sendMessage(input)
+                }
+              }}
+              disabled={loading || (!input.trim() && !voicePending)}
               className="p-1.5 rounded-lg bg-[#d4a843] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#f0c060] transition-colors shrink-0">
               {loading
                 ? <Loader2 className="w-3.5 h-3.5 text-black animate-spin" />
                 : <Send className="w-3.5 h-3.5 text-black" />}
             </button>
           </div>
-          <p className="text-[10px] text-gray-700 mt-1.5 text-center">
-            L'IA peut faire des erreurs. Vérifiez les informations importantes.
-          </p>
+          {voicePending && (
+            <div className="flex items-center gap-2 px-1 mt-1.5 text-xs text-[#d4a843] animate-pulse">
+              <span className="w-1.5 h-1.5 bg-[#d4a843] rounded-full shrink-0" />
+              Envoi dans 3 secondes... (cliquez ➤ pour envoyer maintenant)
+            </div>
+          )}
+          {!voicePending && (
+            <p className="text-[10px] text-gray-700 mt-1.5 text-center">
+              L'IA peut faire des erreurs. Vérifiez les informations importantes.
+            </p>
+          )}
         </div>
       </div>
     </div>

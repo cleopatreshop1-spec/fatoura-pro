@@ -12,6 +12,28 @@ function getGeminiClient() {
   return new GoogleGenerativeAI(key)
 }
 
+async function callWithRetry<T>(
+  fn: () => Promise<T>,
+  retries = 3,
+  delayMs = 2000
+): Promise<T> {
+  try {
+    return await fn()
+  } catch (error) {
+    const message = (error as any)?.message ?? ''
+    const status  = (error as any)?.status ?? 0
+    const is429   = message.includes('429') ||
+                    message.includes('quota') ||
+                    message.includes('TooManyRequests') ||
+                    status === 429
+    if (is429 && retries > 0) {
+      await new Promise(r => setTimeout(r, delayMs))
+      return callWithRetry(fn, retries - 1, delayMs * 2)
+    }
+    throw error
+  }
+}
+
 function detectLanguage(text: string): 'ar' | 'fr' | 'mixed' {
   const arabicChars = (text.match(/[\u0600-\u06FF]/g) ?? []).length
   const totalChars = text.replace(/\s/g, '').length
@@ -76,10 +98,12 @@ TRANSCRIS EXACTEMENT ce que la personne dit.
 Retourne UNIQUEMENT le texte transcrit, rien d'autre.
 Pas d'explication, pas de ponctuation ajoutée, pas de guillemets.`
 
-    const result = await model.generateContent([
-      { inlineData: { mimeType: mimeType as any, data: base64Audio } },
-      prompt,
-    ])
+    const result = await callWithRetry(() =>
+      model.generateContent([
+        { inlineData: { mimeType: mimeType as any, data: base64Audio } },
+        prompt,
+      ])
+    )
 
     const transcript = result.response.text().trim()
 

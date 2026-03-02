@@ -52,15 +52,17 @@ export async function buildUserContext(
     return cached.data
   }
 
+  console.log('[AI Context] Building for company:', companyId)
+
   const now          = new Date()
   const firstOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
   const todayStr     = format(now, 'yyyy-MM-dd')
 
   const [
-    { data: monthRows },
+    { data: monthRows,  error: monthErr  },
     { data: unpaidRows },
     { data: pendingRows },
-    { data: clientRows },
+    { data: clientRows, error: clientErr },
   ] = await Promise.all([
     (supabase as any).from('invoices')
       .select('status, ht_amount, tva_amount, ttc_amount, payment_status')
@@ -110,6 +112,9 @@ export async function buildUserContext(
     due_date:   i.due_date ?? null,
     clientName: (i.clients as any)?.name ?? null,
   }))
+
+  console.log('[AI Context] Month rows:', monthRows?.length ?? 0, 'error:', monthErr?.message ?? null)
+  console.log('[AI Context] Clients:', clientRows?.length ?? 0, 'error:', clientErr?.message ?? null)
 
   const clients: ClientSummary[] = (clientRows ?? []).map((c: any) => ({
     id:               c.id,
