@@ -9,7 +9,7 @@ import { FiscalHealthScore } from '@/components/dashboard/FiscalHealthScore'
 import { RemindersPanel } from '@/components/dashboard/RemindersPanel'
 import { RecentInvoicesTable } from '@/components/dashboard/RecentInvoicesTable'
 import type { InvoiceTableRow } from '@/components/dashboard/RecentInvoicesTable'
-import { format, subDays, addDays, parseISO, isValid, startOfWeek, endOfWeek, eachWeekOfInterval } from 'date-fns'
+import { format, subDays, addDays, parseISO, endOfWeek, eachWeekOfInterval } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
 export default async function DashboardPage() {
@@ -210,10 +210,10 @@ export default async function DashboardPage() {
       <Suspense fallback={null}><PaymentSuccessToast /></Suspense>
       <RealtimeProvider companyId={companyId} />
 
-      {/* Main cockpit grid: 65% left / 35% right */}
-      <div className="flex gap-5 items-start">
+      {/* Main cockpit grid: 65% left / 35% right — stacks on mobile */}
+      <div className="flex flex-col xl:flex-row gap-5 xl:items-start">
 
-        {/* ── LEFT COLUMN (65%) ─────────────────────────────────────── */}
+        {/* ── LEFT COLUMN ────────────────────────────────────────────── */}
         <div className="flex-1 min-w-0 space-y-5">
 
           {/* WIDGET 1 — Hero */}
@@ -263,8 +263,8 @@ export default async function DashboardPage() {
           <RecentInvoicesTable invoices={recentInvoices} />
         </div>
 
-        {/* ── RIGHT COLUMN (35%) — sticky ──────────────────────────── */}
-        <div className="w-80 xl:w-96 shrink-0 sticky top-6">
+        {/* ── RIGHT COLUMN — sticky on xl, normal on mobile ─────────── */}
+        <div className="w-full xl:w-96 shrink-0 xl:sticky xl:top-6">
           <RemindersPanel />
         </div>
       </div>
