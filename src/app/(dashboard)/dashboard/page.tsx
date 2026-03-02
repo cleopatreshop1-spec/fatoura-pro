@@ -66,13 +66,16 @@ export default async function DashboardPage() {
     { data: upcomingDue },
     { data: recentPaid30 },
   ] = await Promise.all([
-    (supabase as any).from('invoices').select('id, ht_amount, status, issue_date, created_at')
-      .eq('company_id', companyId).in('status', ['validated', 'valid'])
-      .is('deleted_at', null),
+    // CA HT this month: fetch validated + valid separately and merge
+    Promise.all([
+      (supabase as any).from('invoices').select('id, ht_amount, status, issue_date, created_at').eq('company_id', companyId).eq('status', 'validated').is('deleted_at', null),
+      (supabase as any).from('invoices').select('id, ht_amount, status, issue_date, created_at').eq('company_id', companyId).eq('status', 'valid').is('deleted_at', null),
+    ]).then(([a, b]) => ({ data: [...(a.data ?? []), ...(b.data ?? [])], error: a.error ?? b.error })),
 
-    (supabase as any).from('invoices').select('id, ht_amount, issue_date, created_at')
-      .eq('company_id', companyId).in('status', ['validated', 'valid'])
-      .is('deleted_at', null),
+    Promise.all([
+      (supabase as any).from('invoices').select('id, ht_amount, issue_date, created_at').eq('company_id', companyId).eq('status', 'validated').is('deleted_at', null),
+      (supabase as any).from('invoices').select('id, ht_amount, issue_date, created_at').eq('company_id', companyId).eq('status', 'valid').is('deleted_at', null),
+    ]).then(([a, b]) => ({ data: [...(a.data ?? []), ...(b.data ?? [])], error: a.error ?? b.error })),
 
     supabase.from('invoices').select('id, ttc_amount, due_date, payment_status')
       .eq('company_id', companyId).eq('status', 'valid')
@@ -86,9 +89,10 @@ export default async function DashboardPage() {
       .eq('company_id', companyId).eq('payment_status', 'paid')
       .gte('payment_date', prevStart).lt('payment_date', prevEnd).is('deleted_at', null),
 
-    (supabase as any).from('invoices').select('tva_amount, issue_date, created_at')
-      .eq('company_id', companyId).in('status', ['validated', 'valid'])
-      .is('deleted_at', null),
+    Promise.all([
+      (supabase as any).from('invoices').select('tva_amount, issue_date, created_at').eq('company_id', companyId).eq('status', 'validated').is('deleted_at', null),
+      (supabase as any).from('invoices').select('tva_amount, issue_date, created_at').eq('company_id', companyId).eq('status', 'valid').is('deleted_at', null),
+    ]).then(([a, b]) => ({ data: [...(a.data ?? []), ...(b.data ?? [])], error: a.error ?? b.error })),
 
     supabase.from('invoices')
       .select('id, number, status, issue_date, ttc_amount, payment_status, clients(name)')
@@ -213,6 +217,10 @@ export default async function DashboardPage() {
 
   return (
     <div>
+      {/* DEBUG — remove after fix */}
+      <div className="text-xs text-red-400 p-2 bg-red-950/20 rounded mb-2">
+        DEBUG: companyId={companyId} | thisMonthValid.length={thisMonthValid?.length ?? 'null'} | caHT={caHT} | monthStart={monthStart} | todayStr={todayStr}
+      </div>
       <Suspense fallback={null}><PaymentSuccessToast /></Suspense>
       <RealtimeProvider companyId={companyId} />
 
