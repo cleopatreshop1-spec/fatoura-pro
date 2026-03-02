@@ -38,16 +38,18 @@ export async function GET(request: NextRequest) {
       { data: recentPaid },
       { data: companyData },
     ] = await Promise.all([
-      // This month all invoices
+      // This month finalized invoices (validated + valid)
       (supabase as any).from('invoices')
         .select('id, ht_amount, tva_amount, ttc_amount, status, payment_status, issue_date, created_at, validated_at')
-        .eq('company_id', cid).gte('issue_date', monthStart).lte('issue_date', todayStr)
+        .eq('company_id', cid).in('status', ['validated', 'valid'])
+        .gte('issue_date', monthStart).lte('issue_date', todayStr)
         .is('deleted_at', null),
 
-      // Prev month invoices
+      // Prev month finalized invoices
       (supabase as any).from('invoices')
         .select('id, ht_amount, status')
-        .eq('company_id', cid).gte('issue_date', prevStart).lt('issue_date', prevEnd)
+        .eq('company_id', cid).in('status', ['validated', 'valid'])
+        .gte('issue_date', prevStart).lt('issue_date', prevEnd)
         .is('deleted_at', null),
 
       // Unpaid valid invoices (À encaisser)
@@ -102,11 +104,8 @@ export async function GET(request: NextRequest) {
     ])
 
     // ── KPIs ──────────────────────────────────────────────────────────────
-    const ACTIVE_STATUSES = ['draft', 'validated', 'valid', 'queued', 'pending']
-    const thisActiveInvoices = (thisMonthInvoices ?? []).filter((i: any) => ACTIVE_STATUSES.includes(i.status))
-    const caHT    = thisActiveInvoices.reduce((s: number, i: any) => s + Number(i.ht_amount ?? 0), 0)
-    const prevCaHT= (prevMonthInvoices ?? []).filter((i: any) => ACTIVE_STATUSES.includes(i.status))
-                      .reduce((s: number, i: any) => s + Number(i.ht_amount ?? 0), 0)
+    const caHT    = (thisMonthInvoices ?? []).reduce((s: number, i: any) => s + Number(i.ht_amount ?? 0), 0)
+    const prevCaHT= (prevMonthInvoices ?? []).reduce((s: number, i: any) => s + Number(i.ht_amount ?? 0), 0)
     const caTrend = prevCaHT > 0 ? Math.round(((caHT - prevCaHT) / prevCaHT) * 100) : null
 
     const tvaQtr         = (validQtr ?? []).reduce((s: number, i: any) => s + Number(i.tva_amount ?? 0), 0)

@@ -65,11 +65,11 @@ export default async function DashboardPage() {
     { data: recentPaid30 },
   ] = await Promise.all([
     supabase.from('invoices').select('id, ht_amount, status')
-      .eq('company_id', companyId).eq('status', 'valid')
+      .eq('company_id', companyId).in('status', ['validated', 'valid'])
       .gte('issue_date', monthStart).lte('issue_date', todayStr).is('deleted_at', null),
 
     supabase.from('invoices').select('id, ht_amount')
-      .eq('company_id', companyId).eq('status', 'valid')
+      .eq('company_id', companyId).in('status', ['validated', 'valid'])
       .gte('issue_date', prevStart).lt('issue_date', prevEnd).is('deleted_at', null),
 
     supabase.from('invoices').select('id, ttc_amount, due_date, payment_status')
@@ -85,7 +85,7 @@ export default async function DashboardPage() {
       .gte('payment_date', prevStart).lt('payment_date', prevEnd).is('deleted_at', null),
 
     supabase.from('invoices').select('tva_amount')
-      .eq('company_id', companyId).eq('status', 'valid')
+      .eq('company_id', companyId).in('status', ['validated', 'valid'])
       .gte('issue_date', qtrStart).is('deleted_at', null),
 
     supabase.from('invoices')
@@ -110,7 +110,7 @@ export default async function DashboardPage() {
   const caHT       = (thisMonthValid ?? []).reduce((s: number, i: any) => s + Number(i.ht_amount ?? 0), 0)
   const prevCaHT   = (prevMonthValid  ?? []).reduce((s: number, i: any) => s + Number(i.ht_amount ?? 0), 0)
   const caTrend    = prevCaHT > 0 ? Math.round(((caHT - prevCaHT) / prevCaHT) * 100) : null
-  const validCount = (thisMonthValid ?? []).length
+  const validCount = (thisMonthValid ?? []).filter((i: any) => i.status === 'valid').length
   const tvaQtr     = (tvaQtrRows ?? []).reduce((s: number, i: any) => s + Number(i.tva_amount ?? 0), 0)
   const paidAmt    = (paidThisMonth ?? []).reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
 
