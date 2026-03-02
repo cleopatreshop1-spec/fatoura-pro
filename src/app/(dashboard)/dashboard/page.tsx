@@ -107,11 +107,15 @@ export default async function DashboardPage() {
   ])
 
   // ── KPIs ──────────────────────────────────────────────────────────────
-  const caHT       = (thisMonthValid ?? []).reduce((s: number, i: any) => s + Number(i.ht_amount ?? 0), 0)
-  const prevCaHT   = (prevMonthValid  ?? []).reduce((s: number, i: any) => s + Number(i.ht_amount ?? 0), 0)
+  console.log('[dashboard] thisMonthValid:', JSON.stringify(thisMonthValid))
+  console.log('[dashboard] monthStart:', monthStart, 'todayStr:', todayStr)
+  // Use issue_date when set, fall back to created_at (handles invoices saved without a date)
+  const invDate = (i: any) => (i.issue_date ?? i.created_at ?? '').slice(0, 10)
+  const caHT       = (thisMonthValid ?? []).filter((i: any) => { const d = invDate(i); return d >= monthStart && d <= todayStr }).reduce((s: number, i: any) => s + Number(i.ht_amount ?? 0), 0)
+  const prevCaHT   = (prevMonthValid  ?? []).filter((i: any) => { const d = invDate(i); return d >= prevStart && d < prevEnd  }).reduce((s: number, i: any) => s + Number(i.ht_amount ?? 0), 0)
   const caTrend    = prevCaHT > 0 ? Math.round(((caHT - prevCaHT) / prevCaHT) * 100) : null
-  const validCount = (thisMonthValid ?? []).filter((i: any) => i.status === 'valid').length
-  const tvaQtr     = (tvaQtrRows ?? []).reduce((s: number, i: any) => s + Number(i.tva_amount ?? 0), 0)
+  const validCount = (thisMonthValid ?? []).filter((i: any) => i.status === 'valid' && invDate(i) >= monthStart && invDate(i) <= todayStr).length
+  const tvaQtr     = (tvaQtrRows ?? []).filter((i: any) => invDate(i) >= qtrStart).reduce((s: number, i: any) => s + Number(i.tva_amount ?? 0), 0)
   const paidAmt    = (paidThisMonth ?? []).reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
 
   const unpaidTotal = (unpaidValid ?? []).reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
