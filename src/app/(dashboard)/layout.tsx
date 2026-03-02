@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { CompanyProvider } from '@/contexts/CompanyContext'
 import { DashboardShell } from '@/components/layout/DashboardShell'
+import { FloatingAIButton } from '@/components/ai/FloatingAIButton'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 
@@ -53,6 +54,7 @@ export default async function DashboardLayout({
       >
         {children}
       </DashboardShell>
+      <FloatingAIButton />
       <Analytics />
       <SpeedInsights />
     </CompanyProvider>

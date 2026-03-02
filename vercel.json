@@ -2,6 +2,7 @@
   "crons": [
     { "path": "/api/ttn-queue/process",    "schedule": "0 6 * * *"   },
     { "path": "/api/cron/check-expiry",    "schedule": "0 8 * * *"   },
-    { "path": "/api/cron/weekly-summary",  "schedule": "0 8 * * 1"   }
+    { "path": "/api/cron/weekly-summary",  "schedule": "0 8 * * 1"   },
+    { "path": "/api/cron/ai-suggestions",  "schedule": "0 9 * * *"   }
   ]
 }
