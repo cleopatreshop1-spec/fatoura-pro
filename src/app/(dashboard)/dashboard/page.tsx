@@ -101,15 +101,15 @@ export default async function DashboardPage() {
 
     supabase.from('invoices')
       .select('id, status, payment_status, issue_date, created_at, validated_at, due_date, payment_date, ttc_amount, ht_amount')
-      .eq('company_id', companyId).gte('issue_date', ago90).is('deleted_at', null),
+      .eq('company_id', companyId).gte('created_at', ago90).is('deleted_at', null),
 
-    supabase.from('invoices').select('id, ttc_amount, due_date')
-      .eq('company_id', companyId).eq('status', 'valid').neq('payment_status', 'paid')
+    (supabase as any).from('invoices').select('id, ttc_amount, due_date')
+      .eq('company_id', companyId).in('status', ['valid', 'validated']).neq('payment_status', 'paid')
       .gte('due_date', todayStr).lte('due_date', in90).is('deleted_at', null),
 
     supabase.from('invoices').select('id, ttc_amount, payment_date')
       .eq('company_id', companyId).eq('payment_status', 'paid')
-      .gte('payment_date', ago30).lte('payment_date', todayStr).is('deleted_at', null),
+      .gte('payment_date', ago90).lte('payment_date', todayStr).is('deleted_at', null),
   ])
 
   // ── KPIs ──────────────────────────────────────────────────────────────
