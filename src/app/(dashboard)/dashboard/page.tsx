@@ -174,6 +174,12 @@ export default async function DashboardPage() {
   const scoreColor = score >= 90 ? '#2dd4a0' : score >= 75 ? '#d4a843' : score >= 55 ? '#4a9eff' : score >= 35 ? '#f59e0b' : '#e05a5a'
 
   // ── Cashflow chart (weekly buckets) ───────────────────────────────────
+  // For past weeks: show paid invoices (by payment_date) OR finalized invoices
+  //   (validated/valid by issue_date/created_at) — whichever has data.
+  // For future weeks: show upcoming due amounts.
+  const allFinalized90 = (allInvoices90 ?? []).filter((i: any) =>
+    ['validated', 'valid'].includes(i.status)
+  )
   const weeks = eachWeekOfInterval(
     { start: subDays(now, 90), end: addDays(now, 30) },
     { weekStartsOn: 1 }
@@ -183,16 +189,29 @@ export default async function DashboardPage() {
     const wStartStr = format(weekStart, 'yyyy-MM-dd')
     const wEndStr   = format(weekEnd,   'yyyy-MM-dd')
     const isPast    = weekEnd < now
-    const encaisse  = isPast
-      ? (recentPaid30 ?? [])
-          .filter((i: any) => i.payment_date >= wStartStr && i.payment_date <= wEndStr)
-          .reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
-      : null
+
+    let encaisse: number | null = null
+    if (isPast) {
+      // Primary: actual cash received (payment_date)
+      const paidAmt = (recentPaid30 ?? [])
+        .filter((i: any) => i.payment_date >= wStartStr && i.payment_date <= wEndStr)
+        .reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
+      // Fallback: factured amount (validated/valid invoices by issue_date or created_at)
+      const facturé = allFinalized90
+        .filter((i: any) => {
+          const d = (i.issue_date ?? i.created_at ?? '').slice(0, 10)
+          return d >= wStartStr && d <= wEndStr
+        })
+        .reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
+      encaisse = paidAmt > 0 ? paidAmt : facturé > 0 ? facturé : 0
+    }
+
     const attendu = !isPast
       ? (upcomingDue ?? [])
           .filter((i: any) => i.due_date >= wStartStr && i.due_date <= wEndStr)
           .reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
       : null
+
     return {
       date: wStartStr,
       label: format(weekStart, 'd MMM', { locale: fr }),
