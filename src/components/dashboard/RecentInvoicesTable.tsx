@@ -9,6 +9,14 @@ export type InvoiceTableRow = {
   date: string | null
   ttc: number
   status: string
+  paymentStatus?: string
+}
+
+function PaymentBadge({ status }: { status?: string }) {
+  if (!status || status === 'unpaid') return <span className="text-[10px] text-gray-600">Impayée</span>
+  if (status === 'partial')  return <span className="text-[10px] text-[#f59e0b] font-medium">Partiel</span>
+  if (status === 'paid')     return <span className="text-[10px] text-[#2dd4a0] font-medium">Payée ✓</span>
+  return null
 }
 
 export function RecentInvoicesTable({ invoices }: { invoices: InvoiceTableRow[] }) {
@@ -29,7 +37,7 @@ export function RecentInvoicesTable({ invoices }: { invoices: InvoiceTableRow[] 
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#1a1b22]">
-                  {['N Facture', 'Client', 'Date', 'Montant TTC', 'Statut'].map(h => (
+                  {['N Facture', 'Client', 'Date', 'Montant TTC', 'Statut', 'Paiement'].map(h => (
                     <th key={h} className="px-4 py-2.5 text-left text-[10px] text-gray-600 uppercase tracking-wider font-semibold whitespace-nowrap">
                       {h}
                     </th>
@@ -55,6 +63,9 @@ export function RecentInvoicesTable({ invoices }: { invoices: InvoiceTableRow[] 
                       <td className="px-4 py-3">
                         <InvoiceStatusBadge status={inv.status} />
                       </td>
+                      <td className="px-4 py-3">
+                        <PaymentBadge status={inv.paymentStatus} />
+                      </td>
                     </tr>
                   </Link>
                 ))}
@@ -63,7 +74,7 @@ export function RecentInvoicesTable({ invoices }: { invoices: InvoiceTableRow[] 
           </div>
           <div className="px-5 py-3 border-t border-[#1a1b22] mt-auto">
             <Link href="/dashboard/invoices" className="text-xs text-gray-500 hover:text-[#d4a843] transition-colors">
-              Voir toutes les factures 
+              Voir toutes les factures →
             </Link>
           </div>
         </>
