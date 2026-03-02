@@ -1,122 +1,227 @@
 'use client'
 
-import { useState, useRef } from 'react'
-import { Mic, Square } from 'lucide-react'
+import { useState, useRef, useCallback } from 'react'
+import { Mic, Square, Loader2 } from 'lucide-react'
 
-type Props = {
+interface VoiceInputProps {
   onTranscript: (text: string) => void
   disabled?: boolean
 }
 
-interface SpeechRecognitionResult {
-  readonly isFinal: boolean
-  readonly [index: number]: { readonly transcript: string }
-}
-interface SpeechRecognitionResultList {
-  readonly length: number
-  readonly [index: number]: SpeechRecognitionResult
-}
-interface SpeechRecognitionEvent extends Event {
-  readonly resultIndex: number
-  readonly results: SpeechRecognitionResultList
-}
-interface SpeechRecognitionInstance extends EventTarget {
-  lang: string
-  interimResults: boolean
-  continuous: boolean
-  maxAlternatives: number
-  start(): void
-  stop(): void
-  onresult: ((event: SpeechRecognitionEvent) => void) | null
-  onend: (() => void) | null
-  onerror: (() => void) | null
-}
-declare global {
-  interface Window {
-    SpeechRecognition: new () => SpeechRecognitionInstance
-    webkitSpeechRecognition: new () => SpeechRecognitionInstance
-  }
+type RecordingState = 'idle' | 'recording' | 'transcribing' | 'error'
+
+function getSupportedMimeType(): string {
+  if (typeof MediaRecorder === 'undefined') return ''
+  const types = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/mp4',
+    'audio/ogg;codecs=opus',
+    '',
+  ]
+  return types.find(t => !t || MediaRecorder.isTypeSupported(t)) ?? ''
 }
 
-export function VoiceInput({ onTranscript, disabled = false }: Props) {
-  const [isListening, setIsListening] = useState(false)
-  const [interimText, setInterimText] = useState('')
-  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
+export function VoiceInput({ onTranscript, disabled = false }: VoiceInputProps) {
+  const [state, setState] = useState<RecordingState>('idle')
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [recordingSeconds, setRecordingSeconds] = useState(0)
 
-  const isSupported = typeof window !== 'undefined' &&
-    ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const chunksRef        = useRef<Blob[]>([])
+  const timerRef         = useRef<ReturnType<typeof setInterval> | null>(null)
+  const streamRef        = useRef<MediaStream | null>(null)
 
-  if (!isSupported) return null
+  const transcribeAudio = useCallback(async (audioBlob: Blob) => {
+    try {
+      const formData = new FormData()
+      formData.append('audio', audioBlob, 'recording.webm')
 
-  const startListening = () => {
-    const SR = window.SpeechRecognition ?? window.webkitSpeechRecognition
-    const recognition = new SR()
+      const response = await fetch('/api/ai/transcribe', {
+        method: 'POST',
+        body: formData,
+      })
 
-    recognition.lang = 'fr-FR'
-    recognition.interimResults = true
-    recognition.continuous = false
-    recognition.maxAlternatives = 1
+      const data = await response.json()
 
-    let finalTranscript = ''
-
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let interim = ''
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const text = event.results[i][0].transcript
-        if (event.results[i].isFinal) {
-          finalTranscript += text
-        } else {
-          interim += text
-        }
+      if (!response.ok) {
+        throw new Error(data.error || 'Erreur de transcription')
       }
-      setInterimText(finalTranscript + interim)
+
+      if (data.transcript) {
+        onTranscript(data.transcript)
+      }
+
+      setState('idle')
+    } catch (err) {
+      setErrorMsg((err as Error).message || 'Transcription échouée')
+      setState('error')
+      setTimeout(() => setState('idle'), 3000)
     }
+  }, [onTranscript])
 
-    recognition.onend = () => {
-      setIsListening(false)
-      setInterimText('')
-      const result = finalTranscript.trim()
-      if (result) onTranscript(result)
+  const stopRecording = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current)
+      timerRef.current = null
     }
+    setRecordingSeconds(0)
 
-    recognition.onerror = () => {
-      setIsListening(false)
-      setInterimText('')
+    if (mediaRecorderRef.current?.state === 'recording') {
+      mediaRecorderRef.current.stop()
+    } else {
+      streamRef.current?.getTracks().forEach(t => t.stop())
+      setState('idle')
     }
+  }, [])
 
-    recognitionRef.current = recognition
-    recognition.start()
-    setIsListening(true)
-  }
+  const startRecording = useCallback(async () => {
+    setErrorMsg(null)
+    chunksRef.current = []
 
-  const stopListening = () => {
-    recognitionRef.current?.stop()
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount:     1,
+          sampleRate:       16000,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl:  true,
+        },
+      })
+
+      streamRef.current = stream
+
+      const mimeType = getSupportedMimeType()
+      const options: MediaRecorderOptions = mimeType
+        ? { mimeType, audioBitsPerSecond: 64000 }
+        : { audioBitsPerSecond: 64000 }
+
+      const recorder = new MediaRecorder(stream, options)
+      mediaRecorderRef.current = recorder
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data)
+      }
+
+      recorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop())
+        streamRef.current = null
+
+        const mimeUsed = recorder.mimeType || 'audio/webm'
+        const audioBlob = new Blob(chunksRef.current, { type: mimeUsed })
+
+        if (audioBlob.size < 1000) {
+          setState('idle')
+          return
+        }
+
+        setState('transcribing')
+        await transcribeAudio(audioBlob)
+      }
+
+      recorder.start(250)
+      setState('recording')
+
+      setRecordingSeconds(0)
+      timerRef.current = setInterval(() => {
+        setRecordingSeconds(s => {
+          if (s >= 59) {
+            stopRecording()
+            return 0
+          }
+          return s + 1
+        })
+      }, 1000)
+
+    } catch (err) {
+      const error = err as DOMException
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        setErrorMsg("Microphone refusé — Autorisez l'accès dans les paramètres du navigateur")
+      } else if (error.name === 'NotFoundError') {
+        setErrorMsg('Aucun microphone détecté sur cet appareil')
+      } else {
+        setErrorMsg('Impossible d\'accéder au microphone')
+      }
+      setState('error')
+    }
+  }, [stopRecording, transcribeAudio])
+
+  const handleClick = () => {
+    if (state === 'recording')  { stopRecording();  return }
+    if (state === 'idle')       { startRecording(); return }
   }
 
   return (
-    <div className="relative flex items-center">
-      {isListening && interimText && (
-        <span className="absolute bottom-full mb-1 right-0 text-[10px] text-gray-500 bg-[#161b27] px-2 py-1 rounded-lg whitespace-nowrap max-w-[200px] truncate">
-          {interimText}
-        </span>
-      )}
+    <div className="relative flex-shrink-0">
       <button
         type="button"
-        onClick={isListening ? stopListening : startListening}
-        disabled={disabled}
-        aria-label={isListening ? "Arrêter l'enregistrement" : 'Parler à Fatoura AI'}
-        className={`p-2 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed ${
-          isListening
-            ? 'bg-red-500/20 text-red-400 animate-pulse border border-red-500/40'
-            : 'text-gray-500 hover:text-[#d4a843] hover:bg-[#1a1508]'
-        }`}
+        onClick={handleClick}
+        disabled={disabled || state === 'transcribing'}
+        aria-label={
+          state === 'recording'    ? "Arrêter l'enregistrement"  :
+          state === 'transcribing' ? 'Transcription en cours...' :
+          'Parler en tunisien ou français'
+        }
+        title="Parlez en tunisien ou français&#10;Ex: «Aamel facture l Ahmed, 500 dinar» · «Quelle est ma TVA ?»"
+        className={[
+          'relative p-2.5 rounded-[10px] transition-all duration-200 select-none',
+          state === 'recording'
+            ? 'bg-red-500/20 border border-red-500 text-red-400'
+            : state === 'transcribing'
+            ? 'bg-[#d4a843]/10 border border-[#d4a843]/30 text-[#d4a843]'
+            : 'bg-[#161b27] border border-white/5 text-[#6b7280] hover:text-[#d4a843] hover:border-[#d4a843]/50',
+          disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+        ].join(' ')}
       >
-        {isListening ? (
-          <Square className="w-3.5 h-3.5" />
+        {state === 'recording' && (
+          <span className="absolute inset-0 rounded-[10px] border border-red-500/50 animate-ping" />
+        )}
+        {state === 'transcribing' ? (
+          <Loader2 size={16} className="animate-spin" />
+        ) : state === 'recording' ? (
+          <Square size={16} fill="currentColor" />
         ) : (
-          <Mic className="w-3.5 h-3.5" />
+          <Mic size={16} />
         )}
       </button>
+
+      {state === 'recording' && (
+        <div className="absolute bottom-full right-0 mb-2 z-50 bg-[#0f1118] border border-red-500/30 rounded-xl px-3 py-2 shadow-lg min-w-[180px]">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <div className="flex items-end gap-0.5 h-4">
+              {[0.4, 1, 0.6, 0.9, 0.3].map((h, i) => (
+                <div
+                  key={i}
+                  className="w-0.5 bg-red-500 rounded-full animate-pulse"
+                  style={{ height: `${h * 100}%`, animationDelay: `${i * 0.1}s`, animationDuration: '0.8s' }}
+                />
+              ))}
+            </div>
+            <span className="text-red-400 text-xs font-medium">{recordingSeconds}s</span>
+          </div>
+          <p className="text-[#6b7280] text-xs">Parlez en tunisien ou français</p>
+          <p className="text-[#6b7280] text-[10px] mt-0.5">Cliquez ⏹ pour terminer</p>
+        </div>
+      )}
+
+      {state === 'transcribing' && (
+        <div className="absolute bottom-full right-0 mb-2 z-50 bg-[#0f1118] border border-[#d4a843]/30 rounded-xl px-3 py-2 shadow-lg whitespace-nowrap">
+          <p className="text-[#d4a843] text-xs">✨ Transcription en cours...</p>
+        </div>
+      )}
+
+      {state === 'error' && errorMsg && (
+        <div className="absolute bottom-full right-0 mb-2 z-50 w-64 bg-[#0f1118] border border-[#e05a5a]/50 rounded-xl p-3 shadow-lg">
+          <p className="text-[#e05a5a] text-xs leading-relaxed">{errorMsg}</p>
+          <button
+            onClick={() => setState('idle')}
+            className="mt-1 text-[10px] text-[#6b7280] hover:text-white"
+          >
+            Fermer ×
+          </button>
+        </div>
+      )}
     </div>
   )
 }

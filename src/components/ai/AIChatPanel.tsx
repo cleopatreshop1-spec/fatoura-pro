@@ -257,12 +257,10 @@ export function AIChatPanel({ onClose, proactiveSuggestions = [] }: Props) {
               disabled={loading}
               className="flex-1 bg-transparent text-sm text-white placeholder-gray-600 outline-none disabled:opacity-50"
             />
-            <div className="md:hidden">
-              <VoiceInput
-                disabled={loading}
-                onTranscript={(text) => { setInput(text); setTimeout(() => sendMessage(text), 100) }}
-              />
-            </div>
+            <VoiceInput
+              disabled={loading}
+              onTranscript={(text) => { setInput(text); setTimeout(() => sendMessage(text), 150) }}
+            />
             <button onClick={() => sendMessage(input)}
               disabled={loading || !input.trim()}
               className="p-1.5 rounded-lg bg-[#d4a843] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#f0c060] transition-colors shrink-0">
