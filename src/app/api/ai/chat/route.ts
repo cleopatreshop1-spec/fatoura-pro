@@ -10,7 +10,7 @@ type Message = { role: 'user' | 'assistant'; content: string }
 
 export async function POST(request: NextRequest) {
   try {
-    const { user, company, supabase } = await getAuthenticatedCompany(request)
+    const { company, supabase } = await getAuthenticatedCompany(request)
     const co = company as any
 
     // Rate limit: 20 messages per 10 minutes per company
@@ -148,7 +148,7 @@ RÈGLES STRICTES :
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-3-5-sonnet-20241022',
         max_tokens: 1024,
         system: systemPrompt,
         messages: anthropicMessages,
@@ -157,8 +157,13 @@ RÈGLES STRICTES :
 
     if (!anthropicRes.ok) {
       const errBody = await anthropicRes.text()
-      console.error('[AI] Anthropic error:', errBody)
-      return err('Erreur de l\'assistant IA. Réessayez dans quelques secondes.', 502)
+      console.error('[AI] Anthropic error', anthropicRes.status, errBody)
+      const msg = anthropicRes.status === 401
+        ? 'Clé API Anthropic invalide ou absente.'
+        : anthropicRes.status === 429
+        ? 'Limite de requêtes atteinte. Réessayez dans quelques secondes.'
+        : `Erreur Anthropic (${anthropicRes.status}). Réessayez.`
+      return err(msg, 502)
     }
 
     const anthropicData = await anthropicRes.json()
