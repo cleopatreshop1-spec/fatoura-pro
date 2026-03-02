@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { X, Send, Sparkles, Loader2, ExternalLink } from 'lucide-react'
+import { X, Send, Sparkles, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import type { AIAction } from '@/lib/ai/action-parser'
+import { parseAIResponse } from '@/lib/ai/action-parser'
+import type { InvoiceAction } from '@/lib/ai/action-parser'
 import { VoiceInput } from '@/components/ai/VoiceInput'
+import { InvoiceActionCard } from '@/components/ai/InvoiceActionCard'
 
 type GeminiPart    = { text: string }
 type GeminiMessage = { role: 'user' | 'model'; parts: GeminiPart[] }
@@ -13,7 +15,7 @@ type Message = {
   id: string
   role: 'user' | 'model'
   content: string
-  action?: AIAction
+  action?: InvoiceAction | null
   isLoading?: boolean
   isQuota?: boolean
 }
@@ -48,7 +50,15 @@ function renderMarkdown(text: string): React.ReactNode[] {
   })
 }
 
-function MessageBubble({ msg, onAction }: { msg: Message; onAction: (a: AIAction) => void }) {
+function MessageBubble({
+  msg,
+  onActionSuccess,
+  onActionEdit,
+}: {
+  msg: Message
+  onActionSuccess: (invoiceId: string, invoiceNumber: string, msgId: string) => void
+  onActionEdit: (action: InvoiceAction) => void
+}) {
   const isUser = msg.role === 'user'
 
   if (msg.isQuota) {
@@ -67,20 +77,22 @@ function MessageBubble({ msg, onAction }: { msg: Message; onAction: (a: AIAction
         </div>
       )}
       <div className={`max-w-[85%] flex flex-col gap-1.5 ${isUser ? 'items-end' : 'items-start'}`}>
-        <div className={`rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed space-y-1 ${
-          isUser
-            ? 'bg-[#1a1b22] text-white rounded-tr-sm'
-            : 'bg-[#0f1118] border border-[#1a1b22] text-gray-200 rounded-tl-sm'
-        }`}>
-          {msg.isLoading ? <TypingDots /> : renderMarkdown(msg.content)}
-        </div>
+        {msg.content && (
+          <div className={`rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed space-y-1 ${
+            isUser
+              ? 'bg-[#1a1b22] text-white rounded-tr-sm'
+              : 'bg-[#0f1118] border border-[#1a1b22] text-gray-200 rounded-tl-sm'
+          }`}>
+            {msg.isLoading ? <TypingDots /> : renderMarkdown(msg.content)}
+          </div>
+        )}
 
-        {msg.action?.type === 'CREATE_INVOICE' && (
-          <button onClick={() => onAction(msg.action!)}
-            className="flex items-center gap-2 px-3 py-2 bg-[#1a1508] border border-[#d4a843]/40 rounded-xl text-xs text-[#d4a843] font-semibold hover:bg-[#241c0a] transition-colors">
-            <ExternalLink className="w-3 h-3" />
-            📄 Ouvrir dans le formulaire →
-          </button>
+        {!isUser && msg.action?.type === 'CREATE_INVOICE' && (
+          <InvoiceActionCard
+            action={msg.action}
+            onSuccess={(id, number) => onActionSuccess(id, number, msg.id)}
+            onEdit={() => onActionEdit(msg.action!)}
+          />
         )}
       </div>
     </div>
@@ -149,17 +161,17 @@ export function AIChatPanel({ onClose, proactiveSuggestions = [] }: Props) {
         return
       }
 
-      const aiText = data.message ?? 'Une erreur est survenue.'
-      const action = data.action ?? null
+      const rawMessage = (data.message ?? 'Une erreur est survenue.') as string
+      const { text: aiText, action } = parseAIResponse(rawMessage)
 
       setMessages(prev => prev.filter(m => m.id !== 'loading').concat({
         id: Date.now().toString(),
         role: 'model',
         content: aiText,
-        action,
+        action: action ?? null,
       }))
 
-      // Update Gemini history for next turn
+      // Update Gemini history for next turn (use clean text only)
       setGeminiHistory(prev => [
         ...prev,
         { role: 'user',  parts: [{ text: trimmed }] },
@@ -176,13 +188,26 @@ export function AIChatPanel({ onClose, proactiveSuggestions = [] }: Props) {
     }
   }, [loading, geminiHistory])
 
-  const handleAction = useCallback((action: AIAction) => {
-    if (action?.type === 'CREATE_INVOICE') {
-      const prefill = encodeURIComponent(JSON.stringify(action.data))
-      router.push(`/dashboard/invoices/new?prefill=${prefill}`)
+  const handleActionSuccess = useCallback(
+    (invoiceId: string, invoiceNumber: string, _msgId: string) => {
+      setMessages(prev => [...prev, {
+        id: Date.now().toString(),
+        role: 'model',
+        content: `Parfait ! La facture **${invoiceNumber}** a été créée. Tu peux maintenant la soumettre à TTN.`,
+        action: null,
+      }])
+    },
+    []
+  )
+
+  const handleActionEdit = useCallback(
+    (action: InvoiceAction) => {
+      const params = new URLSearchParams({ prefill: JSON.stringify(action.data) })
+      router.push(`/dashboard/invoices/new?${params}`)
       onClose()
-    }
-  }, [router, onClose])
+    },
+    [router, onClose]
+  )
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(input) }
@@ -227,7 +252,12 @@ export function AIChatPanel({ onClose, proactiveSuggestions = [] }: Props) {
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0">
           {messages.map(msg => (
-            <MessageBubble key={msg.id} msg={msg} onAction={handleAction} />
+            <MessageBubble
+              key={msg.id}
+              msg={msg}
+              onActionSuccess={handleActionSuccess}
+              onActionEdit={handleActionEdit}
+            />
           ))}
           <div ref={bottomRef} />
         </div>

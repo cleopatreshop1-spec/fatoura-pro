@@ -17,11 +17,19 @@ export type UnpaidInvoice = {
   clientName: string | null
 }
 
+export type ClientSummary = {
+  id: string
+  name: string
+  matricule_fiscal: string | null
+}
+
 export type UserContext = {
   currentMonth: string
   monthStats: MonthStats
   unpaidInvoices: UnpaidInvoice[]
   pendingCount: number
+  clients: ClientSummary[]
+  today: string
 }
 
 export async function buildUserContext(
@@ -36,6 +44,7 @@ export async function buildUserContext(
     { data: monthRows },
     { data: unpaidRows },
     { data: pendingRows },
+    { data: clientRows },
   ] = await Promise.all([
     (supabase as any).from('invoices')
       .select('status, ht_amount, tva_amount, ttc_amount, payment_status')
@@ -58,6 +67,12 @@ export async function buildUserContext(
       .eq('company_id', companyId)
       .in('status', ['draft', 'rejected'])
       .is('deleted_at', null),
+
+    (supabase as any).from('clients')
+      .select('id, name, matricule_fiscal')
+      .eq('company_id', companyId)
+      .order('name')
+      .limit(50),
   ])
 
   const monthStats = (monthRows ?? []).reduce(
@@ -80,15 +95,28 @@ export async function buildUserContext(
     clientName: (i.clients as any)?.name ?? null,
   }))
 
+  const clients: ClientSummary[] = (clientRows ?? []).map((c: any) => ({
+    id:               c.id,
+    name:             c.name,
+    matricule_fiscal: c.matricule_fiscal ?? null,
+  }))
+
   return {
     currentMonth: now.toLocaleDateString('fr-TN', { month: 'long', year: 'numeric' }),
     monthStats,
     unpaidInvoices,
     pendingCount: (pendingRows ?? []).length,
+    clients,
+    today: todayStr,
   }
 }
 
 export function buildSystemPrompt(company: any, ctx: UserContext): string {
+  const clientsList = ctx.clients.length > 0
+    ? ctx.clients
+        .map(c => `- "${c.name}"${c.matricule_fiscal ? ` (${c.matricule_fiscal})` : ''}`)
+        .join('\n')
+    : 'Aucun client enregistré'
   const unpaidList = ctx.unpaidInvoices.length > 0
     ? ctx.unpaidInvoices
         .map(i => `${i.clientName ?? 'Client'}: ${i.ttc.toFixed(3)} TND`)
@@ -132,9 +160,25 @@ RÈGLES STRICTES :
 4. Reformater les montants en format tunisien : 1 234,500 TND
 5. Réponses courtes et actionnables — max 3-4 phrases sauf si question complexe.
 
-FORMAT ACTION (pour création de facture) :
-Si l'utilisateur veut créer une facture, inclure À LA FIN de ta réponse :
-ACTION:CREATE_INVOICE:{"client_name":"...","lines":[{"description":"...","quantity":1,"unit_price":500,"tva_rate":19}]}
+CAPACITÉS D'ACTION :
+Tu peux créer de vraies factures dans Fatoura Pro.
+Quand l'utilisateur demande de créer une facture, réponds en texte naturel PUIS ajoute ce bloc EXACTEMENT :
+
+%%ACTION%%
+{"type":"CREATE_INVOICE","data":{"client_name":"nom du client","client_matricule":null,"lines":[{"description":"description","quantity":1,"unit_price":500,"tva_rate":19}],"invoice_date":"${ctx.today}","notes":null,"confidence":90}}
+%%END_ACTION%%
+
+RÈGLES ACTIONS :
+- Utilise %%ACTION%% SEULEMENT si l'utilisateur demande EXPLICITEMENT de créer une facture (mots : "crée", "aamel", "nouvelle facture", "facture pour", "facturer")
+- Si client OU montant manque, pose UNE question avant de retourner l'action
+- invoice_date = toujours "${ctx.today}"
+- tva_rate = 19 par défaut sauf précision explicite
+- unit_price = 0 si non mentionné (jamais null)
+- confidence = 100 si tout est clair, moins si tu as deviné
+- Si le nom correspond à un client de la liste ci-dessous, utilise son nom EXACT
+
+CLIENTS EXISTANTS :
+${clientsList}
 
 Ne jamais inclure des données d'autres entreprises dans tes réponses.`.trim()
 }

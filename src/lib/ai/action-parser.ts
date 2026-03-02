@@ -5,26 +5,52 @@ export type InvoiceLine = {
   tva_rate: number
 }
 
-export type AIAction =
-  | { type: 'CREATE_INVOICE'; data: { client_name: string; lines: InvoiceLine[] } }
-  | null
+export type InvoiceAction = {
+  type: 'CREATE_INVOICE'
+  data: {
+    client_name:      string | null
+    client_matricule: string | null
+    lines: InvoiceLine[]
+    invoice_date: string
+    notes:        string | null
+    confidence:   number
+  }
+}
 
-export function parseAction(responseText: string): AIAction {
-  const match = responseText.match(/ACTION:([A-Z_]+):(\{[\s\S]+\})\s*$/)
-  if (!match) return null
+export type AIAction = InvoiceAction | null
+
+export interface ParsedAIResponse {
+  text:   string
+  action: AIAction
+}
+
+export function parseAIResponse(rawResponse: string): ParsedAIResponse {
+  const match = rawResponse.match(/%%ACTION%%\s*([\s\S]*?)\s*%%END_ACTION%%/)
+
+  if (!match) {
+    return { text: rawResponse.trim(), action: null }
+  }
+
+  const text = rawResponse
+    .replace(/%%ACTION%%[\s\S]*?%%END_ACTION%%/, '')
+    .trim()
 
   try {
-    const [, actionType, jsonStr] = match
-    const data = JSON.parse(jsonStr)
-    if (actionType === 'CREATE_INVOICE') {
-      return { type: 'CREATE_INVOICE', data }
+    const parsed = JSON.parse(match[1]) as InvoiceAction
+    if (!parsed?.type || !parsed?.data) {
+      return { text: rawResponse.trim(), action: null }
     }
+    return { text, action: parsed }
   } catch {
-    // Malformed JSON — silently ignore
+    return { text: rawResponse.trim(), action: null }
   }
-  return null
+}
+
+// Legacy compat — kept so existing imports don't break during transition
+export function parseAction(responseText: string): AIAction {
+  return parseAIResponse(responseText).action
 }
 
 export function stripAction(responseText: string): string {
-  return responseText.replace(/\nACTION:[A-Z_]+:\{[\s\S]+\}\s*$/, '').trim()
+  return parseAIResponse(responseText).text
 }

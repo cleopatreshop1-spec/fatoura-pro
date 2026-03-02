@@ -13,12 +13,15 @@ const lineSchema = z.object({
 })
 
 const createSchema = z.object({
-  client_id:    z.string().uuid().optional().nullable(),
-  invoice_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  due_date:     z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
-  notes:        z.string().optional().nullable(),
-  status:       z.enum(['draft', 'queued']).default('draft'),
-  lines:        z.array(lineSchema).min(1, 'Au moins une ligne requise'),
+  client_id:        z.string().uuid().optional().nullable(),
+  client_name:      z.string().optional().nullable(),
+  client_matricule: z.string().optional().nullable(),
+  source:           z.enum(['manual', 'ai', 'scan', 'recurring']).default('manual'),
+  invoice_date:     z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  due_date:         z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  notes:            z.string().optional().nullable(),
+  status:           z.enum(['draft', 'queued']).default('draft'),
+  lines:            z.array(lineSchema).min(1, 'Au moins une ligne requise'),
 })
 
 export async function GET(request: NextRequest) {
@@ -58,7 +61,41 @@ export async function POST(request: NextRequest) {
     const parsed = createSchema.safeParse(body)
     if (!parsed.success) return err(parsed.error.issues[0]?.message ?? 'Validation', 422)
 
-    const { client_id, invoice_date, due_date, notes, status, lines } = parsed.data
+    const { client_id, client_name, client_matricule, source, invoice_date, due_date, notes, status, lines } = parsed.data
+
+    // Resolve client: use client_id if provided, else resolve by name (AI flow)
+    let resolvedClientId = client_id ?? null
+
+    if (!resolvedClientId && client_name?.trim()) {
+      // Try to find existing client by name (case-insensitive)
+      const { data: existingClient } = await (supabase as any)
+        .from('clients')
+        .select('id')
+        .eq('company_id', company.id)
+        .ilike('name', client_name.trim())
+        .single()
+
+      if (existingClient) {
+        resolvedClientId = existingClient.id
+      } else {
+        // Auto-create client
+        const { data: newClient, error: clientErr } = await (supabase as any)
+          .from('clients')
+          .insert({
+            company_id:       company.id,
+            name:             client_name.trim(),
+            matricule_fiscal: client_matricule?.trim() ?? null,
+            type:             client_matricule?.trim() ? 'B2B' : 'B2C',
+          })
+          .select('id')
+          .single()
+
+        if (clientErr || !newClient) return err('Impossible de créer le client', 500)
+        resolvedClientId = newClient.id
+      }
+    }
+
+    if (!resolvedClientId) return err('Client requis', 422)
 
     // ── Server-side quota enforcement ──
     const { data: sub } = await (supabase as any)
@@ -99,12 +136,13 @@ export async function POST(request: NextRequest) {
       .from('invoices')
       .insert({
         company_id: company.id,
-        client_id: client_id ?? null,
+        client_id:  resolvedClientId,
         number,
         issue_date: invoice_date,
-        due_date: due_date ?? null,
-        notes: notes ?? null,
+        due_date:   due_date ?? null,
+        notes:      notes ?? null,
         status,
+        source:       source ?? 'manual',
         ht_amount:    totals.total_ht,
         tva_amount:   totals.total_tva,
         stamp_amount: totals.stamp_duty,
@@ -130,7 +168,8 @@ export async function POST(request: NextRequest) {
 
     if (lineErr) return err(lineErr.message, 500)
 
-    await logActivity(supabase as any, company.id, user.id, 'invoice_created', 'invoice', (invoice as any).id, `Facture ${(invoice as any).number} creee`)
+    const actionLabel = source === 'ai' ? 'invoice.created_by_ai' : 'invoice_created'
+    await logActivity(supabase as any, company.id, user.id, actionLabel, 'invoice', (invoice as any).id, `Facture ${(invoice as any).number} creee`)
 
     return success({ invoice: { ...invoice, ...totals, total_in_words: totalInWords } }, 201)
   } catch (e: any) { return err(e.message, e.status ?? 500) }
