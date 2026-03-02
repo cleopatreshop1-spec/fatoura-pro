@@ -66,13 +66,13 @@ export default async function DashboardPage() {
     { data: upcomingDue },
     { data: recentPaid30 },
   ] = await Promise.all([
-    supabase.from('invoices').select('id, ht_amount, status')
+    supabase.from('invoices').select('id, ht_amount, status, issue_date, created_at')
       .eq('company_id', companyId).in('status', ['validated', 'valid'])
-      .gte('issue_date', monthStart).lte('issue_date', todayStr).is('deleted_at', null),
+      .is('deleted_at', null),
 
-    supabase.from('invoices').select('id, ht_amount')
+    supabase.from('invoices').select('id, ht_amount, issue_date, created_at')
       .eq('company_id', companyId).in('status', ['validated', 'valid'])
-      .gte('issue_date', prevStart).lt('issue_date', prevEnd).is('deleted_at', null),
+      .is('deleted_at', null),
 
     supabase.from('invoices').select('id, ttc_amount, due_date, payment_status')
       .eq('company_id', companyId).eq('status', 'valid')
