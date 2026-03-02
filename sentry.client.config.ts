@@ -20,14 +20,13 @@ Sentry.init({
 
   beforeSend(event) {
     if (event.request?.data) {
+      const data = event.request.data as Record<string, unknown>
       const sensitiveKeys = [
         "password", "mot_de_passe", "own_key_pem", "own_cert_pem",
         "ttn_password", "key", "token", "authorization",
       ];
       sensitiveKeys.forEach(k => {
-        if (event.request?.data?.[k]) {
-          event.request.data[k] = "[REDACTED]";
-        }
+        if (data[k]) data[k] = "[REDACTED]";
       });
     }
     return event;
