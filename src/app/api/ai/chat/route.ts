@@ -17,6 +17,29 @@ function getGeminiClient(): GoogleGenerativeAI {
   return new GoogleGenerativeAI(key)
 }
 
+async function callWithRetry<T>(
+  fn: () => Promise<T>,
+  retries = 3,
+  delayMs = 2000
+): Promise<T> {
+  try {
+    return await fn()
+  } catch (error) {
+    const message = (error as any)?.message ?? ''
+    const status  = (error as any)?.status ?? 0
+    const is429   = message.includes('429') ||
+                    message.includes('quota') ||
+                    message.includes('TooManyRequests') ||
+                    status === 429
+
+    if (is429 && retries > 0) {
+      await new Promise(r => setTimeout(r, delayMs))
+      return callWithRetry(fn, retries - 1, delayMs * 2)
+    }
+    throw error
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     // 1. Rate limit — 20 messages AI par heure par IP
@@ -47,7 +70,7 @@ export async function POST(request: NextRequest) {
     })
 
     const chat = model.startChat({ history })
-    const result = await chat.sendMessage(message)
+    const result = await callWithRetry(() => chat.sendMessage(message))
     const rawText: string = result.response.text()
 
     // 6. Parse optional CREATE_INVOICE action

@@ -1,6 +1,13 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { format } from 'date-fns'
 
+const contextCache = new Map<string, {
+  data:      UserContext
+  expiresAt: number
+}>()
+
+const CACHE_TTL_MS = 5 * 60 * 1000
+
 export type MonthStats = {
   totalHt: number
   totalTva: number
@@ -32,10 +39,19 @@ export type UserContext = {
   today: string
 }
 
+export function invalidateUserContext(companyId: string): void {
+  contextCache.delete(companyId)
+}
+
 export async function buildUserContext(
   supabase: SupabaseClient,
   companyId: string
 ): Promise<UserContext> {
+  const cached = contextCache.get(companyId)
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.data
+  }
+
   const now          = new Date()
   const firstOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
   const todayStr     = format(now, 'yyyy-MM-dd')
@@ -101,7 +117,7 @@ export async function buildUserContext(
     matricule_fiscal: c.matricule_fiscal ?? null,
   }))
 
-  return {
+  const result: UserContext = {
     currentMonth: now.toLocaleDateString('fr-TN', { month: 'long', year: 'numeric' }),
     monthStats,
     unpaidInvoices,
@@ -109,6 +125,10 @@ export async function buildUserContext(
     clients,
     today: todayStr,
   }
+
+  contextCache.set(companyId, { data: result, expiresAt: Date.now() + CACHE_TTL_MS })
+
+  return result
 }
 
 export function buildSystemPrompt(company: any, ctx: UserContext): string {

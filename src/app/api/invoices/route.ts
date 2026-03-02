@@ -4,6 +4,7 @@ import { getAuthenticatedCompany, success, err, logActivity } from '@/lib/api-he
 import { calcInvoiceTotals } from '@/lib/utils/tva-calculator'
 import { amountToWords } from '@/lib/utils/amount-to-words'
 import { nextInvoiceNumber } from '@/lib/utils/invoice-number'
+import { invalidateUserContext } from '@/lib/ai/context-builder'
 
 const lineSchema = z.object({
   description: z.string().min(1),
@@ -170,6 +171,8 @@ export async function POST(request: NextRequest) {
 
     const actionLabel = source === 'ai' ? 'invoice.created_by_ai' : 'invoice_created'
     await logActivity(supabase as any, company.id, user.id, actionLabel, 'invoice', (invoice as any).id, `Facture ${(invoice as any).number} creee`)
+
+    invalidateUserContext(company.id)
 
     return success({ invoice: { ...invoice, ...totals, total_in_words: totalInWords } }, 201)
   } catch (e: any) { return err(e.message, e.status ?? 500) }
