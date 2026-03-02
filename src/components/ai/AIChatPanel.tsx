@@ -7,6 +7,8 @@ import { parseAIResponse } from '@/lib/ai/action-parser'
 import type { InvoiceAction } from '@/lib/ai/action-parser'
 import { VoiceInput } from '@/components/ai/VoiceInput'
 import { InvoiceActionCard } from '@/components/ai/InvoiceActionCard'
+import { InvoiceScannerModal } from '@/components/ai/InvoiceScannerModal'
+import type { ScannedInvoice } from '@/types/scanner'
 
 type GeminiPart    = { text: string }
 type GeminiMessage = { role: 'user' | 'model'; parts: GeminiPart[] }
@@ -112,6 +114,7 @@ export function AIChatPanel({ onClose, proactiveSuggestions = [] }: Props) {
   const [showSuggestions, setShowSuggestions] = useState(true)
   const [voicePending, setVoicePending]   = useState(false)
   const voiceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [scannerOpen, setScannerOpen]     = useState(false)
   // Gemini conversation history (role: 'user' | 'model')
   const [geminiHistory, setGeminiHistory] = useState<GeminiMessage[]>([])
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -198,6 +201,22 @@ export function AIChatPanel({ onClose, proactiveSuggestions = [] }: Props) {
         content: `Parfait ! La facture **${invoiceNumber}** a été créée. Tu peux maintenant la soumettre à TTN.`,
         action: null,
       }])
+    },
+    []
+  )
+
+  const handleChatScan = useCallback(
+    (scanned: ScannedInvoice) => {
+      setScannerOpen(false)
+      const summary = `J'ai scanné une facture. Voici les données extraites :
+- Fournisseur : ${scanned.vendor.name || 'Non détecté'}
+- Client : ${scanned.client.name || 'Non détecté'}
+- Montant TTC : ${scanned.totals.total_ttc.toFixed(3)} TND
+- ${scanned.lines.length} ligne(s) de facturation
+- Confiance OCR : ${Math.round(scanned.confidence * 100)}%
+
+Peux-tu créer cette facture dans le système ?`
+      sendMessage(summary)
     },
     []
   )
@@ -289,6 +308,14 @@ export function AIChatPanel({ onClose, proactiveSuggestions = [] }: Props) {
               disabled={loading}
               className="flex-1 bg-transparent text-sm text-white placeholder-gray-600 outline-none disabled:opacity-50"
             />
+            <button
+              onClick={() => setScannerOpen(true)}
+              disabled={loading}
+              title="Scanner une facture"
+              className="p-1.5 rounded-lg text-gray-500 hover:text-[#d4a843] disabled:opacity-30 transition-colors shrink-0"
+            >
+              📷
+            </button>
             <VoiceInput
               disabled={loading}
               onTranscript={(text) => {
@@ -331,6 +358,11 @@ export function AIChatPanel({ onClose, proactiveSuggestions = [] }: Props) {
           )}
         </div>
       </div>
+      <InvoiceScannerModal
+        isOpen={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onConfirm={handleChatScan}
+      />
     </div>
   )
 }

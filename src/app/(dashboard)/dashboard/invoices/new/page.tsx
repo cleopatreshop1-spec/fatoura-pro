@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Send, Save, RefreshCw, AlertTriangle, Lock } from 'lucide-react'
+import { Plus, Send, Save, RefreshCw, AlertTriangle, Lock, ScanLine } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useCompany } from '@/contexts/CompanyContext'
 import { usePlan } from '@/hooks/usePlan'
@@ -16,6 +16,8 @@ import { InvoiceLineItem } from '@/components/invoice/InvoiceLineItem'
 import { ClientModal } from '@/components/clients/ClientModal'
 import type { ComboClient } from '@/components/invoice/ClientCombobox'
 import type { InvLine, TvaRate } from '@/components/invoice/InvoiceLineItem'
+import { InvoiceScannerModal } from '@/components/ai/InvoiceScannerModal'
+import type { ScannedInvoice } from '@/types/scanner'
 
 const SECTION = 'bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-5'
 const LC = 'block text-xs text-gray-400 uppercase tracking-wider mb-1.5'
@@ -55,8 +57,33 @@ export default function NewInvoicePage() {
   const [upgradeReason, setUpgradeReason] = useState<'quota' | 'mandate'>('quota')
   const [submitSuccess, setSubmitSuccess] = useState(false)
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
+  const [scannerOpen, setScannerOpen] = useState(false)
 
   const autoSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function handleScanConfirm(scanned: ScannedInvoice) {
+    setScannerOpen(false)
+    if (scanned.client.name) {
+      const match = clients.find(
+        c => c.name.toLowerCase() === scanned.client.name.toLowerCase()
+      )
+      if (match) setSelectedClient(match)
+    }
+    if (scanned.invoice.date) setInvoiceDate(scanned.invoice.date)
+    if (scanned.invoice.due_date) setDueDate(scanned.invoice.due_date)
+    if (scanned.lines.length > 0) {
+      setLines(scanned.lines.map(l => ({
+        id:          crypto.randomUUID(),
+        description: l.description,
+        quantity:    l.quantity,
+        unit_price:  l.unit_price,
+        tva_rate:    l.tva_rate as TvaRate,
+        line_ht:     l.total_ht,
+        line_ttc:    Math.round(l.total_ht * (1 + l.tva_rate / 100) * 1000) / 1000,
+      })))
+    }
+    showToast('Données scannées importées — vérifiez avant de sauvegarder', 'success')
+  }
 
   const loadData = useCallback(async () => {
     if (!activeCompany?.id) {
@@ -341,6 +368,12 @@ export default function NewInvoicePage() {
         </div>
       )}
 
+      <InvoiceScannerModal
+        isOpen={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onConfirm={handleScanConfirm}
+      />
+
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -355,11 +388,20 @@ export default function NewInvoicePage() {
             </span>
           )}
         </div>
-        {lastSaved && (
-          <span className="text-[10px] text-gray-600">
-            Sauvegarde {lastSaved.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-          </span>
-        )}
+        <div className="flex items-center gap-3">
+          {lastSaved && (
+            <span className="text-[10px] text-gray-600">
+              Sauvegarde {lastSaved.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
+          <button
+            onClick={() => setScannerOpen(true)}
+            className="flex items-center gap-1.5 bg-[#1a1d24] border border-[#252830] hover:border-[#d4a843]/50 text-gray-300 hover:text-white px-3 py-1.5 rounded-lg transition-colors text-xs font-medium"
+          >
+            <ScanLine size={13} />
+            Scanner
+          </button>
+        </div>
       </div>
 
       {/* Validation errors */}
