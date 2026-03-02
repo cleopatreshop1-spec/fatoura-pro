@@ -18,7 +18,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
 
     // Get company for ownership check
     const { data: company } = await (supabase as any)
-      .from('companies').select('*').eq('owner_id', user.id).limit(1).single()
+      .from('companies').select('*').eq('owner_id', user.id).order('created_at', { ascending: true }).limit(1).single()
     if (!company) return err('Societe introuvable', 404)
 
     // Fetch full invoice
