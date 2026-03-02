@@ -66,11 +66,11 @@ export default async function DashboardPage() {
     { data: upcomingDue },
     { data: recentPaid30 },
   ] = await Promise.all([
-    supabase.from('invoices').select('id, ht_amount, status, issue_date, created_at')
+    (supabase as any).from('invoices').select('id, ht_amount, status, issue_date, created_at')
       .eq('company_id', companyId).in('status', ['validated', 'valid'])
       .is('deleted_at', null),
 
-    supabase.from('invoices').select('id, ht_amount, issue_date, created_at')
+    (supabase as any).from('invoices').select('id, ht_amount, issue_date, created_at')
       .eq('company_id', companyId).in('status', ['validated', 'valid'])
       .is('deleted_at', null),
 
@@ -86,9 +86,9 @@ export default async function DashboardPage() {
       .eq('company_id', companyId).eq('payment_status', 'paid')
       .gte('payment_date', prevStart).lt('payment_date', prevEnd).is('deleted_at', null),
 
-    supabase.from('invoices').select('tva_amount')
+    (supabase as any).from('invoices').select('tva_amount, issue_date, created_at')
       .eq('company_id', companyId).in('status', ['validated', 'valid'])
-      .gte('issue_date', qtrStart).is('deleted_at', null),
+      .is('deleted_at', null),
 
     supabase.from('invoices')
       .select('id, number, status, issue_date, ttc_amount, payment_status, clients(name)')
