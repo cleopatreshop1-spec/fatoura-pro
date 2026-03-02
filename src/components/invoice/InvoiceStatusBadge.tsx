@@ -1,13 +1,14 @@
 import { cn } from '@/lib/utils/cn'
 
-export type InvoiceStatus = 'draft' | 'pending' | 'valid' | 'rejected' | 'queued'
+export type InvoiceStatus = 'draft' | 'pending' | 'valid' | 'rejected' | 'queued' | 'validated'
 
 const CONFIG: Record<InvoiceStatus, { label: string; className: string }> = {
-  draft:    { label: 'Brouillon',      className: 'bg-gray-500/10 text-gray-400 border-gray-500/20' },
-  pending:  { label: 'En attente TTN', className: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' },
-  valid:    { label: 'Validée',        className: 'bg-green-500/10 text-[#2dd4a0] border-green-500/20' },
-  rejected: { label: 'Rejetée',       className: 'bg-red-500/10 text-[#e05a5a] border-red-500/20' },
-  queued:   { label: 'File d\'attente', className: 'bg-blue-500/10 text-[#4a9eff] border-blue-500/20' },
+  draft:     { label: 'Brouillon',        className: 'bg-gray-500/10 text-gray-400 border-gray-500/20' },
+  validated: { label: 'Finalisée',        className: 'bg-[#d4a843]/10 text-[#d4a843] border-[#d4a843]/20' },
+  pending:   { label: 'En attente TTN',   className: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' },
+  queued:    { label: 'File d\'attente',  className: 'bg-blue-500/10 text-[#4a9eff] border-blue-500/20' },
+  valid:     { label: 'Validée TTN',      className: 'bg-green-500/10 text-[#2dd4a0] border-green-500/20' },
+  rejected:  { label: 'Rejetée',          className: 'bg-red-500/10 text-[#e05a5a] border-red-500/20' },
 }
 
 interface Props {

@@ -182,6 +182,13 @@ export function InvoiceDetailPanel({ invoice: initial, companyPrefix }: Props) {
           </div>
         )}
 
+        {inv.status === 'validated' && (
+          <div className="flex items-center gap-2 text-xs text-[#d4a843] bg-[#d4a843]/10 border border-[#d4a843]/20 rounded-xl px-3 py-2.5 mb-3">
+            <CheckCircle size={13} />
+            Facture finalisée — prête à soumettre à TTN
+          </div>
+        )}
+
         {/* Timeline */}
         {timeline.length > 0 && (
           <div className="mt-3 space-y-2">
@@ -221,17 +228,17 @@ export function InvoiceDetailPanel({ invoice: initial, companyPrefix }: Props) {
       <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-5 space-y-2">
         <div className="text-xs font-bold text-[#d4a843] uppercase tracking-wider mb-3">Actions</div>
 
-        {inv.status === 'draft' && (
+        {['draft', 'validated'].includes(inv.status) && (
           <Link href={`/dashboard/invoices/new?edit=${inv.id}`}
             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#252830] bg-[#161b27] text-sm text-gray-300 hover:text-white transition-colors">
             Modifier
           </Link>
         )}
 
-        {['draft','rejected'].includes(inv.status) && (
+        {['draft', 'validated', 'rejected'].includes(inv.status) && (
           <button onClick={handleSubmitTTN} disabled={submitting}
             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#d4a843] hover:bg-[#f0c060] text-black text-sm font-bold transition-colors disabled:opacity-50">
-            {submitting ? <><div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />Soumission...</> : <><Send size={14} />Soumettre a TTN</>}
+            {submitting ? <><div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />Soumission...</> : <><Send size={14} />Soumettre à TTN</>}
           </button>
         )}
 
@@ -245,7 +252,7 @@ export function InvoiceDetailPanel({ invoice: initial, companyPrefix }: Props) {
           <RefreshCw size={14} />Dupliquer
         </button>
 
-        {inv.status === 'draft' && (
+        {['draft', 'validated'].includes(inv.status) && (
           <button onClick={() => setConfirmDelete(true)}
             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-red-900/30 text-sm text-red-400 hover:bg-red-950/20 transition-colors">
             <Trash2 size={14} />Supprimer

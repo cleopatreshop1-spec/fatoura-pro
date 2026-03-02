@@ -245,7 +245,16 @@ export default function NewInvoicePage() {
     setSaving(true); setValidationErrors([])
     const id = await buildAndSave('draft')
     setLastSaved(new Date()); setSaving(false)
-    if (id) { showToast('Brouillon sauvegarde'); router.push(`/dashboard/invoices/${id}`) }
+    if (id) { showToast('Brouillon sauvegardé'); router.push(`/dashboard/invoices/${id}`) }
+  }
+
+  async function handleFinalise() {
+    const e = validate(false)
+    if (e.length > 0) { setValidationErrors(e); return }
+    setSaving(true); setValidationErrors([])
+    const id = await buildAndSave('validated')
+    setLastSaved(new Date()); setSaving(false)
+    if (id) { showToast('Facture finalisée — prête à soumettre à TTN'); router.push(`/dashboard/invoices/${id}`) }
   }
 
   async function handleSubmitTTN() {
@@ -599,6 +608,12 @@ export default function NewInvoicePage() {
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-[#252830] bg-[#161b27] text-sm text-gray-300 hover:text-white hover:bg-[#252830] transition-colors disabled:opacity-50">
                 <Save size={15} />
                 {saving ? 'Enregistrement...' : 'Enregistrer en brouillon'}
+              </button>
+
+              <button type="button" onClick={handleFinalise} disabled={saving || submitting}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-[#d4a843]/40 bg-[#d4a843]/10 text-sm text-[#d4a843] hover:bg-[#d4a843]/20 transition-colors disabled:opacity-50">
+                <Save size={15} />
+                {saving ? 'Enregistrement...' : 'Finaliser la facture'}
               </button>
 
               <button type="button" onClick={handleSubmitTTN} disabled={saving || submitting || submitSuccess}

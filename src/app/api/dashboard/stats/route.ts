@@ -70,10 +70,10 @@ export async function GET(request: NextRequest) {
         .gte('payment_date', prevStart).lt('payment_date', prevEnd)
         .is('deleted_at', null),
 
-      // Valid this quarter (TVA)
+      // Valid this quarter (TVA) — include validated + valid
       (supabase as any).from('invoices')
         .select('tva_amount, ht_amount')
-        .eq('company_id', cid).eq('status', 'valid')
+        .eq('company_id', cid).in('status', ['validated', 'valid'])
         .gte('issue_date', qtrStart).is('deleted_at', null),
 
       // All invoices last 90 days (for fiscal score + chart)
@@ -102,14 +102,15 @@ export async function GET(request: NextRequest) {
     ])
 
     // ── KPIs ──────────────────────────────────────────────────────────────
-    const thisValidInvoices = (thisMonthInvoices ?? []).filter((i: any) => i.status === 'valid')
-    const caHT    = thisValidInvoices.reduce((s: number, i: any) => s + Number(i.ht_amount ?? 0), 0)
-    const prevCaHT= (prevMonthInvoices ?? []).filter((i: any) => i.status === 'valid')
+    const ACTIVE_STATUSES = ['draft', 'validated', 'valid', 'queued', 'pending']
+    const thisActiveInvoices = (thisMonthInvoices ?? []).filter((i: any) => ACTIVE_STATUSES.includes(i.status))
+    const caHT    = thisActiveInvoices.reduce((s: number, i: any) => s + Number(i.ht_amount ?? 0), 0)
+    const prevCaHT= (prevMonthInvoices ?? []).filter((i: any) => ACTIVE_STATUSES.includes(i.status))
                       .reduce((s: number, i: any) => s + Number(i.ht_amount ?? 0), 0)
     const caTrend = prevCaHT > 0 ? Math.round(((caHT - prevCaHT) / prevCaHT) * 100) : null
 
     const tvaQtr         = (validQtr ?? []).reduce((s: number, i: any) => s + Number(i.tva_amount ?? 0), 0)
-    const validThisMonth = thisValidInvoices.length
+    const validThisMonth = (thisMonthInvoices ?? []).filter((i: any) => i.status === 'valid').length
     const paidThisMonthAmt = (paidThisMonth ?? []).reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
 
     const unpaidTotal = (unpaidValid ?? []).reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
