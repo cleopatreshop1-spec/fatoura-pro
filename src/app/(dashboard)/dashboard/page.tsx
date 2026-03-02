@@ -22,7 +22,7 @@ export default async function DashboardPage() {
   const { data: companies } = await supabase
     .from('companies')
     .select('id, name, matricule_fiscal, address, logo_url, bank_rib')
-    .eq('owner_id', user.id).limit(1)
+    .eq('owner_id', user.id).order('created_at', { ascending: true }).limit(1)
   const company: any = (companies as any)?.[0]
   const companyId: string | undefined = company?.id
 
