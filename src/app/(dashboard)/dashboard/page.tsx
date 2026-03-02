@@ -1,4 +1,6 @@
-﻿import { Suspense } from 'react'
+﻿export const dynamic = 'force-dynamic'
+
+import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { RealtimeProvider } from '@/components/dashboard/RealtimeProvider'
 import { PaymentSuccessToast } from '@/components/billing/PaymentSuccessToast'
