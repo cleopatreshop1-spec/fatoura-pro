@@ -87,8 +87,8 @@ export async function DELETE(req: NextRequest, { params }: Ctx) {
 
     if (invoice.status !== 'draft') return err('Seules les factures brouillon peuvent etre supprimees', 409)
 
-    await (supabase as any).from('invoice_line_items').delete().eq('invoice_id', id)
-    const { error } = await (supabase as any).from('invoices').delete().eq('id', id)
+    const { error } = await (supabase as any).from('invoices')
+      .update({ deleted_at: new Date().toISOString() }).eq('id', id)
     if (error) return err(error.message, 500)
 
     await logActivity(supabase as any, company.id, user.id, 'invoice_deleted', 'invoice', id, `Facture ${invoice.number} supprimee`)

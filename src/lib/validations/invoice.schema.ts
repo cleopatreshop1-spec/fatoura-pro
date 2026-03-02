@@ -1,5 +1,19 @@
 import { z } from 'zod'
 import { TVA_RATES } from '@/lib/utils/tva-calculator'
+import { isValid, parseISO, isFuture, differenceInDays } from 'date-fns'
+
+const MAX_DAYS_PAST = 30
+
+export const invoiceDateSchema = z
+  .string()
+  .min(1, "Date d'émission requise")
+  .refine(val => isValid(parseISO(val)), { message: 'Date invalide' })
+  .refine(val => !isFuture(parseISO(val)), {
+    message: 'La date ne peut pas être dans le futur (refusé par TTN)',
+  })
+  .refine(val => differenceInDays(new Date(), parseISO(val)) <= MAX_DAYS_PAST, {
+    message: `La date ne peut pas être antérieure de plus de ${MAX_DAYS_PAST} jours (refusé par TTN)`,
+  })
 
 export const invoiceLineSchema = z.object({
   description: z.string().min(1, 'Description requise'),

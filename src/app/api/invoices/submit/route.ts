@@ -1,6 +1,11 @@
 ﻿import { NextRequest } from 'next/server'
 import { getAuthenticatedCompany, success, err, logActivity, insertNotification } from '@/lib/api-helpers'
 import { captureError, captureMessage } from '@/lib/monitoring/sentry'
+import { applyRateLimit, rateLimiters, getClientIp } from '@/lib/rate-limiter'
+import { sendEmail } from '@/lib/email/resend'
+import { invoiceValidatedEmail, invoiceRejectedEmail } from '@/lib/email/templates'
+import { shouldSendEmail, getCompanyEmail } from '@/lib/email/should-send'
+import { getTTNRejectionMessage } from '@/lib/ttn/rejection-messages'
 import * as Sentry from '@sentry/nextjs'
 
 export async function POST(request: NextRequest) {
@@ -11,6 +16,9 @@ export async function POST(request: NextRequest) {
     const invoiceId: string = body.invoiceId ?? body.invoice_id
 
     if (!invoiceId) return err('invoiceId requis', 400)
+
+    const rlLimited = await applyRateLimit(rateLimiters.ttnSubmit, `${company.id}:${getClientIp(request)}`)
+    if (rlLimited) return rlLimited
 
     span.setAttribute('invoice.id', invoiceId)
 
@@ -83,6 +91,22 @@ export async function POST(request: NextRequest) {
         'invoice_validated', 'invoice', invoiceId,
         `Facture ${(invoice as any).number} validee  TTN_ID: ${ttnId}`)
 
+      // Email notification
+      if (await shouldSendEmail(supabase as any, company.id, 'invoice_validated_email')) {
+        const email = await getCompanyEmail(supabase as any, company.id)
+        if (email) await sendEmail({
+          to: email,
+          subject: `✓ Facture ${(invoice as any).number} validée par TTN`,
+          html: invoiceValidatedEmail({
+            companyName:   (company as any).name ?? '',
+            invoiceNumber: (invoice as any).number,
+            ttnId,
+            totalTtc:      `${Number((invoice as any).ttc_amount ?? 0).toFixed(3)} TND`,
+            invoiceUrl:    `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/invoices/${invoiceId}`,
+          }),
+        })
+      }
+
       return success({ success: true, status: 'valid', ttnId })
 
     } catch (ttnError: any) {
@@ -101,22 +125,38 @@ export async function POST(request: NextRequest) {
         return success({ success: false, status: 'queued', error: message })
       } else {
         // TTN rejection — business rejection, not an exception
+        const humanReason = getTTNRejectionMessage(message)
         captureMessage('TTN invoice rejected', 'warning', {
           invoiceId, invoiceNumber: (invoice as any).number,
           rejectionReason: message, companyId: company.id,
         })
         await (supabase as any).from('invoices').update({
           status: 'rejected',
-          ttn_rejection_reason: message,
+          ttn_rejection_reason: humanReason,
         }).eq('id', invoiceId)
 
         await insertNotification(supabase as any, company.id, 'invoice_rejected',
-          `Facture ${(invoice as any).number} rejetee par TTN`, message)
+          `Facture ${(invoice as any).number} rejetee par TTN`, humanReason)
         await logActivity(supabase as any, company.id, user.id,
           'invoice_rejected', 'invoice', invoiceId,
-          `Facture ${(invoice as any).number} rejetee: ${message}`)
+          `Facture ${(invoice as any).number} rejetee: ${humanReason}`)
 
-        return success({ success: false, status: 'rejected', error: message }, 200)
+        // Email notification
+        if (await shouldSendEmail(supabase as any, company.id, 'invoice_rejected_email')) {
+          const email = await getCompanyEmail(supabase as any, company.id)
+          if (email) await sendEmail({
+            to: email,
+            subject: `✗ Facture ${(invoice as any).number} rejetée par TTN`,
+            html: invoiceRejectedEmail({
+              companyName:   (company as any).name ?? '',
+              invoiceNumber: (invoice as any).number,
+              rejectionReason: humanReason,
+              invoiceUrl:    `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/invoices/${invoiceId}`,
+            }),
+          })
+        }
+
+        return success({ success: false, status: 'rejected', error: humanReason }, 200)
       }
     }
   } catch (e: any) {

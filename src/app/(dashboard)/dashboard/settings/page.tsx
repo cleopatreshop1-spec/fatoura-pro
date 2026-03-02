@@ -2,15 +2,16 @@
 
 import { Suspense, useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Building2, Shield, Key, Bell, Lock, CreditCard } from 'lucide-react'
+import { Building2, Shield, Key, Bell, Lock, CreditCard, History } from 'lucide-react'
 import { CompanyTab } from '@/components/settings/CompanyTab'
 import { SignatureTab } from '@/components/settings/SignatureTab'
 import { ApiKeysTab } from '@/components/settings/ApiKeysTab'
 import { NotificationsTab } from '@/components/settings/NotificationsTab'
 import { SecurityTab } from '@/components/settings/SecurityTab'
 import { BillingTab } from '@/components/settings/BillingTab'
+import { ActivityLogTab } from '@/components/settings/ActivityLogTab'
 
-type TabId = 'company' | 'signature' | 'api-keys' | 'notifications' | 'security' | 'billing'
+type TabId = 'company' | 'signature' | 'api-keys' | 'notifications' | 'security' | 'billing' | 'history'
 
 const TABS: { id: TabId; label: string; Icon: any; desc: string }[] = [
   { id: 'company',       label: 'Entreprise',             Icon: Building2,  desc: 'Infos, logo, banque' },
@@ -19,6 +20,7 @@ const TABS: { id: TabId; label: string; Icon: any; desc: string }[] = [
   { id: 'api-keys',      label: 'Cles API',               Icon: Key,        desc: 'Integrations ERP' },
   { id: 'notifications', label: 'Notifications',          Icon: Bell,       desc: 'Alertes et emails' },
   { id: 'security',      label: 'Securite',               Icon: Lock,       desc: 'Mot de passe, sessions' },
+  { id: 'history',       label: 'Historique',             Icon: History,    desc: 'Journal des activités' },
 ]
 
 const VALID_TABS = TABS.map(t => t.id)
@@ -85,6 +87,7 @@ function SettingsContent() {
           {activeTab === 'api-keys'      && <ApiKeysTab />}
           {activeTab === 'notifications' && <NotificationsTab />}
           {activeTab === 'security'      && <SecurityTab />}
+          {activeTab === 'history'        && <ActivityLogTab />}
         </div>
       </div>
     </div>

@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
       .from('invoices')
       .select('*, clients(id, name, type, matricule_fiscal)', { count: 'exact' })
       .eq('company_id', company.id)
+      .is('deleted_at', null)
       .order('created_at', { ascending: false })
       .range((page - 1) * limit, page * limit - 1)
 
@@ -87,15 +88,11 @@ export async function POST(request: NextRequest) {
     // Server-side totals calculation — never trust client
     const totals = calcInvoiceTotals(lines)
 
-    // Atomic-ish invoice number generation
-    const { data: lastInv } = await (supabase as any)
-      .from('invoices').select('number')
-      .eq('company_id', company.id)
-      .order('created_at', { ascending: false })
-      .limit(1).maybeSingle()
-
-    const prefix = company.invoice_prefix ?? 'FP'
-    const number = nextInvoiceNumber((lastInv as any)?.number, prefix)
+    // Atomic invoice number generation — no race condition under concurrency (FIX 1)
+    const { data: invoiceNumber, error: counterErr } = await (supabase as any)
+      .rpc('increment_invoice_counter', { p_company_id: company.id })
+    if (counterErr || !invoiceNumber) throw new Error('Impossible de générer le numéro de facture')
+    const number = invoiceNumber as string
     const totalInWords = amountToWords(totals.total_ttc)
 
     const { data: invoice, error: invErr } = await (supabase as any)
