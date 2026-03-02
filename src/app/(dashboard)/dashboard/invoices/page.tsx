@@ -202,10 +202,11 @@ export default function InvoicesPage() {
   const STATUS_OPTS = [
     { value: 'all', label: 'Tous les statuts' },
     { value: 'draft', label: 'Brouillon' },
+    { value: 'validated', label: 'Finalisée' },
     { value: 'queued', label: 'File attente' },
     { value: 'pending', label: 'En attente TTN' },
-    { value: 'valid', label: 'Validee' },
-    { value: 'rejected', label: 'Rejetee' },
+    { value: 'valid', label: 'Validée TTN' },
+    { value: 'rejected', label: 'Rejetée' },
   ]
 
   const SEL = 'bg-[#0f1118] border border-[#1a1b22] rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-[#d4a843] transition-colors'
@@ -384,13 +385,13 @@ export default function InvoicesPage() {
                                   className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-300 hover:bg-[#252830] hover:text-white transition-colors text-left">
                                   Dupliquer
                                 </button>
-                                {['rejected','draft'].includes(inv.status) && (
+                                {['rejected','draft','validated'].includes(inv.status) && (
                                   <button onClick={() => handleResubmit(inv)}
                                     className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-300 hover:bg-[#252830] hover:text-white transition-colors text-left">
-                                    Resoumettre a TTN
+                                    Soumettre à TTN
                                   </button>
                                 )}
-                                {inv.status === 'draft' && <>
+                                {['draft','validated'].includes(inv.status) && <>
                                   <div className="my-1 border-t border-[#252830]" />
                                   <button onClick={() => { setDeleteId(inv.id); setDropdown(null) }}
                                     className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-400 hover:bg-red-950/20 transition-colors text-left">

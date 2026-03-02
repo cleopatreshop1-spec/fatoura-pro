@@ -113,8 +113,6 @@ export default async function DashboardPage() {
   ])
 
   // ── KPIs ──────────────────────────────────────────────────────────────
-  console.log('[dashboard] thisMonthValid:', JSON.stringify(thisMonthValid))
-  console.log('[dashboard] monthStart:', monthStart, 'todayStr:', todayStr)
   // Use issue_date when set, fall back to created_at (handles invoices saved without a date)
   const invDate = (i: any) => (i.issue_date ?? i.created_at ?? '').slice(0, 10)
   const caHT       = (thisMonthValid ?? []).filter((i: any) => { const d = invDate(i); return d >= monthStart && d <= todayStr }).reduce((s: number, i: any) => s + Number(i.ht_amount ?? 0), 0)
@@ -217,10 +215,6 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      {/* DEBUG — remove after fix */}
-      <div className="text-xs text-red-400 p-2 bg-red-950/20 rounded mb-2">
-        DEBUG: companyId={companyId} | thisMonthValid.length={thisMonthValid?.length ?? 'null'} | caHT={caHT} | monthStart={monthStart} | todayStr={todayStr}
-      </div>
       <Suspense fallback={null}><PaymentSuccessToast /></Suspense>
       <RealtimeProvider companyId={companyId} />
 
