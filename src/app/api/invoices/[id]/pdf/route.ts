@@ -5,6 +5,7 @@ import QRCode from 'qrcode'
 import { createClient } from '@/lib/supabase/server'
 import { err } from '@/lib/api-helpers'
 import { InvoicePDFTemplate } from '@/components/invoice/InvoicePDFTemplate'
+import { captureError } from '@/lib/monitoring/sentry'
 
 type Ctx = { params: Promise<{ id: string }> }
 
@@ -97,6 +98,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
     })
   } catch (e: any) {
     console.error('[PDF] Error:', e?.message)
+    captureError(e, { action: 'pdf_generate' })
     return err(e?.message ?? 'Erreur generation PDF', 500)
   }
 }

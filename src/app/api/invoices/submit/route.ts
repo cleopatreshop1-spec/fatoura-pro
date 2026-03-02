@@ -1,13 +1,18 @@
 ﻿import { NextRequest } from 'next/server'
 import { getAuthenticatedCompany, success, err, logActivity, insertNotification } from '@/lib/api-helpers'
+import { captureError, captureMessage } from '@/lib/monitoring/sentry'
+import * as Sentry from '@sentry/nextjs'
 
 export async function POST(request: NextRequest) {
+  return Sentry.startSpan({ name: 'ttn.submit', op: 'ttn' }, async (span) => {
   try {
     const { user, company, supabase } = await getAuthenticatedCompany(request)
     const body = await request.json()
     const invoiceId: string = body.invoiceId ?? body.invoice_id
 
     if (!invoiceId) return err('invoiceId requis', 400)
+
+    span.setAttribute('invoice.id', invoiceId)
 
     // Fetch full invoice with relations
     const { data: invoice, error: fetchErr } = await (supabase as any)
@@ -92,9 +97,14 @@ export async function POST(request: NextRequest) {
           { invoice_id: invoiceId, attempts: 1, max_attempts: 5, next_retry_at: nextRetry, last_error: message },
           { onConflict: 'invoice_id' }
         )
+        captureError(ttnError, { action: 'ttn_submit', invoiceId, companyId: company.id, extra: { type: 'timeout' } })
         return success({ success: false, status: 'queued', error: message })
       } else {
-        // TTN rejection
+        // TTN rejection — business rejection, not an exception
+        captureMessage('TTN invoice rejected', 'warning', {
+          invoiceId, invoiceNumber: (invoice as any).number,
+          rejectionReason: message, companyId: company.id,
+        })
         await (supabase as any).from('invoices').update({
           status: 'rejected',
           ttn_rejection_reason: message,
@@ -109,5 +119,9 @@ export async function POST(request: NextRequest) {
         return success({ success: false, status: 'rejected', error: message }, 200)
       }
     }
-  } catch (e: any) { return err(e.message, e.status ?? 500) }
+  } catch (e: any) {
+    captureError(e, { action: 'ttn_submit', companyId: undefined })
+    return err(e.message, e.status ?? 500)
+  }
+  }) // end Sentry.startSpan
 }

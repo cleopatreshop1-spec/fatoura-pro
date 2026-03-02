@@ -1,6 +1,7 @@
 ﻿import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { insertNotification, logActivity } from '@/lib/api-helpers'
+import { captureError, captureMessage } from '@/lib/monitoring/sentry'
 
 export async function POST(request: NextRequest) {
   const secret = process.env.CRON_SECRET
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
 
   if (!queue?.length) return Response.json({ processed: 0, succeeded: 0, failed: 0 })
 
-  let succeeded = 0; let failed = 0
+  let succeeded = 0; let failed = 0; let maxRetriesReached = 0
 
   for (const item of queue) {
     const inv     = (item as any).invoices
@@ -63,10 +64,22 @@ export async function POST(request: NextRequest) {
         await (supabase as any).from('ttn_queue').delete().eq('id', item.id)
         await insertNotification(supabase as any, company?.id, 'invoice_rejected',
           `Facture ${inv?.number} rejetee apres 5 tentatives`, e?.message)
+        captureMessage('Invoice permanently failed TTN submission', 'error', {
+          invoiceId: item.invoice_id,
+          attempts: item.attempts,
+          lastError: e?.message,
+        })
+        maxRetriesReached++
+      } else {
+        captureError(e, { action: 'ttn_submit', invoiceId: item.invoice_id, extra: { attempt: attempts } })
       }
       failed++
     }
   }
 
-  return Response.json({ processed: queue.length, succeeded, failed })
+  captureMessage('TTN queue processed', 'info', {
+    total: queue.length, succeeded, failed, maxRetriesReached,
+  })
+
+  return Response.json({ processed: queue.length, succeeded, failed, maxRetriesReached })
 }

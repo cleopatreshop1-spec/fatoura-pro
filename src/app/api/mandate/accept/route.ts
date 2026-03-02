@@ -1,5 +1,6 @@
 ﻿import { NextRequest } from 'next/server'
 import { getAuthenticatedCompany, success, err, logActivity, insertNotification } from '@/lib/api-helpers'
+import { captureError, captureMessage } from '@/lib/monitoring/sentry'
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,6 +34,13 @@ export async function POST(request: NextRequest) {
     await insertNotification(supabase as any, company.id, 'mandate_accepted',
       'Mandat de signature active', `Valide jusqu\'au ${new Date(sealExpiry).toLocaleDateString('fr-FR')}`)
 
+    captureMessage('Mandate accepted', 'info', {
+      companyId: company.id,
+      sealIdentifier: process.env.FATOURA_SEAL_SERIAL ?? 'FATOURA-PRO-SEAL-2026',
+    })
     return success({ message: 'Mandat accepte', mandateId: (data as any).id, sealValidUntil: sealExpiry }, 201)
-  } catch (e: any) { return err(e.message, e.status ?? 500) }
+  } catch (e: any) {
+    captureError(e, { action: 'mandate_accept' })
+    return err(e.message, e.status ?? 500)
+  }
 }

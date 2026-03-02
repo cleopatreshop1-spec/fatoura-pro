@@ -10,6 +10,7 @@ import {
 import { createClient } from '@/lib/supabase/client'
 import { useCompany } from '@/contexts/CompanyContext'
 import { usePlan } from '@/hooks/usePlan'
+import { clearUser } from '@/lib/monitoring/sentry'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 
@@ -64,6 +65,7 @@ export function Sidebar({ userEmail, userName, userInitials, onClose }: Props) {
 
   async function handleSignOut() {
     setSigningOut(true)
+    clearUser()
     await supabase.auth.signOut()
     router.push('/login')
   }

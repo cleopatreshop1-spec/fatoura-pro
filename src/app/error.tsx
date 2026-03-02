@@ -2,9 +2,13 @@
 
 import { useEffect } from 'react'
 import Link from 'next/link'
+import * as Sentry from "@sentry/nextjs"
 
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
-  useEffect(() => { console.error('[Error]', error) }, [error])
+  useEffect(() => {
+    console.error('[Error]', error)
+    Sentry.captureException(error)
+  }, [error])
 
   return (
     <div className="min-h-screen bg-[#0a0b0f] flex items-center justify-center p-4">

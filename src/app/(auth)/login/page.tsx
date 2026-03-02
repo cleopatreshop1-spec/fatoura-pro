@@ -8,6 +8,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/client'
+import { identifyUser } from '@/lib/monitoring/sentry'
 
 const loginSchema = z.object({
   email: z.string().email('Email invalide'),
@@ -57,10 +58,14 @@ export default function LoginPage() {
   async function onLogin(data: LoginData) {
     setServerError('')
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email: data.email, password: data.password })
+    const { data: authData, error } = await supabase.auth.signInWithPassword({ email: data.email, password: data.password })
     if (error) {
       setServerError(error.message.includes('Invalid login') ? 'Email ou mot de passe incorrect.' : error.message)
     } else {
+      if (authData.user) {
+        const { data: company } = await supabase.from('companies').select('id').eq('owner_id', authData.user.id).single()
+        if (company) identifyUser(authData.user.id, (company as any).id)
+      }
       router.push('/dashboard')
       router.refresh()
     }
