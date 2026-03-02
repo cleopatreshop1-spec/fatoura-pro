@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useCompany } from '@/contexts/CompanyContext'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
+import { TTNStatusCard } from '@/components/settings/TTNStatusCard'
 
 type MandateRow = { id: string; accepted_at: string; seal_identifier: string; seal_valid_until: string; ip_address: string | null }
 
@@ -190,6 +191,16 @@ export function SignatureTab() {
           </div>
         </div>
       )}
+
+      {/* TTN/ElFatoora registration status */}
+      <div>
+        <div className="flex items-center gap-2 mb-4">
+          <div className="h-px flex-1 bg-[#1a1b22]" />
+          <span className="text-[10px] text-gray-600 uppercase tracking-widest font-bold px-2">Inscription TTN / ElFatoora</span>
+          <div className="h-px flex-1 bg-[#1a1b22]" />
+        </div>
+        <TTNStatusCard />
+      </div>
 
       <ConfirmDialog open={confirmRevoke}
         title="Revoquer le mandat de signature ?"
