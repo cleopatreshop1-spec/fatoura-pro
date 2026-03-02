@@ -36,6 +36,19 @@ export async function GET(req: NextRequest, { params }: Ctx) {
     const lines = ((inv.invoice_line_items ?? []) as any[])
       .sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
 
+    // Pre-fetch logo as base64 so react-pdf doesn't make external requests in serverless
+    let logoDataUrl: string | null = null
+    if ((company as any).logo_url) {
+      try {
+        const logoRes = await fetch((company as any).logo_url)
+        if (logoRes.ok) {
+          const buf = await logoRes.arrayBuffer()
+          const mime = logoRes.headers.get('content-type') ?? 'image/png'
+          logoDataUrl = `data:${mime};base64,${Buffer.from(buf).toString('base64')}`
+        }
+      } catch {}
+    }
+
     // Generate QR code if validated
     let qrDataUrl: string | null = null
     if (inv.status === 'valid' && inv.ttn_id) {
@@ -66,7 +79,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
         website:               (company as any).website ?? null,
         bank_name:             (company as any).bank_name ?? null,
         bank_rib:              (company as any).bank_rib ?? null,
-        logo_url:              (company as any).logo_url ?? null,
+        logo_url:              logoDataUrl ?? null,
         default_payment_terms: (company as any).default_payment_terms ?? null,
         tva_regime:            (company as any).tva_regime ?? null,
       },

@@ -102,7 +102,7 @@ export function InvoiceDetailPanel({ invoice: initial, companyPrefix }: Props) {
     setDownloadingPdf(true)
     try {
       const res = await fetch(`/api/invoices/${inv.id}/pdf`)
-      if (!res.ok) { showToast('Erreur generation PDF', 'err'); return }
+      if (!res.ok) { const e = await res.json().catch(() => ({})); showToast(e.error ?? 'Erreur generation PDF', 'err'); return }
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
