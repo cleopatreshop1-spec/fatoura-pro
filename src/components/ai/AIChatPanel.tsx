@@ -3,20 +3,26 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { X, Send, Sparkles, Loader2, ExternalLink } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import type { AIAction } from '@/lib/ai/action-parser'
+
+type GeminiPart    = { text: string }
+type GeminiMessage = { role: 'user' | 'model'; parts: GeminiPart[] }
 
 type Message = {
   id: string
-  role: 'user' | 'assistant'
+  role: 'user' | 'model'
   content: string
-  action?: { action: string; data: any } | null
+  action?: AIAction
   isLoading?: boolean
+  isQuota?: boolean
 }
 
 const QUICK_SUGGESTIONS = [
-  { icon: '📊', label: 'Ma TVA ce trimestre ?' },
-  { icon: '💰', label: 'Mes meilleurs clients ce mois' },
-  { icon: '⚠️', label: 'Factures en attente de soumission' },
-  { icon: '📄', label: 'Aide-moi à préparer une facture' },
+  { icon: '📊', label: 'TVA ce trimestre' },
+  { icon: '💰', label: 'Mes meilleurs clients' },
+  { icon: '⚠️', label: 'Factures à soumettre' },
+  { icon: '📄', label: 'Nouvelle facture rapide' },
+  { icon: '📈', label: 'Mon score fiscal' },
 ]
 
 function TypingDots() {
@@ -30,26 +36,26 @@ function TypingDots() {
   )
 }
 
-function MessageBubble({ msg, onAction }: { msg: Message; onAction: (action: any) => void }) {
+function renderMarkdown(text: string): React.ReactNode[] {
+  return text.split('\n').map((line, i) => {
+    const html = line
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/`([^`]+)`/g,
+        '<code class="font-mono text-[#d4a843] bg-[#1a1508] px-1 rounded text-xs">$1</code>')
+    return <p key={i} className="leading-relaxed min-h-[1em]"
+      dangerouslySetInnerHTML={{ __html: html }} />
+  })
+}
+
+function MessageBubble({ msg, onAction }: { msg: Message; onAction: (a: AIAction) => void }) {
   const isUser = msg.role === 'user'
 
-  // Detect and render simple markdown tables / code blocks
-  const renderContent = (text: string) => {
-    const lines = text.split('\n')
-    const elements: React.ReactNode[] = []
-    let i = 0
-    while (i < lines.length) {
-      const line = lines[i]
-      // Simple bold **text**
-      const rendered = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/`([^`]+)`/g, `<code class="font-mono text-[#d4a843] bg-[#1a1508] px-1 rounded text-xs">$1</code>`)
-      elements.push(
-        <p key={i} className="leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: rendered }} />
-      )
-      i++
-    }
-    return elements
+  if (msg.isQuota) {
+    return (
+      <div className="mx-1 px-4 py-3 rounded-xl bg-[#1a1508]/60 border border-[#d4a843]/20 text-xs text-[#d4a843]">
+        {msg.content}
+      </div>
+    )
   }
 
   return (
@@ -59,21 +65,20 @@ function MessageBubble({ msg, onAction }: { msg: Message; onAction: (action: any
           <Sparkles className="w-3.5 h-3.5 text-[#d4a843]" />
         </div>
       )}
-      <div className={`max-w-[85%] ${isUser ? 'items-end' : 'items-start'} flex flex-col gap-1.5`}>
+      <div className={`max-w-[85%] flex flex-col gap-1.5 ${isUser ? 'items-end' : 'items-start'}`}>
         <div className={`rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed space-y-1 ${
           isUser
             ? 'bg-[#1a1b22] text-white rounded-tr-sm'
             : 'bg-[#0f1118] border border-[#1a1b22] text-gray-200 rounded-tl-sm'
         }`}>
-          {msg.isLoading ? <TypingDots /> : renderContent(msg.content)}
+          {msg.isLoading ? <TypingDots /> : renderMarkdown(msg.content)}
         </div>
 
-        {/* Structured action card */}
-        {msg.action?.action === 'create_invoice' && (
-          <button onClick={() => onAction(msg.action)}
+        {msg.action?.type === 'CREATE_INVOICE' && (
+          <button onClick={() => onAction(msg.action!)}
             className="flex items-center gap-2 px-3 py-2 bg-[#1a1508] border border-[#d4a843]/40 rounded-xl text-xs text-[#d4a843] font-semibold hover:bg-[#241c0a] transition-colors">
             <ExternalLink className="w-3 h-3" />
-            Ouvrir dans le formulaire →
+            📄 Ouvrir dans le formulaire →
           </button>
         )}
       </div>
@@ -88,26 +93,26 @@ type Props = {
 
 export function AIChatPanel({ onClose, proactiveSuggestions = [] }: Props) {
   const router = useRouter()
-  const [messages, setMessages]   = useState<Message[]>([])
-  const [input, setInput]         = useState('')
-  const [loading, setLoading]     = useState(false)
+  const [messages, setMessages]         = useState<Message[]>([])
+  const [input, setInput]               = useState('')
+  const [loading, setLoading]           = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(true)
+  // Gemini conversation history (role: 'user' | 'model')
+  const [geminiHistory, setGeminiHistory] = useState<GeminiMessage[]>([])
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef  = useRef<HTMLInputElement>(null)
 
-  // Initial greeting
   useEffect(() => {
-    const hour = new Date().getHours()
-    const greeting = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir'
+    const h = new Date().getHours()
+    const greeting = h < 12 ? 'Bonjour' : h < 18 ? 'Bon après-midi' : 'Bonsoir'
     setMessages([{
       id: 'init',
-      role: 'assistant',
+      role: 'model',
       content: `${greeting} ! Je suis **Fatoura AI**, votre assistant fiscal. Comment puis-je vous aider aujourd'hui ?`,
     }])
     setTimeout(() => inputRef.current?.focus(), 100)
   }, [])
 
-  // Auto-scroll on new message
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
@@ -119,83 +124,86 @@ export function AIChatPanel({ onClose, proactiveSuggestions = [] }: Props) {
     setInput('')
     setShowSuggestions(false)
 
-    const userMsg: Message = { id: Date.now().toString(), role: 'user', content: trimmed }
-    const loadingMsg: Message = { id: 'loading', role: 'assistant', content: '', isLoading: true }
-
+    const userMsg: Message    = { id: Date.now().toString(), role: 'user', content: trimmed }
+    const loadingMsg: Message = { id: 'loading', role: 'model', content: '', isLoading: true }
     setMessages(prev => [...prev, userMsg, loadingMsg])
     setLoading(true)
 
     try {
-      const history = messages
-        .filter(m => !m.isLoading && m.id !== 'init')
-        .map(m => ({ role: m.role, content: m.content }))
-
       const res  = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: trimmed, conversationHistory: history }),
+        body: JSON.stringify({ message: trimmed, history: geminiHistory }),
       })
       const data = await res.json()
 
-      if (!res.ok) {
+      // Quota error — show soft warning, not red error
+      if (data.error === 'quota_exceeded') {
         setMessages(prev => prev.filter(m => m.id !== 'loading').concat({
           id: Date.now().toString(),
-          role: 'assistant',
-          content: data.error ?? 'Une erreur s\'est produite. Réessayez.',
+          role: 'model',
+          content: data.message,
+          isQuota: true,
         }))
         return
       }
 
+      const aiText = data.message ?? 'Une erreur est survenue.'
+      const action = data.action ?? null
+
       setMessages(prev => prev.filter(m => m.id !== 'loading').concat({
         id: Date.now().toString(),
-        role: 'assistant',
-        content: data.text,
-        action: data.action ?? null,
+        role: 'model',
+        content: aiText,
+        action,
       }))
+
+      // Update Gemini history for next turn
+      setGeminiHistory(prev => [
+        ...prev,
+        { role: 'user',  parts: [{ text: trimmed }] },
+        { role: 'model', parts: [{ text: aiText }] },
+      ])
     } catch {
       setMessages(prev => prev.filter(m => m.id !== 'loading').concat({
         id: Date.now().toString(),
-        role: 'assistant',
+        role: 'model',
         content: 'Connexion impossible. Vérifiez votre connexion internet.',
       }))
     } finally {
       setLoading(false)
     }
-  }, [messages, loading])
+  }, [loading, geminiHistory])
 
-  const handleAction = useCallback((action: any) => {
-    if (action?.action === 'create_invoice' && action.data) {
-      const params = new URLSearchParams()
-      if (action.data.client_name) params.set('client_name', action.data.client_name)
-      if (action.data.lines?.length > 0) {
-        params.set('lines', JSON.stringify(action.data.lines))
-      }
-      router.push(`/dashboard/invoices/new?${params.toString()}`)
+  const handleAction = useCallback((action: AIAction) => {
+    if (action?.type === 'CREATE_INVOICE') {
+      const prefill = encodeURIComponent(JSON.stringify(action.data))
+      router.push(`/dashboard/invoices/new?prefill=${prefill}`)
       onClose()
     }
   }, [router, onClose])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      sendMessage(input)
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(input) }
   }
 
   return (
     <div className="fixed inset-y-0 right-0 w-full sm:w-[420px] z-50 flex flex-col shadow-2xl animate-in slide-in-from-right duration-300">
-      {/* Backdrop on mobile */}
-      <div className="sm:hidden absolute inset-0 -left-full bg-black/60 backdrop-blur-sm" onClick={onClose} />
-
       <div className="relative flex flex-col h-full bg-[#0a0b0f] border-l border-[#1a1b22]">
+
         {/* Header */}
         <div className="flex items-center gap-3 px-5 py-4 border-b border-[#1a1b22] shrink-0 bg-[#0f1118]">
           <div className="w-8 h-8 rounded-full bg-[#1a1508] border border-[#d4a843]/50 flex items-center justify-center">
             <Sparkles className="w-4 h-4 text-[#d4a843]" />
           </div>
           <div className="flex-1">
-            <h3 className="text-sm font-bold text-white">Fatoura AI</h3>
-            <p className="text-[10px] text-gray-600">Assistant fiscal • Données en temps réel</p>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold text-white">✨ Fatoura AI</h3>
+              <span className="text-[9px] text-gray-600 border border-gray-700 rounded px-1 py-0.5 leading-none">
+                Powered by Gemini
+              </span>
+            </div>
+            <p className="text-[10px] text-gray-600 mt-0.5">Assistant fiscal • Données en temps réel</p>
           </div>
           <button onClick={onClose}
             className="p-1.5 rounded-lg hover:bg-[#161b27] text-gray-500 hover:text-white transition-colors">
@@ -223,9 +231,9 @@ export function AIChatPanel({ onClose, proactiveSuggestions = [] }: Props) {
           <div ref={bottomRef} />
         </div>
 
-        {/* Quick suggestion chips */}
+        {/* Quick chips */}
         {showSuggestions && (
-          <div className="px-4 pb-3 flex flex-wrap gap-2 shrink-0">
+          <div className="px-4 pb-3 flex flex-wrap gap-2 shrink-0 border-t border-[#1a1b22] pt-3">
             {QUICK_SUGGESTIONS.map(s => (
               <button key={s.label}
                 onClick={() => sendMessage(`${s.icon} ${s.label}`)}
@@ -237,7 +245,7 @@ export function AIChatPanel({ onClose, proactiveSuggestions = [] }: Props) {
         )}
 
         {/* Input */}
-        <div className="px-4 pb-4 pt-2 border-t border-[#1a1b22] shrink-0 bg-[#0f1118]">
+        <div className="px-4 pb-4 pt-3 border-t border-[#1a1b22] shrink-0 bg-[#0f1118]">
           <div className="flex gap-2 items-center bg-[#161b27] border border-[#1a1b22] rounded-xl px-3 py-2 focus-within:border-[#d4a843]/40 transition-colors">
             <input
               ref={inputRef}
@@ -248,14 +256,12 @@ export function AIChatPanel({ onClose, proactiveSuggestions = [] }: Props) {
               disabled={loading}
               className="flex-1 bg-transparent text-sm text-white placeholder-gray-600 outline-none disabled:opacity-50"
             />
-            <button
-              onClick={() => sendMessage(input)}
+            <button onClick={() => sendMessage(input)}
               disabled={loading || !input.trim()}
               className="p-1.5 rounded-lg bg-[#d4a843] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#f0c060] transition-colors shrink-0">
               {loading
                 ? <Loader2 className="w-3.5 h-3.5 text-black animate-spin" />
-                : <Send className="w-3.5 h-3.5 text-black" />
-              }
+                : <Send className="w-3.5 h-3.5 text-black" />}
             </button>
           </div>
           <p className="text-[10px] text-gray-700 mt-1.5 text-center">

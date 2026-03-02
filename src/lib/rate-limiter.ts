@@ -37,6 +37,11 @@ export const rateLimiters = {
     limiter: Ratelimit.slidingWindow(20, '10 m'),
     prefix: 'fp:export',
   }),
+  ai: new Ratelimit({
+    redis: Redis.fromEnv(),
+    limiter: Ratelimit.slidingWindow(20, '1 h'),
+    prefix: 'fp:ai',
+  }),
 }
 
 export function getClientIp(request: Request): string {
