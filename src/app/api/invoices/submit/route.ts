@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     if (fetchErr || !invoice) return err('Facture introuvable ou acces refuse', 404)
 
-    const allowedStatuses = ['draft', 'rejected', 'queued']
+    const allowedStatuses = ['draft', 'validated', 'rejected', 'queued']
     if (!allowedStatuses.includes((invoice as any).status)) {
       return err(`Statut "${(invoice as any).status}" ne permet pas la soumission`, 409)
     }

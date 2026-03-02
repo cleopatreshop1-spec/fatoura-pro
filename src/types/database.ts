@@ -59,7 +59,7 @@ export interface Database {
           number: string
           issue_date: string
           due_date: string | null
-          status: 'draft' | 'pending' | 'valid' | 'rejected' | 'queued'
+          status: 'draft' | 'validated' | 'pending' | 'valid' | 'rejected' | 'queued'
           ht_amount: number
           tva_amount: number
           stamp_amount: number
