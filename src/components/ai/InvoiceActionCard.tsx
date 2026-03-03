@@ -17,9 +17,12 @@ export function InvoiceActionCard({ action, onSuccess, onEdit }: InvoiceActionCa
   const [cardState, setCardState] = useState<CardState>('pending')
   const [error, setError]         = useState<string | null>(null)
   const [createdInvoice, setCreatedInvoice] = useState<{ id: string; number: string } | null>(null)
+  const [clientNameInput, setClientNameInput] = useState(action.data.client_name ?? '')
   const router = useRouter()
 
   const { data } = action
+  // Use the locally-edited client name (may have been filled in by user)
+  const resolvedClientName = clientNameInput.trim() || null
 
   const totalHt  = data.lines.reduce((sum, l) => sum + l.quantity * l.unit_price, 0)
   const totalTva = data.lines.reduce((sum, l) => sum + l.quantity * l.unit_price * l.tva_rate / 100, 0)
@@ -30,7 +33,7 @@ export function InvoiceActionCard({ action, onSuccess, onEdit }: InvoiceActionCa
     setError(null)
 
     const payload = {
-      client_name:      data.client_name,
+      client_name:      resolvedClientName,
       client_matricule: data.client_matricule,
       invoice_date:     data.invoice_date,
       notes:            data.notes,
@@ -92,11 +95,18 @@ export function InvoiceActionCard({ action, onSuccess, onEdit }: InvoiceActionCa
         </div>
 
         <div className="px-4 py-3 space-y-2 text-sm">
-          <div className="flex justify-between items-center">
-            <span className="text-[#6b7280]">Client</span>
-            <span className="text-[#e8eaf0] font-medium">
-              {data.client_name ?? <span className="text-[#e05a5a] italic">Non détecté</span>}
-            </span>
+          <div className="flex justify-between items-center gap-2">
+            <span className="text-[#6b7280] shrink-0">Client</span>
+            {data.client_name ? (
+              <span className="text-[#e8eaf0] font-medium text-right">{data.client_name}</span>
+            ) : (
+              <input
+                value={clientNameInput}
+                onChange={e => setClientNameInput(e.target.value)}
+                placeholder="Entrez le nom du client…"
+                className="flex-1 bg-[#0f1118] border border-[#e05a5a]/60 focus:border-[#d4a843] rounded-lg px-2 py-1 text-xs text-white outline-none text-right placeholder-gray-600 transition-colors"
+              />
+            )}
           </div>
 
           <div className="border-t border-white/5 pt-2 space-y-1">
@@ -139,7 +149,9 @@ export function InvoiceActionCard({ action, onSuccess, onEdit }: InvoiceActionCa
           </button>
           <button
             onClick={handleCreate}
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-[#d4a843] text-black font-bold rounded-[8px] text-xs hover:bg-[#f0c060] transition-colors"
+            disabled={!resolvedClientName}
+            title={!resolvedClientName ? 'Entrez le nom du client avant de créer' : undefined}
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-[#d4a843] text-black font-bold rounded-[8px] text-xs hover:bg-[#f0c060] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             ✓ Créer la facture
           </button>

@@ -18,7 +18,7 @@ const createSchema = z.object({
   client_name:      z.string().optional().nullable(),
   client_matricule: z.string().optional().nullable(),
   source:           z.enum(['manual', 'ai', 'scan', 'recurring']).default('manual'),
-  invoice_date:     z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  invoice_date:     z.string().regex(/^\d{4}-\d{2}-\d{2}$/).default(new Date().toISOString().slice(0, 10)),
   due_date:         z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   notes:            z.string().optional().nullable(),
   status:           z.enum(['draft', 'queued']).default('draft'),
@@ -59,8 +59,13 @@ export async function POST(request: NextRequest) {
   try {
     const { user, company, supabase } = await getAuthenticatedCompany(request)
     const body = await request.json()
+    console.log('[POST /api/invoices] body received:', JSON.stringify(body))
     const parsed = createSchema.safeParse(body)
-    if (!parsed.success) return err(parsed.error.issues[0]?.message ?? 'Validation', 422)
+    if (!parsed.success) {
+      console.error('[POST /api/invoices] Zod validation failed:', parsed.error.issues)
+      return err(parsed.error.issues[0]?.message ?? 'Validation', 422)
+    }
+    console.log('[POST /api/invoices] parsed ok — client_name:', parsed.data.client_name, 'invoice_date:', parsed.data.invoice_date, 'lines:', parsed.data.lines.length)
 
     const { client_id, client_name, client_matricule, source, invoice_date, due_date, notes, status, lines } = parsed.data
 
@@ -96,7 +101,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (!resolvedClientId) return err('Client requis', 422)
+    if (!resolvedClientId) {
+      // AI flow: create a placeholder client so the invoice is never blocked
+      const fallbackName = 'Client à définir'
+      const { data: fb, error: fbErr } = await (supabase as any)
+        .from('clients')
+        .insert({ company_id: company.id, name: fallbackName, type: 'B2C' })
+        .select('id').single()
+      if (fbErr || !fb) return err('Client requis (impossible de créer un client par défaut)', 422)
+      resolvedClientId = fb.id
+    }
 
     // ── Server-side quota enforcement ──
     const { data: sub } = await (supabase as any)
