@@ -8,6 +8,8 @@ import { createClient } from '@/lib/supabase/client'
 import { InvoiceStatusBadge } from '@/components/invoice/InvoiceStatusBadge'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { nextInvoiceNumber } from '@/lib/utils/invoice-number'
+import { PaymentReminderButton } from '@/components/invoice/PaymentReminderButton'
+import { InvoiceTranslator } from '@/components/invoice/InvoiceTranslator'
 
 type InvoiceData = {
   id: string; number: string | null; status: string
@@ -16,6 +18,8 @@ type InvoiceData = {
   payment_status: string | null; paid_at: string | null
   created_at: string; submitted_at: string | null; validated_at: string | null
   company_id: string
+  ttc_amount?: number | null
+  client_name?: string | null
 }
 
 interface Props {
@@ -251,6 +255,23 @@ export function InvoiceDetailPanel({ invoice: initial, companyPrefix }: Props) {
           className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#1a1b22] text-sm text-gray-400 hover:text-white hover:bg-[#161b27] transition-colors">
           <RefreshCw size={14} />Dupliquer
         </button>
+
+        {/* ── AI Tools ── */}
+        <div className="pt-1 border-t border-[#1a1b22]">
+          <p className="text-[10px] text-gray-600 uppercase tracking-wider mb-2">Outils IA</p>
+          <div className="flex gap-2 flex-wrap">
+            {inv.payment_status !== 'paid' && (
+              <PaymentReminderButton
+                invoiceId={inv.id}
+                invoiceNumber={inv.number ?? ''}
+                clientName={inv.client_name ?? 'Client'}
+                amount={Number(inv.ttc_amount ?? 0)}
+                dueDate={inv.due_date}
+              />
+            )}
+            <InvoiceTranslator invoiceData={inv as Record<string, unknown>} />
+          </div>
+        </div>
 
         {['draft', 'validated'].includes(inv.status) && (
           <button onClick={() => setConfirmDelete(true)}

@@ -8,6 +8,7 @@ import type { InvoiceAction } from '@/lib/ai/action-parser'
 import { VoiceInput } from '@/components/ai/VoiceInput'
 import { InvoiceActionCard } from '@/components/ai/InvoiceActionCard'
 import { InvoiceScannerModal } from '@/components/ai/InvoiceScannerModal'
+import { ExpenseScannerButton } from '@/components/ai/ExpenseScannerButton'
 import type { ScannedInvoice } from '@/types/scanner'
 
 type GeminiPart    = { text: string }
@@ -316,6 +317,9 @@ Peux-tu créer cette facture dans le système ?`
             >
               📷
             </button>
+            <div className="shrink-0">
+              <ExpenseScannerButton />
+            </div>
             <VoiceInput
               disabled={loading}
               onTranscript={(text) => {
