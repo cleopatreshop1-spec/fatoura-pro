@@ -4,7 +4,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 export const maxDuration = 60
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
-const MODEL = 'gemini-2.0-flash'
+const MODEL = 'gemini-2.5-flash-preview-04-17'
 
 const SYSTEM_PROMPT = `You are an expert OCR system specialized in Tunisian business invoices.
 
