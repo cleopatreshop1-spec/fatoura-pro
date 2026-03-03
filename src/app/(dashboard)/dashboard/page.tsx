@@ -54,63 +54,45 @@ export default async function DashboardPage() {
   const ago14     = format(subDays(now, 14), 'yyyy-MM-dd')
   const in90      = format(addDays(now, 90), 'yyyy-MM-dd')
 
+  const db = supabase as any
+
   const [
-    { data: thisMonthValid },
-    { data: prevMonthValid },
-    { data: unpaidValid },
-    { data: paidThisMonth },
-    { data: paidLastMonth },
-    { data: tvaQtrRows },
-    { data: recentRaw },
-    { data: allInvoices90 },
-    { data: upcomingDue },
-    { data: recentPaid30 },
+    r_thisMonthV, r_thisMonthVld,
+    r_prevMonthV, r_prevMonthVld,
+    r_unpaidValid,
+    r_paidThisMonth,
+    r_paidLastMonth,
+    r_tvaQtrV, r_tvaQtrVld,
+    r_recent,
+    r_all90,
+    r_upcomingDue,
+    r_recentPaid,
   ] = await Promise.all([
-    // CA HT this month: fetch validated + valid separately and merge
-    Promise.all([
-      (supabase as any).from('invoices').select('id, ht_amount, status, issue_date, created_at').eq('company_id', companyId).eq('status', 'validated').is('deleted_at', null),
-      (supabase as any).from('invoices').select('id, ht_amount, status, issue_date, created_at').eq('company_id', companyId).eq('status', 'valid').is('deleted_at', null),
-    ]).then(([a, b]) => ({ data: [...(a.data ?? []), ...(b.data ?? [])], error: a.error ?? b.error })),
-
-    Promise.all([
-      (supabase as any).from('invoices').select('id, ht_amount, issue_date, created_at').eq('company_id', companyId).eq('status', 'validated').is('deleted_at', null),
-      (supabase as any).from('invoices').select('id, ht_amount, issue_date, created_at').eq('company_id', companyId).eq('status', 'valid').is('deleted_at', null),
-    ]).then(([a, b]) => ({ data: [...(a.data ?? []), ...(b.data ?? [])], error: a.error ?? b.error })),
-
-    supabase.from('invoices').select('id, ttc_amount, due_date, payment_status')
-      .eq('company_id', companyId).eq('status', 'valid')
-      .neq('payment_status', 'paid').is('deleted_at', null),
-
-    supabase.from('invoices').select('id, ttc_amount, payment_date')
-      .eq('company_id', companyId).eq('payment_status', 'paid')
-      .gte('payment_date', monthStart).lte('payment_date', todayStr).is('deleted_at', null),
-
-    supabase.from('invoices').select('id, ttc_amount')
-      .eq('company_id', companyId).eq('payment_status', 'paid')
-      .gte('payment_date', prevStart).lt('payment_date', prevEnd).is('deleted_at', null),
-
-    Promise.all([
-      (supabase as any).from('invoices').select('tva_amount, issue_date, created_at').eq('company_id', companyId).eq('status', 'validated').is('deleted_at', null),
-      (supabase as any).from('invoices').select('tva_amount, issue_date, created_at').eq('company_id', companyId).eq('status', 'valid').is('deleted_at', null),
-    ]).then(([a, b]) => ({ data: [...(a.data ?? []), ...(b.data ?? [])], error: a.error ?? b.error })),
-
-    supabase.from('invoices')
-      .select('id, number, status, issue_date, ttc_amount, payment_status, clients(name)')
-      .eq('company_id', companyId).is('deleted_at', null)
-      .order('created_at', { ascending: false }).limit(5),
-
-    supabase.from('invoices')
-      .select('id, status, payment_status, issue_date, created_at, validated_at, due_date, payment_date, ttc_amount, ht_amount')
-      .eq('company_id', companyId).gte('created_at', ago90).is('deleted_at', null),
-
-    (supabase as any).from('invoices').select('id, ttc_amount, due_date')
-      .eq('company_id', companyId).in('status', ['valid', 'validated']).neq('payment_status', 'paid')
-      .gte('due_date', todayStr).lte('due_date', in90).is('deleted_at', null),
-
-    supabase.from('invoices').select('id, ttc_amount, payment_date')
-      .eq('company_id', companyId).eq('payment_status', 'paid')
-      .gte('payment_date', ago90).lte('payment_date', todayStr).is('deleted_at', null),
+    db.from('invoices').select('id, ht_amount, status, issue_date, created_at').eq('company_id', companyId).eq('status', 'valid').is('deleted_at', null),
+    db.from('invoices').select('id, ht_amount, status, issue_date, created_at').eq('company_id', companyId).eq('status', 'validated').is('deleted_at', null),
+    db.from('invoices').select('id, ht_amount, issue_date, created_at').eq('company_id', companyId).eq('status', 'valid').is('deleted_at', null),
+    db.from('invoices').select('id, ht_amount, issue_date, created_at').eq('company_id', companyId).eq('status', 'validated').is('deleted_at', null),
+    db.from('invoices').select('id, ttc_amount, due_date, payment_status').eq('company_id', companyId).in('status', ['valid', 'validated']).neq('payment_status', 'paid').is('deleted_at', null),
+    db.from('invoices').select('id, ttc_amount, payment_date').eq('company_id', companyId).eq('payment_status', 'paid').gte('payment_date', monthStart).lte('payment_date', todayStr).is('deleted_at', null),
+    db.from('invoices').select('id, ttc_amount').eq('company_id', companyId).eq('payment_status', 'paid').gte('payment_date', prevStart).lt('payment_date', prevEnd).is('deleted_at', null),
+    db.from('invoices').select('tva_amount, issue_date, created_at').eq('company_id', companyId).eq('status', 'valid').is('deleted_at', null),
+    db.from('invoices').select('tva_amount, issue_date, created_at').eq('company_id', companyId).eq('status', 'validated').is('deleted_at', null),
+    db.from('invoices').select('id, number, status, issue_date, ttc_amount, payment_status, clients(name)').eq('company_id', companyId).is('deleted_at', null).order('created_at', { ascending: false }).limit(5),
+    db.from('invoices').select('id, status, payment_status, issue_date, created_at, validated_at, due_date, payment_date, ttc_amount, ht_amount').eq('company_id', companyId).gte('created_at', ago90).is('deleted_at', null),
+    db.from('invoices').select('id, ttc_amount, due_date').eq('company_id', companyId).in('status', ['valid', 'validated']).neq('payment_status', 'paid').gte('due_date', todayStr).lte('due_date', in90).is('deleted_at', null),
+    db.from('invoices').select('id, ttc_amount, payment_date').eq('company_id', companyId).eq('payment_status', 'paid').gte('payment_date', ago90).lte('payment_date', todayStr).is('deleted_at', null),
   ])
+
+  const thisMonthValid  = [...(r_thisMonthV.data ?? []),   ...(r_thisMonthVld.data ?? [])]
+  const prevMonthValid  = [...(r_prevMonthV.data ?? []),   ...(r_prevMonthVld.data ?? [])]
+  const unpaidValid     = r_unpaidValid.data    ?? []
+  const paidThisMonth   = r_paidThisMonth.data  ?? []
+  const paidLastMonth   = r_paidLastMonth.data  ?? []
+  const tvaQtrRows      = [...(r_tvaQtrV.data ?? []),      ...(r_tvaQtrVld.data ?? [])]
+  const recentRaw       = r_recent.data         ?? []
+  const allInvoices90   = r_all90.data          ?? []
+  const upcomingDue     = r_upcomingDue.data     ?? []
+  const recentPaid30    = r_recentPaid.data      ?? []
 
   // ── KPIs ──────────────────────────────────────────────────────────────
   // Use issue_date when set, fall back to created_at (handles invoices saved without a date)
@@ -232,17 +214,13 @@ export default async function DashboardPage() {
 
   const firstName = user.user_metadata?.first_name ?? user.email?.split('@')[0] ?? 'vous'
 
-  const { data: _rawCount, error: _rawErr } = await supabase
-    .from('invoices').select('id', { count: 'exact', head: true })
-    .eq('company_id', companyId ?? '').is('deleted_at', null)
-
   const _dbg = {
     uid: user.id.slice(0, 8),
     cid: companyId?.slice(0, 8),
-    all90: (allInvoices90 ?? []).length,
-    finalized: allFinalized90.length,
-    rawCount: (_rawCount as any)?.length ?? '?',
-    rawErr: (_rawErr as any)?.message ?? null,
+    all90: allInvoices90.length,
+    fin: allFinalized90.length,
+    all90err: r_all90.error?.message ?? null,
+    thisV: thisMonthValid.length,
     ago90,
   }
   console.log('[CHART_DEBUG]', JSON.stringify(_dbg))
@@ -250,8 +228,8 @@ export default async function DashboardPage() {
   return (
     <div>
       <div className="text-[10px] font-mono bg-black text-yellow-400 px-3 py-1 rounded mb-2 break-all">
-        DBG: uid={_dbg.uid} cid={_dbg.cid} all90={_dbg.all90} fin={_dbg.finalized}
-        {' | '}rawErr={_dbg.rawErr ?? 'none'} ago90={ago90}
+        DBG uid={_dbg.uid} cid={_dbg.cid} all90={_dbg.all90} fin={_dbg.fin} thisV={_dbg.thisV}
+        {' | '}all90err={_dbg.all90err ?? 'none'}
       </div>
       <Suspense fallback={null}><PaymentSuccessToast /></Suspense>
       <RealtimeProvider companyId={companyId} />
