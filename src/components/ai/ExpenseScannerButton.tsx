@@ -12,7 +12,11 @@ type ScannedExpense = {
   tva_amount: number | null
 }
 
-export function ExpenseScannerButton() {
+interface Props {
+  compact?: boolean
+}
+
+export function ExpenseScannerButton({ compact = false }: Props) {
   const [open, setOpen]         = useState(false)
   const [loading, setLoading]   = useState(false)
   const [result, setResult]     = useState<ScannedExpense | null>(null)
@@ -61,10 +65,14 @@ export function ExpenseScannerButton() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#1a1b22] bg-[#0f1118] text-xs text-gray-400 hover:text-[#d4a843] hover:border-[#d4a843]/40 transition-colors"
+        title="Scanner un reçu / note de frais"
+        className={compact
+          ? 'p-1.5 rounded-lg text-gray-500 hover:text-[#d4a843] transition-colors'
+          : 'flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#1a1b22] bg-[#0f1118] text-xs text-gray-400 hover:text-[#d4a843] hover:border-[#d4a843]/40 transition-colors'
+        }
       >
         <Receipt size={13} />
-        Scanner reçu
+        {!compact && <span>Scanner reçu</span>}
       </button>
 
       {open && (

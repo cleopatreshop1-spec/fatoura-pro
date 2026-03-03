@@ -318,7 +318,7 @@ Peux-tu créer cette facture dans le système ?`
               📷
             </button>
             <div className="shrink-0">
-              <ExpenseScannerButton />
+              <ExpenseScannerButton compact />
             </div>
             <VoiceInput
               disabled={loading}
