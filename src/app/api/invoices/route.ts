@@ -157,7 +157,6 @@ export async function POST(request: NextRequest) {
         due_date:   due_date ?? null,
         notes:      notes ?? null,
         status,
-        source:       source ?? 'manual',
         ht_amount:    totals.total_ht,
         tva_amount:   totals.total_tva,
         stamp_amount: totals.stamp_duty,
