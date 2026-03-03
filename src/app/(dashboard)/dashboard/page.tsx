@@ -232,14 +232,26 @@ export default async function DashboardPage() {
 
   const firstName = user.user_metadata?.first_name ?? user.email?.split('@')[0] ?? 'vous'
 
-  const _dbg = { all90: (allInvoices90 ?? []).length, finalized: allFinalized90.length, companyId, ago90, cashflowDataSample: cashflowData.slice(0,3) }
+  const { data: _rawCount, error: _rawErr } = await supabase
+    .from('invoices').select('id', { count: 'exact', head: true })
+    .eq('company_id', companyId ?? '').is('deleted_at', null)
+
+  const _dbg = {
+    uid: user.id.slice(0, 8),
+    cid: companyId?.slice(0, 8),
+    all90: (allInvoices90 ?? []).length,
+    finalized: allFinalized90.length,
+    rawCount: (_rawCount as any)?.length ?? '?',
+    rawErr: (_rawErr as any)?.message ?? null,
+    ago90,
+  }
   console.log('[CHART_DEBUG]', JSON.stringify(_dbg))
 
   return (
     <div>
       <div className="text-[10px] font-mono bg-black text-yellow-400 px-3 py-1 rounded mb-2 break-all">
-        DBG: all90={_dbg.all90} finalized={_dbg.finalized} cid={companyId?.slice(0,8)} ago90={ago90}
-        {' | '}sample={JSON.stringify(cashflowData.find(w => w.encaisse && w.encaisse > 0))}
+        DBG: uid={_dbg.uid} cid={_dbg.cid} all90={_dbg.all90} fin={_dbg.finalized}
+        {' | '}rawErr={_dbg.rawErr ?? 'none'} ago90={ago90}
       </div>
       <Suspense fallback={null}><PaymentSuccessToast /></Suspense>
       <RealtimeProvider companyId={companyId} />
