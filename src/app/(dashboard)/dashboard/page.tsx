@@ -214,23 +214,8 @@ export default async function DashboardPage() {
 
   const firstName = user.user_metadata?.first_name ?? user.email?.split('@')[0] ?? 'vous'
 
-  const _dbg = {
-    uid: user.id.slice(0, 8),
-    cid: companyId?.slice(0, 8),
-    all90: allInvoices90.length,
-    fin: allFinalized90.length,
-    all90err: r_all90.error?.message ?? null,
-    thisV: thisMonthValid.length,
-    ago90,
-  }
-  console.log('[CHART_DEBUG]', JSON.stringify(_dbg))
-
   return (
     <div>
-      <div className="text-[10px] font-mono bg-black text-yellow-400 px-3 py-1 rounded mb-2 break-all">
-        DBG uid={_dbg.uid} cid={_dbg.cid} all90={_dbg.all90} fin={_dbg.fin} thisV={_dbg.thisV}
-        {' | '}all90err={_dbg.all90err ?? 'none'}
-      </div>
       <Suspense fallback={null}><PaymentSuccessToast /></Suspense>
       <RealtimeProvider companyId={companyId} />
 
