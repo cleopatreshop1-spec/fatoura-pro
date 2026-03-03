@@ -14,20 +14,17 @@ export type PlanFeature =
 
 type Plan = 'starter' | 'essential' | 'pro' | 'fiduciaire' | 'unknown'
 
+const ALL_FEATURES: PlanFeature[] = [
+  'ttn_validator', 'payment_prediction', 'ocr', 'letters', 'anomaly_detection',
+  'forecast', 'ai_chat', 'voice', 'scan_receipt', 'fiduciaire_summary',
+]
+
 const PLAN_FEATURES: Record<Plan, PlanFeature[]> = {
-  starter: ['ttn_validator'],
-  essential: [
-    'ttn_validator', 'payment_prediction', 'ocr', 'letters', 'anomaly_detection',
-  ],
-  pro: [
-    'ttn_validator', 'payment_prediction', 'ocr', 'letters', 'anomaly_detection',
-    'forecast', 'ai_chat', 'voice', 'scan_receipt',
-  ],
-  fiduciaire: [
-    'ttn_validator', 'payment_prediction', 'ocr', 'letters', 'anomaly_detection',
-    'forecast', 'ai_chat', 'voice', 'scan_receipt', 'fiduciaire_summary',
-  ],
-  unknown: ['ttn_validator'],
+  starter:     ALL_FEATURES,
+  essential:   ALL_FEATURES,
+  pro:         ALL_FEATURES,
+  fiduciaire:  ALL_FEATURES,
+  unknown:     ALL_FEATURES,
 }
 
 const UPGRADE_MESSAGES: Record<PlanFeature, { message: string; minPlan: string }> = {
