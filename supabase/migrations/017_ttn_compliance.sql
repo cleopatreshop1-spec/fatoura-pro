@@ -66,6 +66,14 @@ ALTER TABLE companies ADD COLUMN IF NOT EXISTS
 ALTER TABLE companies ADD COLUMN IF NOT EXISTS
   ttn_sftp_pass_encrypted   TEXT;
 
+-- ─── invoices: payment_date column (app uses this, DB only had paid_at) ───────
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS
+  payment_date    DATE;
+
+-- Back-fill from paid_at where available
+UPDATE invoices SET payment_date = paid_at::DATE
+  WHERE paid_at IS NOT NULL AND payment_date IS NULL;
+
 -- ─── invoices: TTN reference columns ─────────────────────────────────────────
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS
   ttn_reference   VARCHAR(100);
