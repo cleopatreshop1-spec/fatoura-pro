@@ -74,8 +74,12 @@ export async function POST(request: NextRequest) {
     const rawText: string = result.response.text()
 
     // 6. Parse optional CREATE_INVOICE action
+    console.log('[AI Chat] raw response length:', rawText.length)
+    console.log('[AI Chat] contains %%ACTION%%:', rawText.includes('%%ACTION%%'))
+    console.log('[AI Chat] raw tail (500 chars):', rawText.slice(-500))
     const action      = parseAction(rawText)
     const displayText = action ? stripAction(rawText) : rawText
+    console.log('[AI Chat] action parsed:', action ? action.type : 'null')
 
     // 7. Mark proactive suggestions as read
     await (supabase as any).from('ai_suggestions')

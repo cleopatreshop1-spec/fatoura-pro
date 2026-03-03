@@ -167,14 +167,16 @@ export function AIChatPanel({ onClose, proactiveSuggestions = [] }: Props) {
         return
       }
 
-      const rawMessage = (data.message ?? 'Une erreur est survenue.') as string
-      const { text: aiText, action } = parseAIResponse(rawMessage)
+      const aiText = (data.message ?? 'Une erreur est survenue.') as string
+      // action comes pre-parsed from the server; do NOT re-parse aiText (it's already stripped)
+      const action = data.action ?? null
+      console.log('[AIChatPanel] action received:', action)
 
       setMessages(prev => prev.filter(m => m.id !== 'loading').concat({
         id: Date.now().toString(),
         role: 'model',
         content: aiText,
-        action: action ?? null,
+        action,
       }))
 
       // Update Gemini history for next turn (use clean text only)
