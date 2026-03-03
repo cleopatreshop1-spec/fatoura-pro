@@ -9,6 +9,7 @@ import { KpiCards } from '@/components/dashboard/KpiCards'
 import { CashFlowChart } from '@/components/dashboard/CashFlowChart'
 import { FiscalHealthScore } from '@/components/dashboard/FiscalHealthScore'
 import { RemindersPanel } from '@/components/dashboard/RemindersPanel'
+import { AIInsightsPanel } from '@/components/dashboard/AIInsightsPanel'
 import { RecentInvoicesTable } from '@/components/dashboard/RecentInvoicesTable'
 import type { InvoiceTableRow } from '@/components/dashboard/RecentInvoicesTable'
 import { format, subDays, addDays, parseISO, endOfWeek, eachWeekOfInterval } from 'date-fns'
@@ -273,7 +274,8 @@ export default async function DashboardPage() {
         </div>
 
         {/* ── RIGHT COLUMN — sticky on xl, normal on mobile ─────────── */}
-        <div className="w-full xl:w-96 shrink-0 xl:sticky xl:top-6">
+        <div className="w-full xl:w-96 shrink-0 xl:sticky xl:top-6 space-y-5">
+          <AIInsightsPanel />
           <RemindersPanel />
         </div>
       </div>

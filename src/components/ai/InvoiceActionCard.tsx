@@ -29,38 +29,49 @@ export function InvoiceActionCard({ action, onSuccess, onEdit }: InvoiceActionCa
     setCardState('creating')
     setError(null)
 
+    const payload = {
+      client_name:      data.client_name,
+      client_matricule: data.client_matricule,
+      invoice_date:     data.invoice_date,
+      notes:            data.notes,
+      source:           'ai',
+      lines: data.lines.map((l, i) => ({
+        sort_order:  i,
+        description: l.description,
+        quantity:    l.quantity,
+        unit_price:  l.unit_price,
+        tva_rate:    l.tva_rate,
+      })),
+    }
+
+    console.log('[AI Invoice] Step 1 — Payload built:', payload)
+
     try {
+      console.log('[AI Invoice] Step 2 — Calling POST /api/invoices...')
       const response = await fetch('/api/invoices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          client_name:      data.client_name,
-          client_matricule: data.client_matricule,
-          invoice_date:     data.invoice_date,
-          notes:            data.notes,
-          source:           'ai',
-          lines: data.lines.map((l, i) => ({
-            sort_order:  i,
-            description: l.description,
-            quantity:    l.quantity,
-            unit_price:  l.unit_price,
-            tva_rate:    l.tva_rate,
-          })),
-        }),
+        body: JSON.stringify(payload),
       })
 
+      console.log('[AI Invoice] Step 3 — HTTP status:', response.status)
       const result = await response.json()
+      console.log('[AI Invoice] Step 4 — Response body:', result)
 
       if (!response.ok) {
-        throw new Error(result.error || 'Erreur lors de la création')
+        throw new Error(result.error || `Erreur HTTP ${response.status}`)
       }
 
       const inv = result.invoice
+      if (!inv?.id) throw new Error('Réponse invalide: invoice manquante dans la réponse')
+
+      console.log('[AI Invoice] Step 5 — Invoice saved ✓ id:', inv.id, 'number:', inv.number)
       setCreatedInvoice({ id: inv.id, number: inv.number })
       setCardState('success')
       onSuccess(inv.id, inv.number)
 
     } catch (err) {
+      console.error('[AI Invoice] FAILED:', err)
       setError((err as Error).message)
       setCardState('error')
     }

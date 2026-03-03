@@ -1,5 +1,7 @@
 ﻿'use client'
 
+import { useState } from 'react'
+import { Sparkles, Loader2 } from 'lucide-react'
 import { fmtTND } from '@/lib/utils/tva-calculator'
 
 export type TvaRate = 0 | 7 | 13 | 19
@@ -33,17 +35,61 @@ const NI = 'bg-[#0a0b0f] border border-[#1a1b22] rounded-lg px-2.5 py-2 text-sm 
 const TI = 'bg-[#0a0b0f] border border-[#1a1b22] rounded-lg px-2.5 py-2 text-sm text-white outline-none focus:border-[#d4a843] transition-colors w-full'
 
 export function InvoiceLineItem({ line, index, isOnly, onChange, onRemove }: Props) {
-  return (
-    <div className="grid gap-2 items-start py-3 border-b border-[#1a1b22] last:border-0"
-      style={{ gridTemplateColumns: '1fr 80px 100px 130px 90px 90px 28px' }}>
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError]     = useState<string | null>(null)
 
-      {/* Description */}
-      <input
-        value={line.description}
-        onChange={e => onChange(line.id, 'description', e.target.value)}
-        placeholder="Prestation de service, produit..."
-        className={TI}
-      />
+  const handleAISuggest = async () => {
+    const keyword = line.description.trim()
+    if (!keyword) return
+    setAiLoading(true)
+    setAiError(null)
+    try {
+      const res = await fetch('/api/ai/suggest-line', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keyword }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Erreur IA')
+      if (data.description) onChange(line.id, 'description', data.description)
+      if (data.unit_price)  onChange(line.id, 'unit_price',  data.unit_price)
+      if (data.tva_rate != null) onChange(line.id, 'tva_rate', data.tva_rate)
+    } catch (e: any) {
+      setAiError(e.message)
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
+  const showAiBtn = line.description.trim().length >= 3
+
+  return (
+    <div className="border-b border-[#1a1b22] last:border-0 py-3 space-y-1.5">
+      <div className="grid gap-2 items-start"
+        style={{ gridTemplateColumns: '1fr 80px 100px 130px 90px 90px 28px' }}>
+
+      {/* Description + AI button */}
+      <div className="relative">
+        <input
+          value={line.description}
+          onChange={e => onChange(line.id, 'description', e.target.value)}
+          placeholder="Prestation de service, produit..."
+          className={`${TI} ${showAiBtn ? 'pr-8' : ''}`}
+        />
+        {showAiBtn && (
+          <button
+            type="button"
+            onClick={handleAISuggest}
+            disabled={aiLoading}
+            title="Générer description et prix avec l'IA"
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-[#d4a843] hover:text-[#f0c060] disabled:opacity-40 transition-colors"
+          >
+            {aiLoading
+              ? <Loader2 size={13} className="animate-spin" />
+              : <Sparkles size={13} />}
+          </button>
+        )}
+      </div>
 
       {/* Quantity */}
       <input
@@ -95,8 +141,14 @@ export function InvoiceLineItem({ line, index, isOnly, onChange, onRemove }: Pro
         className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-950/20 transition-colors disabled:opacity-20 disabled:cursor-not-allowed mt-0.5"
         title="Supprimer la ligne"
       >
-        
+        ✕
       </button>
+      </div>
+
+      {/* AI error */}
+      {aiError && (
+        <p className="text-[10px] text-red-400 px-1">{aiError}</p>
+      )}
     </div>
   )
 }

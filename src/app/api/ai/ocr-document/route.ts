@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     const base64 = Buffer.from(bytes).toString('base64')
 
     const genAI = getGeminiClient()
-    const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL ?? 'gemini-1.5-flash' })
+    const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL ?? 'gemini-2.5-flash' })
 
     const prompt = `Tu es un extracteur de données pour un logiciel de facturation tunisien.
 Analyse ce document et extrais UNIQUEMENT les lignes facturables.
