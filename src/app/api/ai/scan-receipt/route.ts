@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     const base64 = Buffer.from(bytes).toString('base64')
 
     const genAI = getGeminiClient()
-    const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL ?? 'gemini-2.5-flash' })
+    const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL ?? 'gemini-1.5-flash' })
 
     const prompt = `Analyse ce recu ou ticket de caisse tunisien.
 Extrais exactement ces donnees en JSON :

@@ -153,7 +153,7 @@ Ton : professionnel mais lisible. Texte fluide, pas de bullet points. En frança
 
     const genAI = getGeminiClient()
     const model = genAI.getGenerativeModel({
-      model: process.env.GEMINI_MODEL ?? 'gemini-2.5-flash',
+      model: process.env.GEMINI_MODEL ?? 'gemini-1.5-flash',
       generationConfig: { maxOutputTokens: 400, temperature: 0.3 },
     })
 
