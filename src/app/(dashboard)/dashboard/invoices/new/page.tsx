@@ -40,6 +40,8 @@ export default function NewInvoicePage() {
   const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().slice(0, 10))
   const [dueDate, setDueDate] = useState('')
   const [reference, setReference] = useState('')
+  const [currency, setCurrency] = useState<'TND' | 'EUR' | 'USD'>('TND')
+  const [exchangeRate, setExchangeRate] = useState<string>('1')
   const [lines, setLines] = useState<InvLine[]>([newLine()])
   const [notes, setNotes] = useState('')
   const [selectedClient, setSelectedClient] = useState<ComboClient | null>(null)
@@ -325,6 +327,8 @@ export default function NewInvoicePage() {
         notes:        notes || null,
         status,
         source:       'manual',
+        currency,
+        exchange_rate: parseFloat(exchangeRate) || 1,
         lines: lines.map((l, idx) => ({
           sort_order:  idx,
           description: l.description,
@@ -648,6 +652,23 @@ export default function NewInvoicePage() {
                 <input value={reference} onChange={e => setReference(e.target.value)}
                   placeholder="Bon de commande, projet..." className={IC} />
               </div>
+              <div>
+                <label className={LC}>Devise</label>
+                <select value={currency} onChange={e => setCurrency(e.target.value as 'TND' | 'EUR' | 'USD')} className={IC}>
+                  <option value="TND">TND — Dinar Tunisien</option>
+                  <option value="EUR">EUR — Euro</option>
+                  <option value="USD">USD — Dollar US</option>
+                </select>
+              </div>
+              {currency !== 'TND' && (
+                <div>
+                  <label className={LC}>Taux de change (1 {currency} = ? TND)</label>
+                  <input type="number" step="0.000001" min="0" value={exchangeRate}
+                    onChange={e => setExchangeRate(e.target.value)}
+                    className={IC} placeholder="Ex: 3.350" />
+                  <p className="text-[10px] text-gray-600 mt-1">Montants saisis en {currency}</p>
+                </div>
+              )}
             </div>
           </div>
 

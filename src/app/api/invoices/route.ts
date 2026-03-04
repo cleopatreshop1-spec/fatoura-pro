@@ -23,6 +23,8 @@ const createSchema = z.object({
   due_date:         z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   notes:            z.string().optional().nullable(),
   status:           z.enum(['draft', 'queued']).default('draft'),
+  currency:         z.enum(['TND', 'EUR', 'USD']).default('TND'),
+  exchange_rate:    z.number().positive().default(1),
   lines:            z.array(lineSchema).min(1, 'Au moins une ligne requise'),
 })
 
@@ -65,7 +67,7 @@ export async function POST(request: NextRequest) {
       return err(parsed.error.issues[0]?.message ?? 'Validation', 422)
     }
 
-    const { client_id, client_name, client_matricule, source, invoice_date, due_date, notes, status, lines } = parsed.data
+    const { client_id, client_name, client_matricule, source, invoice_date, due_date, notes, status, currency, exchange_rate, lines } = parsed.data
 
     // Resolve client: use client_id if provided, else resolve by name (AI flow)
     let resolvedClientId = client_id ?? null
@@ -148,19 +150,21 @@ export async function POST(request: NextRequest) {
     const { data: invoice, error: invErr } = await (supabase as any)
       .from('invoices')
       .insert({
-        company_id: company.id,
-        client_id:  resolvedClientId,
+        company_id:    company.id,
+        client_id:     resolvedClientId,
         number,
-        issue_date: invoice_date,
-        due_date:   due_date ?? null,
-        notes:      notes ? sanitizeString(notes, 1000) : null,
+        issue_date:    invoice_date,
+        due_date:      due_date ?? null,
+        notes:         notes ? sanitizeString(notes, 1000) : null,
         status,
-        ht_amount:    totals.total_ht,
-        tva_amount:   totals.total_tva,
-        stamp_amount: totals.stamp_duty,
-        ttc_amount:   totals.total_ttc,
+        currency,
+        exchange_rate,
+        ht_amount:     totals.total_ht,
+        tva_amount:    totals.total_tva,
+        stamp_amount:  totals.stamp_duty,
+        ttc_amount:    totals.total_ttc,
         total_in_words: totalInWords,
-        created_by: user.id,
+        created_by:    user.id,
       })
       .select('id, number').single()
 
