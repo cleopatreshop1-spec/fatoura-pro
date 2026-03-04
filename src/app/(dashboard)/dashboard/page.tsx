@@ -884,6 +884,48 @@ export default async function DashboardPage() {
             </div>
           )}
 
+          {/* WIDGET: Upcoming due in 7 / 30 days */}
+          {(() => {
+            const in7  = format(addDays(now, 7),  'yyyy-MM-dd')
+            const soon = (upcomingDue as any[]).filter((i: any) => i.due_date && i.due_date <= in7)
+            if (soon.length === 0) return null
+            const soonTotal = soon.reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
+            return (
+              <div className="bg-[#0f1118] border border-[#f59e0b]/20 rounded-2xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-xs font-bold text-[#f59e0b] uppercase tracking-wider">Échéances dans 7 jours</h2>
+                  <span className="text-[10px] font-mono font-bold text-[#f59e0b]">
+                    {new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(soonTotal)} TND
+                  </span>
+                </div>
+                <ul className="space-y-1.5">
+                  {soon.slice(0, 5).map((inv: any) => {
+                    const daysLeft = Math.ceil((new Date(inv.due_date).getTime() - Date.now()) / 86400000)
+                    return (
+                      <li key={inv.id}>
+                        <a href={`/dashboard/invoices/${inv.id}`}
+                          className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg border border-[#1a1b22] hover:border-[#f59e0b]/30 hover:bg-[#161b27] transition-all group">
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border shrink-0 ${
+                            daysLeft <= 1 ? 'text-red-400 bg-red-950/30 border-red-900/30' :
+                            daysLeft <= 3 ? 'text-orange-400 bg-orange-950/30 border-orange-900/30' :
+                            'text-[#f59e0b] bg-amber-950/30 border-amber-900/30'
+                          }`}>J-{daysLeft}</span>
+                          <span className="text-[10px] text-gray-400 flex-1 truncate">{inv.due_date ? new Date(inv.due_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : ''}</span>
+                          <span className="text-[10px] font-mono font-bold text-gray-300 shrink-0">
+                            {new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Number(inv.ttc_amount ?? 0))}
+                          </span>
+                        </a>
+                      </li>
+                    )
+                  })}
+                </ul>
+                {soon.length > 5 && (
+                  <p className="text-[10px] text-gray-600 text-center mt-2">+{soon.length - 5} autres</p>
+                )}
+              </div>
+            )
+          })()}
+
           <RecentActivityFeed items={recentActivity} />
           <RevenueGoalWidget
             caHT={caHT}
