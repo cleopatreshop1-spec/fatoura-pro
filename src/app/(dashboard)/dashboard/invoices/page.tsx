@@ -68,6 +68,7 @@ export default function InvoicesPage() {
   const [toast, setToast] = useState('')
   const [editingDueDate, setEditingDueDate] = useState<string | null>(null)
   const [zipProgress, setZipProgress] = useState<{ current: number; total: number } | null>(null)
+  const [monthlyGoal, setMonthlyGoal] = useState<number | null>(null)
   const [payDateInvoiceId, setPayDateInvoiceId] = useState<string | null>(null)
   const [payDate, setPayDate] = useState(new Date().toISOString().slice(0,10))
   const [bulkPayDate, setBulkPayDate] = useState(new Date().toISOString().slice(0,10))
@@ -105,6 +106,8 @@ export default function InvoicesPage() {
     if (!activeCompany?.id) return
     setLoading(true)
     const { data: cls } = await supabase.from('clients').select('id, name').eq('company_id', activeCompany.id).order('name')
+    const { data: co } = await (supabase as any).from('companies').select('monthly_revenue_goal').eq('id', activeCompany.id).single()
+    setMonthlyGoal(co?.monthly_revenue_goal ? Number(co.monthly_revenue_goal) : null)
     setClients((cls ?? []) as ClientRow[])
     const { data } = await supabase
       .from('invoices')
@@ -718,6 +721,7 @@ export default function InvoicesPage() {
 
       {/* Summary */}
       {filtered.length > 0 && (
+        <>
         <div className="sticky top-0 z-10 bg-[#080a0e]/90 backdrop-blur-sm border border-[#1a1b22] rounded-xl px-4 py-2.5 text-xs text-gray-500 flex flex-wrap gap-x-4 gap-y-1 items-center shadow-lg">
           <span className="font-bold text-gray-300">{filtered.length} facture{filtered.length!==1?'s':''}</span>
           <span className="text-gray-600">·</span>
@@ -743,6 +747,27 @@ export default function InvoicesPage() {
             </span>
           )}
         </div>
+        {monthlyGoal && monthlyGoal > 0 && (() => {
+          const nowD = new Date()
+          const thisMonth = `${nowD.getFullYear()}-${String(nowD.getMonth() + 1).padStart(2, '0')}`
+          const monthlyTTC = invoices.filter(i => (i.issue_date ?? '').startsWith(thisMonth) && i.status !== 'draft').reduce((s, i) => s + Number(i.ttc_amount ?? 0), 0)
+          const pct = Math.min(100, Math.round((monthlyTTC / monthlyGoal) * 100))
+          return (
+            <div className="mt-2 space-y-1">
+              <div className="flex items-center justify-between text-[10px] text-gray-600">
+                <span>Objectif mensuel</span>
+                <span className={`font-mono font-bold ${pct >= 100 ? 'text-[#2dd4a0]' : pct >= 75 ? 'text-[#d4a843]' : 'text-gray-500'}`}>
+                  {fmtTND(monthlyTTC)} / {fmtTND(monthlyGoal)} TND ({pct}%)
+                </span>
+              </div>
+              <div className="h-1.5 bg-[#1a1b22] rounded-full overflow-hidden">
+                <div className={`h-full rounded-full transition-all duration-700 ${pct >= 100 ? 'bg-[#2dd4a0]' : pct >= 75 ? 'bg-[#d4a843]' : 'bg-[#4a9eff]'}`}
+                  style={{ width: `${pct}%` }} />
+              </div>
+            </div>
+          )
+        })()}
+        </>
       )}
 
       {/* Per-client revenue summary (top 5) */}
