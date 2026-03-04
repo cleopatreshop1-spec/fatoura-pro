@@ -443,6 +443,11 @@ export default async function DashboardPage() {
 
   const firstName = user.user_metadata?.first_name ?? user.email?.split('@')[0] ?? 'vous'
 
+  // ── Net Cash Position (this month) ───────────────────────────────────
+  const cashCollectedMonth = (paidThisMonth as any[]).reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
+  const netCash = cashCollectedMonth - expensesTotal
+  const netCashPct = cashCollectedMonth > 0 ? Math.round((netCash / cashCollectedMonth) * 100) : 0
+
   // ── Recent activity feed (last 14 days) ───────────────────────────
   const activityItems: ActivityItem[] = []
   for (const inv of (allInvoices90 as any[]).filter(i => (i.created_at ?? '') >= ago14).slice(0, 6)) {
@@ -547,6 +552,45 @@ export default async function DashboardPage() {
             month={monthLabel}
             monthlyExpenses={expSparkline6m}
           />
+
+          {/* WIDGET: Net Cash Position */}
+          {(cashCollectedMonth > 0 || expensesTotal > 0) && (
+            <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xs font-bold text-[#d4a843] uppercase tracking-wider">Trésorerie nette (ce mois)</h2>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                  netCash >= 0 ? 'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20'
+                               : 'text-red-400 bg-red-950/20 border-red-900/30'
+                }`}>{netCash >= 0 ? '+' : ''}{netCashPct}%</span>
+              </div>
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                {[
+                  { label: 'Encaissé', value: cashCollectedMonth, color: 'text-[#2dd4a0]' },
+                  { label: 'Dépenses', value: expensesTotal,      color: 'text-red-400' },
+                  { label: 'Net',      value: netCash,             color: netCash >= 0 ? 'text-[#2dd4a0]' : 'text-red-400' },
+                ].map(k => (
+                  <div key={k.label} className="text-center">
+                    <p className="text-[10px] text-gray-600 uppercase tracking-wider mb-1">{k.label}</p>
+                    <p className={`text-sm font-mono font-bold ${k.color}`}>
+                      {netCash < 0 && k.label === 'Net' ? '-' : ''}{new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.abs(k.value))}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              {cashCollectedMonth > 0 && (
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-[10px] text-gray-600 mb-1">
+                    <span>Encaissé</span><span>Dépenses</span>
+                  </div>
+                  <div className="h-2 bg-[#1a1b22] rounded-full overflow-hidden flex">
+                    <div className="h-full bg-[#2dd4a0] rounded-l-full transition-all duration-700"
+                      style={{ width: `${Math.min(100, Math.round((cashCollectedMonth / (cashCollectedMonth + expensesTotal)) * 100))}%` }} />
+                    <div className="h-full bg-red-500/70 rounded-r-full transition-all duration-700 flex-1" />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* WIDGET: Expense Category Donut */}
           {expByCat.length > 0 && (
