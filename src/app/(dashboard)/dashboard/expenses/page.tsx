@@ -1,7 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Plus, Search, Trash2, Receipt, TrendingDown } from 'lucide-react'
+import { Plus, Search, Trash2, Receipt, TrendingDown, Download } from 'lucide-react'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { createClient } from '@/lib/supabase/client'
 import { useCompany } from '@/contexts/CompanyContext'
 import { fmtTND } from '@/lib/utils/tva-calculator'
@@ -129,6 +130,18 @@ export default function ExpensesPage() {
     load()
   }
 
+  function exportCSV() {
+    const header = 'Date,Description,Catégorie,Montant (TND),Notes'
+    const rows = expenses.map(e =>
+      [e.date, `"${e.description.replace(/"/g,'""')}"`, e.category, e.amount, e.notes ? `"${e.notes.replace(/"/g,'""')}"` : ''].join(',')
+    )
+    const csv = [header, ...rows].join('\n')
+    const a = document.createElement('a')
+    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv)
+    a.download = `depenses_${new Date().toISOString().slice(0,10)}.csv`
+    a.click()
+  }
+
   return (
     <div className="space-y-5">
       {toast && (
@@ -146,13 +159,21 @@ export default function ExpensesPage() {
           </h1>
           <p className="text-gray-500 text-sm">Suivez vos dépenses et charges</p>
         </div>
-        <button
-          onClick={() => setFormOpen(o => !o)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-[#d4a843] hover:bg-[#f0c060] text-black text-sm font-bold rounded-xl transition-colors"
-        >
-          <Plus size={15} strokeWidth={2.5} />
-          Nouvelle dépense
-        </button>
+        <div className="flex items-center gap-2">
+          {expenses.length > 0 && (
+            <button onClick={exportCSV}
+              className="flex items-center gap-2 px-3 py-2 border border-[#1a1b22] text-gray-400 hover:text-white text-sm rounded-xl transition-colors">
+              <Download size={13} />CSV
+            </button>
+          )}
+          <button
+            onClick={() => setFormOpen(o => !o)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#d4a843] hover:bg-[#f0c060] text-black text-sm font-bold rounded-xl transition-colors"
+          >
+            <Plus size={15} strokeWidth={2.5} />
+            Nouvelle dépense
+          </button>
+        </div>
       </div>
 
       {/* KPI row */}
@@ -172,6 +193,36 @@ export default function ExpensesPage() {
           </div>
         ))}
       </div>
+
+      {/* Category bar chart */}
+      {expenses.length > 0 && (() => {
+        const chartData = CATEGORIES
+          .map(c => ({ name: c.label.split(' ')[0], amount: totals.byCat[c.value] ?? 0 }))
+          .filter(d => d.amount > 0)
+          .sort((a, b) => b.amount - a.amount)
+        const BAR_COLORS = ['#ef4444','#f97316','#f59e0b','#d4a843','#a855f7','#ec4899','#14b8a6','#3b82f6','#2dd4a0','#6b7280']
+        return (
+          <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-5">
+            <h3 className="text-xs font-bold text-[#d4a843] uppercase tracking-wider mb-4">Répartition par catégorie</h3>
+            <div className="h-[180px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 0, right: 4, left: 0, bottom: 0 }}>
+                  <XAxis dataKey="name" tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <YAxis tickFormatter={v => fmtTND(v)} tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} width={52} />
+                  <Tooltip
+                    contentStyle={{ background: '#0a0b0f', border: '1px solid #1a1b22', borderRadius: '8px', fontSize: '11px' }}
+                    formatter={(v: any) => [fmtTND(Number(v ?? 0)) + ' TND', 'Montant']}
+                    labelStyle={{ color: '#9ca3af' }}
+                  />
+                  <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
+                    {chartData.map((_, i) => <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} fillOpacity={0.85} />)}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Add expense form */}
       {formOpen && (
