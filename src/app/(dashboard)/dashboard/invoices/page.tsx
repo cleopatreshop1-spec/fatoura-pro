@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Plus, Search, MoreVertical, FileText, ChevronUp, ChevronDown, CheckSquare, Trash2, Download, DollarSign, Columns2 } from 'lucide-react'
+import { Plus, Search, MoreVertical, FileText, ChevronUp, ChevronDown, CheckSquare, Trash2, Download, DollarSign, Columns2, Bookmark, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useCompany } from '@/contexts/CompanyContext'
 import { InvoiceStatusBadge } from '@/components/invoice/InvoiceStatusBadge'
@@ -25,6 +25,7 @@ type InvRow = {
 }
 type SortField = 'number' | 'issue_date' | 'due_date' | 'ttc_amount' | 'status'
 type ClientRow = { id: string; name: string }
+type FilterPreset = { name: string; status: string; payment: string; period: string; client: string; amountMin: string; amountMax: string }
 const PAGE_SIZE = 25
 
 function getPeriodRange(p: string): { from: string; to: string } {
@@ -71,6 +72,34 @@ export default function InvoicesPage() {
   const [payDate, setPayDate] = useState(new Date().toISOString().slice(0,10))
   const [bulkPayDate, setBulkPayDate] = useState(new Date().toISOString().slice(0,10))
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [savedPresets, setSavedPresets] = useState<FilterPreset[]>(() => {
+    try { return JSON.parse(localStorage.getItem('inv_filter_presets') ?? '[]') } catch { return [] }
+  })
+
+  function savePreset() {
+    const name = window.prompt('Nom du preset :')
+    if (!name?.trim()) return
+    const preset: FilterPreset = { name: name.trim(), status: statusFilter, payment: paymentFilter, period, client: clientFilter, amountMin, amountMax }
+    const next = [...savedPresets.filter(p => p.name !== preset.name), preset]
+    setSavedPresets(next)
+    localStorage.setItem('inv_filter_presets', JSON.stringify(next))
+  }
+
+  function applyPreset(p: FilterPreset) {
+    setStatusFilter(p.status)
+    setPaymentFilter(p.payment as any)
+    setPeriod(p.period)
+    setClientFilter(p.client)
+    setAmountMin(p.amountMin)
+    setAmountMax(p.amountMax)
+    setPage(1)
+  }
+
+  function deletePreset(name: string) {
+    const next = savedPresets.filter(p => p.name !== name)
+    setSavedPresets(next)
+    localStorage.setItem('inv_filter_presets', JSON.stringify(next))
+  }
 
   const load = useCallback(async () => {
     if (!activeCompany?.id) return
@@ -594,6 +623,37 @@ export default function InvoicesPage() {
               </button>
             )
           })}
+        </div>
+      )}
+
+      {/* Saved filter presets */}
+      {(savedPresets.length > 0) && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-[10px] text-gray-600 uppercase tracking-wider font-semibold">Presets :</span>
+          {savedPresets.map(p => (
+            <div key={p.name} className="flex items-center gap-0">
+              <button onClick={() => applyPreset(p)}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-l-lg border border-[#1a1b22] text-[10px] font-medium text-gray-400 hover:text-[#d4a843] hover:border-[#d4a843]/30 transition-colors">
+                <Bookmark size={9} />{p.name}
+              </button>
+              <button onClick={() => deletePreset(p.name)}
+                className="px-1.5 py-1 rounded-r-lg border border-l-0 border-[#1a1b22] text-[10px] text-gray-700 hover:text-red-400 hover:border-red-900/30 transition-colors">
+                <X size={9} />
+              </button>
+            </div>
+          ))}
+          <button onClick={savePreset}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-dashed border-[#252830] text-[10px] text-gray-600 hover:text-[#d4a843] hover:border-[#d4a843]/30 transition-colors">
+            <Bookmark size={9} />Sauvegarder les filtres
+          </button>
+        </div>
+      )}
+      {savedPresets.length === 0 && (
+        <div className="flex items-center">
+          <button onClick={savePreset}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-dashed border-[#252830] text-[10px] text-gray-600 hover:text-[#d4a843] hover:border-[#d4a843]/30 transition-colors">
+            <Bookmark size={9} />Sauvegarder les filtres
+          </button>
         </div>
       )}
 
