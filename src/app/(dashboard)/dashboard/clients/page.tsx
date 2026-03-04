@@ -94,6 +94,17 @@ export default function ClientsPage() {
     return { count, ca, balance, unpaid }
   }
 
+  function getRisk(c: ClientRow): { label: string; color: string; bg: string } | null {
+    const { count, ca, balance, unpaid } = getStats(c)
+    if (count === 0) return null
+    const unpaidRatio = count > 0 ? unpaid / count : 0
+    const balanceRatio = ca > 0 ? balance / ca : 0
+    const score = unpaidRatio * 0.5 + balanceRatio * 0.5
+    if (score >= 0.6) return { label: 'Risque élevé', color: 'text-red-400',    bg: 'bg-red-950/30 border-red-900/30' }
+    if (score >= 0.3) return { label: 'Risque moyen', color: 'text-[#f59e0b]', bg: 'bg-[#f59e0b]/10 border-[#f59e0b]/20' }
+    return null
+  }
+
   // Filtered + searched + sorted clients
   const filtered = useMemo(() => {
     let list = clients
@@ -395,6 +406,7 @@ export default function ClientsPage() {
                   {paginated.map(c => {
                     const { count, ca, balance, unpaid } = getStats(c)
                     const lastInvDate = c.invoices?.reduce((m: string, i: any) => i.status !== 'draft' && (i.issue_date ?? '') > m ? (i.issue_date ?? '') : m, '') ?? ''
+                    const risk = getRisk(c)
                     return (
                       <tr key={c.id} className={`hover:bg-[#161b27]/50 transition-colors ${selected.has(c.id) ? 'bg-red-950/10' : ''}`}>
                         <td className="px-4 py-3 w-8">
@@ -402,10 +414,16 @@ export default function ClientsPage() {
                             className="w-3.5 h-3.5 rounded accent-[#d4a843] cursor-pointer" />
                         </td>
                         <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <Link href={`/dashboard/clients/${c.id}`} className="font-medium text-gray-200 hover:text-[#d4a843] transition-colors">
                               {c.name}
                             </Link>
+                            {risk && (
+                              <span title="Score de risque basé sur le ratio impayés/CA"
+                                className={`shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded border ${risk.color} ${risk.bg}`}>
+                                {risk.label}
+                              </span>
+                            )}
                             {count > 0 && balance > 0 && (
                               <span title={`${unpaid} facture${unpaid > 1 ? 's' : ''} impayée${unpaid > 1 ? 's' : ''}`}
                                 className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-950/40 text-amber-400 border border-amber-900/30">
