@@ -7,6 +7,7 @@ import { z } from 'zod'
 import { useCompany } from '@/contexts/CompanyContext'
 import { createClient } from '@/lib/supabase/client'
 import { CreateCompanyCard } from '@/components/company/CreateCompanyCard'
+import { sanitizeString } from '@/lib/utils/sanitize'
 
 const GOUVERNORATS = ['Tunis','Ariana','Ben Arous','Manouba','Nabeul','Zaghouan','Bizerte','Beja','Jendouba','Kef','Siliana','Sousse','Monastir','Mahdia','Sfax','Kairouan','Kasserine','Sidi Bouzid','Gabes','Medenine','Tataouine','Gafsa','Tozeur','Kebili']
 
@@ -92,12 +93,17 @@ export function CompanyTab() {
     if (!activeCompany?.id) return
     setSaving(true); setSaved(false)
     await supabase.from('companies').update({
-      name: data.name, matricule_fiscal: data.matricule_fiscal || null,
-      tva_regime: data.tva_regime, address: data.address || null,
-      gouvernorat: data.gouvernorat || null, postal_code: data.postal_code || null,
-      phone: data.phone || null, email: data.email || null,
-      bank_name: data.bank_name || null, bank_rib: data.bank_rib || null,
-      invoice_prefix: data.invoice_prefix || 'FP',
+      name:             sanitizeString(data.name, 200),
+      matricule_fiscal: data.matricule_fiscal ? sanitizeString(data.matricule_fiscal, 50) : null,
+      tva_regime:       data.tva_regime,
+      address:          data.address   ? sanitizeString(data.address, 300)   : null,
+      gouvernorat:      data.gouvernorat ? sanitizeString(data.gouvernorat, 100) : null,
+      postal_code:      data.postal_code ? sanitizeString(data.postal_code, 20)  : null,
+      phone:            data.phone     ? sanitizeString(data.phone, 30)     : null,
+      email:            data.email     ? sanitizeString(data.email, 200)    : null,
+      bank_name:        data.bank_name ? sanitizeString(data.bank_name, 100) : null,
+      bank_rib:         data.bank_rib  ? sanitizeString(data.bank_rib, 50)  : null,
+      invoice_prefix:   sanitizeString(data.invoice_prefix || 'FP', 10),
     }).eq('id', activeCompany.id)
     await refreshCompanies()
     setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 3000)
