@@ -130,11 +130,22 @@ export function CashFlowChart({ data, paidThisMonth, unpaidTotal, caHT }: Props)
       </div>
 
       {/* Bottom metrics */}
-      <div className="grid grid-cols-3 gap-4 mt-5 pt-4 border-t border-[#1a1b22]">
+      <div className="grid grid-cols-4 gap-3 mt-5 pt-4 border-t border-[#1a1b22]">
         {[
           { label: 'CA ce mois (HT)', value: fmtTND(caHT) + ' TND', color: 'text-white' },
-          { label: 'Payé reçu', value: fmtTND(paidThisMonth) + ' TND', color: 'text-[#2dd4a0]' },
+          { label: 'Encaissé', value: fmtTND(paidThisMonth) + ' TND', color: 'text-[#2dd4a0]' },
           { label: 'En attente', value: fmtTND(unpaidTotal) + ' TND', color: 'text-[#f59e0b]' },
+          {
+            label: 'Taux recouvrement',
+            value: (caHT + unpaidTotal) > 0
+              ? Math.round((paidThisMonth / (paidThisMonth + unpaidTotal)) * 100) + '%'
+              : '—',
+            color: (() => {
+              const rate = (paidThisMonth + unpaidTotal) > 0
+                ? paidThisMonth / (paidThisMonth + unpaidTotal) : 0
+              return rate >= 0.8 ? 'text-[#2dd4a0]' : rate >= 0.5 ? 'text-[#f59e0b]' : 'text-red-400'
+            })(),
+          },
         ].map(m => (
           <div key={m.label} className="text-center">
             <p className={`text-sm font-mono font-bold ${m.color}`}>{m.value}</p>
