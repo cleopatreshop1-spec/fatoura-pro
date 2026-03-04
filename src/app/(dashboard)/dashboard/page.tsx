@@ -356,6 +356,18 @@ export default async function DashboardPage() {
     .sort((a, b) => b.totalTTC - a.totalTTC)
     .slice(0, 5)
 
+  // ── Worst overdue client ─────────────────────────────────────────────
+  const overdueByClient: Record<string, { id: string; name: string; overdue: number; count: number }> = {}
+  for (const inv of clientInvRaw as any[]) {
+    const cl = inv.clients as any
+    if (!cl?.id || inv.payment_status === 'paid') continue
+    if (!inv.due_date || inv.due_date >= todayStr) continue
+    if (!overdueByClient[cl.id]) overdueByClient[cl.id] = { id: cl.id, name: cl.name, overdue: 0, count: 0 }
+    overdueByClient[cl.id].overdue += Number(inv.ttc_amount ?? 0)
+    overdueByClient[cl.id].count   += 1
+  }
+  const worstOverdue = Object.values(overdueByClient).sort((a, b) => b.overdue - a.overdue)[0] ?? null
+
   const firstName = user.user_metadata?.first_name ?? user.email?.split('@')[0] ?? 'vous'
 
   return (
@@ -445,6 +457,28 @@ export default async function DashboardPage() {
 
         {/* ── RIGHT COLUMN — sticky on xl, normal on mobile ─────────── */}
         <div className="w-full xl:w-96 shrink-0 xl:sticky xl:top-6 space-y-5">
+
+          {/* Overdue client alert */}
+          {worstOverdue && (
+            <a href={`/dashboard/clients/${worstOverdue.id}`}
+              className="block bg-[#0f1118] border border-red-900/40 rounded-2xl px-4 py-4 hover:border-red-700/60 transition-colors group">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-red-950/40 border border-red-900/40 flex items-center justify-center shrink-0">
+                  <span className="text-sm">⚠</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] text-red-400 font-bold uppercase tracking-wider mb-0.5">Créance en retard</p>
+                  <p className="text-sm font-bold text-white truncate group-hover:text-red-300 transition-colors">{worstOverdue.name}</p>
+                  <p className="text-xs font-mono text-red-400 mt-0.5">
+                    {new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 3 }).format(worstOverdue.overdue)} TND
+                    <span className="text-gray-600 font-sans ml-1.5">— {worstOverdue.count} fact. impayée{worstOverdue.count > 1 ? 's' : ''}</span>
+                  </p>
+                </div>
+                <span className="text-gray-600 group-hover:text-red-400 transition-colors text-sm">→</span>
+              </div>
+            </a>
+          )}
+
           <TopClientsWidget clients={topClients} />
           <AIInsightsPanel />
           <RemindersPanel />
