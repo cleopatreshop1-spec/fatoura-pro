@@ -145,6 +145,29 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
         ))}
       </div>
 
+      {/* Lifetime value badge */}
+      {totalTTC > 0 && validInvs.length >= 2 && (() => {
+        const firstDate = validInvs.map((i: any) => i.issue_date).filter(Boolean).sort()[0]
+        const monthsSince = firstDate ? Math.max(1, Math.round((now.getTime() - new Date(firstDate).getTime()) / (86400000 * 30))) : null
+        const ltv = totalTTC
+        const monthly = monthsSince ? Math.round((ltv / monthsSince) * 1000) / 1000 : null
+        return (
+          <div className="bg-[#0f1118] border border-[#d4a843]/20 rounded-2xl px-4 py-3 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] text-gray-600 uppercase tracking-wider mb-1">Valeur client à vie (LTV)</p>
+              <p className="text-xl font-mono font-black text-[#d4a843]">{fmtTND(ltv)} <span className="text-sm font-normal text-gray-500">TND</span></p>
+            </div>
+            {monthly !== null && (
+              <div className="text-right">
+                <p className="text-[10px] text-gray-600 mb-0.5">CA moyen / mois</p>
+                <p className="text-sm font-mono font-bold text-[#d4a843]/70">{fmtTND(monthly)} TND</p>
+                <p className="text-[9px] text-gray-600">sur {monthsSince} mois</p>
+              </div>
+            )}
+          </div>
+        )
+      })()}
+
       {/* Risk score breakdown */}
       {riskResult?.level && validInvs.length >= 2 && (
         <div className={`bg-[#0f1118] border rounded-2xl p-4 ${
