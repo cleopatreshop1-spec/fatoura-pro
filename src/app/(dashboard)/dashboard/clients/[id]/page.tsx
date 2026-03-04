@@ -95,7 +95,15 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
         <Link href="/dashboard/clients" className="text-gray-500 hover:text-gray-300 text-sm transition-colors">Clients</Link>
         <span className="text-gray-700">/</span>
         <h1 className="text-lg font-bold text-white truncate">{c.name}</h1>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          <Link href={`/dashboard/invoices/new?client_id=${id}`}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#d4a843]/30 bg-[#d4a843]/10 text-xs font-bold text-[#d4a843] hover:bg-[#d4a843]/20 transition-colors">
+            + Facture
+          </Link>
+          <Link href={`/dashboard/expenses?client=${encodeURIComponent(c.name ?? '')}`}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#1a1b22] text-xs text-gray-400 hover:text-[#2dd4a0] hover:border-[#2dd4a0]/30 transition-colors">
+            Dépenses →
+          </Link>
           <ClientStatementButton clientId={id} clientName={c.name ?? 'client'} clientEmail={c.email ?? null} />
         </div>
         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${typeColor}`}>{c.type ?? 'B2B'}</span>
