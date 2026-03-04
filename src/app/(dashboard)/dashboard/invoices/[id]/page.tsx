@@ -202,6 +202,35 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
               paid_at={i.paid_at ?? null}
             />
           </div>
+          {/* Line items summary */}
+          {ls.length > 0 && (
+            <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4 print:hidden">
+              <p className="text-[10px] text-gray-600 uppercase tracking-wider font-semibold mb-3">Lignes ({ls.length})</p>
+              <div className="space-y-1.5 mb-3 max-h-[160px] overflow-y-auto pr-1">
+                {ls.map((l: any, idx: number) => (
+                  <div key={l.id ?? idx} className="flex items-start justify-between gap-2">
+                    <span className="text-[11px] text-gray-400 truncate flex-1 leading-tight">{l.description || '—'}</span>
+                    <span className="text-[11px] font-mono text-gray-300 shrink-0">{fmtTND(Number(l.line_ttc ?? 0))} TND</span>
+                  </div>
+                ))}
+              </div>
+              <div className="border-t border-[#1a1b22] pt-2.5 space-y-1">
+                <div className="flex justify-between text-[10px] text-gray-600">
+                  <span>Sous-total HT</span>
+                  <span className="font-mono">{fmtTND(Number(i.ht_amount ?? 0))} TND</span>
+                </div>
+                <div className="flex justify-between text-[10px] text-gray-600">
+                  <span>TVA</span>
+                  <span className="font-mono">{fmtTND(Number(i.tva_amount ?? 0))} TND</span>
+                </div>
+                <div className="flex justify-between text-xs font-bold text-white pt-1 border-t border-[#1a1b22]">
+                  <span>Total TTC</span>
+                  <span className="font-mono text-[#d4a843]">{fmtTND(Number(i.ttc_amount ?? 0))} TND</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           <InvoiceDetailPanel
             invoice={{
               id: i.id, number: i.number, status: i.status ?? 'draft',
