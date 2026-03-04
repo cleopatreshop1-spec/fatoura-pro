@@ -56,6 +56,48 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ── Light mode overrides ───────────────────────────────────────────── */
+html[data-theme="light"] {
+  --fp-bg:           #f4f5f7;
+  --fp-surface:      #ffffff;
+  --fp-surface-2:    #f0f2f5;
+  --fp-border:       #e2e4e9;
+  --fp-border-2:     #d1d5db;
+  --fp-text-primary:   #0f172a;
+  --fp-text-secondary: #475569;
+  --fp-text-muted:     #64748b;
+  --fp-text-dim:       #94a3b8;
+  --background: var(--fp-bg);
+  --foreground: var(--fp-text-primary);
+}
+
+/* Remap Tailwind arbitrary bg/border/text tokens used throughout the app */
+html[data-theme="light"] .bg-\[\#080a0f\]   { background-color: #f4f5f7 !important; }
+html[data-theme="light"] .bg-\[\#0f1118\]   { background-color: #ffffff !important; }
+html[data-theme="light"] .bg-\[\#0a0b0f\]   { background-color: #f9fafb !important; }
+html[data-theme="light"] .bg-\[\#161b27\]   { background-color: #f0f2f5 !important; }
+html[data-theme="light"] .border-\[\#1a1b22\] { border-color: #e2e4e9 !important; }
+html[data-theme="light"] .border-\[\#252830\] { border-color: #d1d5db !important; }
+html[data-theme="light"] .text-white         { color: #0f172a !important; }
+html[data-theme="light"] .text-gray-200      { color: #1e293b !important; }
+html[data-theme="light"] .text-gray-300      { color: #334155 !important; }
+html[data-theme="light"] .text-gray-400      { color: #475569 !important; }
+html[data-theme="light"] .text-gray-500      { color: #64748b !important; }
+html[data-theme="light"] .text-gray-600      { color: #64748b !important; }
+html[data-theme="light"] .text-gray-700      { color: #94a3b8 !important; }
+html[data-theme="light"] .divide-\[\#1a1b22\] > * + * { border-color: #e2e4e9 !important; }
+html[data-theme="light"] .hover\:bg-\[\#161b27\]\/50:hover { background-color: rgba(240,242,245,0.8) !important; }
+html[data-theme="light"] .hover\:border-\[\#252830\]:hover { border-color: #d1d5db !important; }
+html[data-theme="light"] input,
+html[data-theme="light"] select,
+html[data-theme="light"] textarea {
+  background-color: #f9fafb !important;
+  color: #0f172a !important;
+  border-color: #d1d5db !important;
+}
+html[data-theme="light"] input::placeholder,
+html[data-theme="light"] textarea::placeholder { color: #94a3b8 !important; }
+
 /* ── Scrollbar styling ─────────────────────────────────────────────── */
 ::-webkit-scrollbar              { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track        { background: var(--fp-surface); }

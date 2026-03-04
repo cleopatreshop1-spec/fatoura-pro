@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Menu, Plus, LogOut, Settings, ChevronRight, Search } from 'lucide-react'
+import { ThemeToggle } from '@/components/shared/ThemeToggle'
 import { FiduciaireSwitcher } from './FiduciaireSwitcher'
 import { NotificationsDropdown } from './NotificationsDropdown'
 import { createClient } from '@/lib/supabase/client'
@@ -123,6 +124,7 @@ export function Header({ userEmail, userName, userInitials, onMenuToggle }: Prop
           <Plus size={16} strokeWidth={2.5} />
         </Link>
 
+        <ThemeToggle />
         <NotificationsDropdown />
 
         {/* User avatar dropdown */}
