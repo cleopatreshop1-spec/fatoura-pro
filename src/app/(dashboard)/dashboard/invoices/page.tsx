@@ -345,6 +345,15 @@ export default function InvoicesPage() {
     load()
   }
 
+  async function bulkUpdateStatus(newStatus: string) {
+    const ids = invoices.filter(i => selected.has(i.id) && i.status !== newStatus).map(i => i.id)
+    if (!ids.length) return
+    await Promise.all(ids.map(id => supabase.from('invoices').update({ status: newStatus }).eq('id', id)))
+    setSelected(new Set())
+    showToast(`${ids.length} facture${ids.length > 1 ? 's' : ''} → ${newStatus}`)
+    load()
+  }
+
   async function exportZIP() {
     const ids = invoices.filter(i => selected.has(i.id)).map(i => i.id)
     if (!ids.length) return
@@ -725,6 +734,16 @@ export default function InvoicesPage() {
                 className="bg-[#0a0b0f] border border-[#2dd4a0]/20 rounded-lg px-2 py-1.5 text-xs text-[#2dd4a0] outline-none focus:border-[#2dd4a0]/50 transition-colors w-32"
               />
             </div>
+            <select
+              defaultValue=""
+              onChange={e => { if (e.target.value) { bulkUpdateStatus(e.target.value); e.target.value = '' } }}
+              className="bg-[#0a0b0f] border border-[#252830] rounded-lg px-2 py-1.5 text-xs text-gray-400 outline-none focus:border-[#d4a843]/40 transition-colors cursor-pointer">
+              <option value="" disabled>Changer statut…</option>
+              <option value="draft">→ Brouillon</option>
+              <option value="validated">→ Validée</option>
+              <option value="valid">→ Soumise TTN</option>
+              <option value="rejected">→ Rejetée</option>
+            </select>
             <button onClick={exportCSV}
               className="flex items-center gap-1.5 text-xs text-gray-300 hover:text-white border border-[#252830] px-3 py-1.5 rounded-lg transition-colors">
               <Download size={12} />CSV
