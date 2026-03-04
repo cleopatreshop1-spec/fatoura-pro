@@ -408,6 +408,33 @@ export function InvoiceDetailPanel({ invoice: initial, companyPrefix }: Props) {
         </div>
       </div>
 
+      {/* Payment / Status History Timeline */}
+      <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4">
+        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Historique</p>
+        <ol className="relative border-l border-[#252830] space-y-3 ml-1">
+          {[
+            inv.paid_at        && { date: inv.paid_at,        label: 'Paiement reçu',     color: 'bg-[#2dd4a0]',  text: 'text-[#2dd4a0]'  },
+            inv.validated_at   && { date: inv.validated_at,   label: 'Validée (TTN)',      color: 'bg-[#d4a843]',  text: 'text-[#d4a843]'  },
+            inv.submitted_at   && { date: inv.submitted_at,   label: 'Soumise à TTN',     color: 'bg-[#4a9eff]',  text: 'text-[#4a9eff]'  },
+            inv.issue_date     && { date: inv.issue_date,     label: 'Date de facturation', color: 'bg-gray-500',  text: 'text-gray-400'   },
+            inv.created_at     && { date: inv.created_at,     label: 'Créée',              color: 'bg-gray-700',   text: 'text-gray-500'   },
+          ]
+            .filter(Boolean)
+            .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            .map((e: any, i: number) => (
+              <li key={i} className="ml-4">
+                <span className={`absolute -left-1.5 mt-0.5 w-3 h-3 rounded-full border-2 border-[#0f1118] ${e.color}`} />
+                <p className={`text-[10px] font-semibold ${e.text}`}>{e.label}</p>
+                <p className="text-[10px] text-gray-600 font-mono">
+                  {new Date(e.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  {' · '}
+                  {new Date(e.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </li>
+            ))}
+        </ol>
+      </div>
+
       <ConfirmDialog open={confirmDelete} title="Supprimer cette facture ?" description="Cette action est irreversible."
         confirmLabel="Supprimer" dangerous loading={deleting}
         onConfirm={handleDelete} onCancel={() => setConfirmDelete(false)} />
