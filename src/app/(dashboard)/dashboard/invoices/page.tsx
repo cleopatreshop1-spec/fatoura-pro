@@ -384,6 +384,34 @@ export default function InvoicesPage() {
         )}
       </div>
 
+      {/* Quick-filter chip bar */}
+      <div className="flex flex-wrap gap-1.5">
+        {STATUS_OPTS.map(o => {
+          const count = o.value === 'all'
+            ? invoices.length
+            : invoices.filter(i => i.status === o.value).length
+          if (o.value !== 'all' && count === 0) return null
+          const active = statusFilter === o.value
+          const CHIP_COLOR: Record<string, string> = {
+            all:       active ? 'bg-[#d4a843]/15 border-[#d4a843]/40 text-[#d4a843]' : 'border-[#1a1b22] text-gray-500 hover:text-gray-300 hover:border-[#252830]',
+            draft:     active ? 'bg-gray-700/40 border-gray-600/50 text-gray-200' : 'border-[#1a1b22] text-gray-600 hover:text-gray-300 hover:border-[#252830]',
+            validated: active ? 'bg-[#d4a843]/15 border-[#d4a843]/40 text-[#d4a843]' : 'border-[#1a1b22] text-gray-600 hover:text-gray-300 hover:border-[#252830]',
+            queued:    active ? 'bg-blue-950/40 border-blue-800/50 text-blue-300' : 'border-[#1a1b22] text-gray-600 hover:text-gray-300 hover:border-[#252830]',
+            pending:   active ? 'bg-[#4a9eff]/15 border-[#4a9eff]/40 text-[#4a9eff]' : 'border-[#1a1b22] text-gray-600 hover:text-gray-300 hover:border-[#252830]',
+            valid:     active ? 'bg-[#2dd4a0]/15 border-[#2dd4a0]/40 text-[#2dd4a0]' : 'border-[#1a1b22] text-gray-600 hover:text-gray-300 hover:border-[#252830]',
+            rejected:  active ? 'bg-red-950/40 border-red-800/50 text-red-400' : 'border-[#1a1b22] text-gray-600 hover:text-gray-300 hover:border-[#252830]',
+          }
+          return (
+            <button key={o.value}
+              onClick={() => { setStatusFilter(o.value); setPage(1) }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-all ${CHIP_COLOR[o.value] ?? ''}`}>
+              {o.label}
+              <span className={`text-[10px] font-mono ${active ? 'opacity-80' : 'opacity-50'}`}>{count}</span>
+            </button>
+          )
+        })}
+      </div>
+
       {/* Summary */}
       {filtered.length > 0 && (
         <div className="text-xs text-gray-500 flex flex-wrap gap-3">
