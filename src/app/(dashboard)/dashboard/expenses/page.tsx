@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Plus, Search, Trash2, Receipt, TrendingDown, Download, Paperclip, X as XIcon, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react'
+import { Plus, Search, Trash2, Receipt, TrendingDown, Download, Paperclip, X as XIcon, RefreshCw, ChevronDown, ChevronUp, Pencil } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { createClient } from '@/lib/supabase/client'
 import { useCompany } from '@/contexts/CompanyContext'
@@ -85,6 +85,7 @@ export default function ExpensesPage() {
   const [recurringForm, setRecurringForm]   = useState(emptyRecurring())
   const [addingRecurring, setAddingRecurring] = useState(false)
   const [savingRecurring, setSavingRecurring] = useState(false)
+  const [editingRecurringId, setEditingRecurringId] = useState<string | null>(null)
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(''), 3000) }
 
@@ -101,20 +102,33 @@ export default function ExpensesPage() {
   async function saveRecurring() {
     if (!activeCompany?.id || !recurringForm.description || !recurringForm.amount) return
     setSavingRecurring(true)
-    const { error } = await (supabase as any).from('recurring_expenses').insert({
-      company_id:   activeCompany.id,
-      description:  recurringForm.description,
-      amount:       parseFloat(recurringForm.amount),
-      category:     recurringForm.category,
-      notes:        recurringForm.notes || null,
-      day_of_month: parseInt(recurringForm.day_of_month) || 1,
-    })
-    setSavingRecurring(false)
-    if (error) { showToast('Erreur sauvegarde'); return }
+    if (editingRecurringId) {
+      const { error } = await (supabase as any).from('recurring_expenses').update({
+        description:  recurringForm.description,
+        amount:       parseFloat(recurringForm.amount),
+        category:     recurringForm.category,
+        notes:        recurringForm.notes || null,
+        day_of_month: parseInt(recurringForm.day_of_month) || 1,
+      }).eq('id', editingRecurringId)
+      setSavingRecurring(false)
+      if (error) { showToast('Erreur sauvegarde'); return }
+      setEditingRecurringId(null)
+    } else {
+      const { error } = await (supabase as any).from('recurring_expenses').insert({
+        company_id:   activeCompany.id,
+        description:  recurringForm.description,
+        amount:       parseFloat(recurringForm.amount),
+        category:     recurringForm.category,
+        notes:        recurringForm.notes || null,
+        day_of_month: parseInt(recurringForm.day_of_month) || 1,
+      })
+      setSavingRecurring(false)
+      if (error) { showToast('Erreur sauvegarde'); return }
+    }
     setRecurringForm(emptyRecurring())
     setAddingRecurring(false)
     loadRecurring()
-    showToast('Dépense récurrente ajoutée')
+    showToast(editingRecurringId ? 'Récurrence mise à jour' : 'Dépense récurrente ajoutée')
   }
 
   async function toggleRecurring(id: string, active: boolean) {
@@ -341,6 +355,15 @@ export default function ExpensesPage() {
                       </p>
                     </div>
                     <span className="font-mono text-xs font-bold text-[#d4a843] shrink-0">{fmtTND(r.amount)} TND</span>
+                    <button
+                      onClick={() => {
+                        setEditingRecurringId(r.id)
+                        setRecurringForm({ description: r.description, amount: String(r.amount), category: r.category, notes: r.notes ?? '', day_of_month: String(r.day_of_month) })
+                        setAddingRecurring(true)
+                      }}
+                      className="text-gray-700 hover:text-[#d4a843] transition-colors shrink-0">
+                      <Pencil size={12} />
+                    </button>
                     <button onClick={() => deleteRecurring(r.id)} className="text-gray-700 hover:text-red-400 transition-colors shrink-0">
                       <Trash2 size={12} />
                     </button>
@@ -349,9 +372,10 @@ export default function ExpensesPage() {
               </div>
             )}
 
-            {/* Add form */}
+            {/* Add / Edit form */}
             {addingRecurring ? (
               <div className="bg-[#161b27] border border-[#252830] rounded-xl p-4 space-y-3">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">{editingRecurringId ? 'Modifier la récurrence' : 'Nouvelle récurrence'}</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="col-span-2">
                     <label className={LC}>Description *</label>
@@ -378,9 +402,9 @@ export default function ExpensesPage() {
                 <div className="flex gap-2">
                   <button onClick={saveRecurring} disabled={savingRecurring}
                     className="flex-1 py-2 bg-[#2dd4a0] hover:bg-[#34d8a8] disabled:opacity-50 text-black font-bold text-sm rounded-xl transition-colors">
-                    {savingRecurring ? 'Sauvegarde...' : 'Ajouter'}
+                    {savingRecurring ? 'Sauvegarde...' : editingRecurringId ? 'Enregistrer' : 'Ajouter'}
                   </button>
-                  <button onClick={() => { setAddingRecurring(false); setRecurringForm(emptyRecurring()) }}
+                  <button onClick={() => { setAddingRecurring(false); setEditingRecurringId(null); setRecurringForm(emptyRecurring()) }}
                     className="px-4 py-2 border border-[#252830] text-gray-400 hover:text-white text-sm rounded-xl transition-colors">
                     Annuler
                   </button>
