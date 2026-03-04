@@ -81,6 +81,7 @@ export default async function DashboardPage() {
     r_expenses,
     r_expenses6m,
     r_clients,
+    r_expensesPrev,
   ] = await Promise.all([
     db.from('invoices').select('id, ht_amount, status, issue_date, created_at').eq('company_id', companyId).eq('status', 'valid').is('deleted_at', null),
     db.from('invoices').select('id, ht_amount, status, issue_date, created_at').eq('company_id', companyId).eq('status', 'validated').is('deleted_at', null),
@@ -98,6 +99,7 @@ export default async function DashboardPage() {
     db.from('expenses').select('amount, category, date').eq('company_id', companyId).gte('date', monthStart).lte('date', todayStr),
     db.from('expenses').select('amount, date').eq('company_id', companyId).gte('date', format(subDays(now, 180), 'yyyy-MM-dd')).lte('date', todayStr),
     db.from('invoices').select('client_id, ttc_amount, payment_status, clients(id, name)').eq('company_id', companyId).in('status', ['valid','validated']).is('deleted_at', null),
+    db.from('expenses').select('amount').eq('company_id', companyId).gte('date', prevStart).lt('date', prevEnd),
   ])
 
   const thisMonthValid  = [...(r_thisMonthV.data ?? []),   ...(r_thisMonthVld.data ?? [])]
@@ -113,6 +115,7 @@ export default async function DashboardPage() {
   const expensesMonth   = r_expenses.data        ?? []
   const expenses6mRaw   = r_expenses6m.data       ?? []
   const clientInvRaw    = r_clients.data          ?? []
+  const expensesPrevMonth = r_expensesPrev.data   ?? []
 
   // ── KPIs ──────────────────────────────────────────────────────────────
   // Use issue_date when set, fall back to created_at (handles invoices saved without a date)
@@ -298,7 +301,9 @@ export default async function DashboardPage() {
     transport: 'Transport', telecom: 'Télécom', fournitures: 'Fournitures',
     marketing: 'Marketing', comptabilite: 'Comptabilité', impots: 'Impôts', autre: 'Autre',
   }
-  const expensesTotal = (expensesMonth as any[]).reduce((s: number, e: any) => s + Number(e.amount ?? 0), 0)
+  const expensesTotal     = (expensesMonth as any[]).reduce((s: number, e: any) => s + Number(e.amount ?? 0), 0)
+  const expensesPrevTotal = (expensesPrevMonth as any[]).reduce((s: number, e: any) => s + Number(e.amount ?? 0), 0)
+  const expenseMoM        = expensesPrevTotal > 0 ? Math.round(((expensesTotal - expensesPrevTotal) / expensesPrevTotal) * 100) : null
   const expByCat = Object.entries(
     (expensesMonth as any[]).reduce((acc: Record<string, number>, e: any) => {
       acc[e.category] = (acc[e.category] ?? 0) + Number(e.amount ?? 0)
@@ -587,7 +592,16 @@ export default async function DashboardPage() {
                   { label: 'Net',      value: netCash,             color: netCash >= 0 ? 'text-[#2dd4a0]' : 'text-red-400' },
                 ].map(k => (
                   <div key={k.label} className="text-center">
-                    <p className="text-[10px] text-gray-600 uppercase tracking-wider mb-1">{k.label}</p>
+                    <div className="flex items-center justify-center gap-1 mb-1">
+                      <p className="text-[10px] text-gray-600 uppercase tracking-wider">{k.label}</p>
+                      {k.label === 'Dépenses' && expenseMoM !== null && (
+                        <span className={`text-[9px] font-bold px-1 py-0.5 rounded border ${
+                          expenseMoM > 10  ? 'text-red-400 bg-red-950/30 border-red-900/30' :
+                          expenseMoM < -10 ? 'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20' :
+                          'text-gray-500 bg-[#1a1b22] border-[#252830]'
+                        }`}>{expenseMoM > 0 ? '+' : ''}{expenseMoM}%</span>
+                      )}
+                    </div>
                     <p className={`text-sm font-mono font-bold ${k.color}`}>
                       {netCash < 0 && k.label === 'Net' ? '-' : ''}{new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.abs(k.value))}
                     </p>
