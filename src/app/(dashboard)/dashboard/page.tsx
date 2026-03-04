@@ -82,6 +82,7 @@ export default async function DashboardPage() {
     r_expenses6m,
     r_clients,
     r_expensesPrev,
+    r_lineItems,
   ] = await Promise.all([
     db.from('invoices').select('id, ht_amount, status, issue_date, created_at').eq('company_id', companyId).eq('status', 'valid').is('deleted_at', null),
     db.from('invoices').select('id, ht_amount, status, issue_date, created_at').eq('company_id', companyId).eq('status', 'validated').is('deleted_at', null),
@@ -100,6 +101,7 @@ export default async function DashboardPage() {
     db.from('expenses').select('amount, date').eq('company_id', companyId).gte('date', format(subDays(now, 180), 'yyyy-MM-dd')).lte('date', todayStr),
     db.from('invoices').select('client_id, ttc_amount, payment_status, clients(id, name)').eq('company_id', companyId).in('status', ['valid','validated']).is('deleted_at', null),
     db.from('expenses').select('amount').eq('company_id', companyId).gte('date', prevStart).lt('date', prevEnd),
+    db.from('invoice_line_items').select('description, line_ht').eq('company_id', companyId).gte('created_at', ago90).limit(500),
   ])
 
   const thisMonthValid  = [...(r_thisMonthV.data ?? []),   ...(r_thisMonthVld.data ?? [])]
@@ -112,6 +114,7 @@ export default async function DashboardPage() {
   const allInvoices90   = r_all90.data          ?? []
   const upcomingDue     = r_upcomingDue.data     ?? []
   const recentPaid30    = r_recentPaid.data      ?? []
+  const lineItems90     = r_lineItems.data        ?? []
   const expensesMonth   = r_expenses.data        ?? []
   const expenses6mRaw   = r_expenses6m.data       ?? []
   const clientInvRaw    = r_clients.data          ?? []
@@ -777,6 +780,43 @@ export default async function DashboardPage() {
             scoreC={scoreC}
             scoreD={scoreD}
           />
+
+          {/* WIDGET: Top services/products (90 days) */}
+          {lineItems90.length >= 3 && (() => {
+            const byDesc: Record<string, { ht: number; count: number }> = {}
+            for (const li of lineItems90 as any[]) {
+              const key = (li.description ?? '').trim().slice(0, 60)
+              if (!key) continue
+              if (!byDesc[key]) byDesc[key] = { ht: 0, count: 0 }
+              byDesc[key].ht    += Number(li.line_ht ?? 0)
+              byDesc[key].count += 1
+            }
+            const top5 = Object.entries(byDesc).sort((a, b) => b[1].ht - a[1].ht).slice(0, 5)
+            if (top5.length < 2) return null
+            const maxHT = top5[0][1].ht
+            return (
+              <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Top prestations — 90j</p>
+                <div className="space-y-2">
+                  {top5.map(([desc, { ht, count }]) => (
+                    <div key={desc}>
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="text-[10px] text-gray-300 truncate max-w-[200px]" title={desc}>{desc}</span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-[9px] text-gray-600">{count}×</span>
+                          <span className="text-[10px] font-mono text-[#d4a843]">{new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 0 }).format(ht)} TND</span>
+                        </div>
+                      </div>
+                      <div className="h-1 bg-[#1a1b22] rounded-full overflow-hidden">
+                        <div className="h-full bg-[#d4a843]/50 rounded-full"
+                          style={{ width: `${Math.round((ht / maxHT) * 100)}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })()}
 
           {/* WIDGET: Day-of-week revenue heatmap */}
           {(() => {
