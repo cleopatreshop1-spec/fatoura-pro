@@ -5,6 +5,7 @@ import { InvoiceStatusBadge } from '@/components/invoice/InvoiceStatusBadge'
 import { fmtTND } from '@/lib/utils/tva-calculator'
 import { ClientDetailActions } from '@/components/clients/ClientDetailActions'
 import { computeRisk } from '@/components/invoice/LatePaymentRisk'
+import { ClientStatementButton } from '@/components/clients/ClientStatementButton'
 
 export default async function ClientDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -71,6 +72,9 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
         <Link href="/dashboard/clients" className="text-gray-500 hover:text-gray-300 text-sm transition-colors">Clients</Link>
         <span className="text-gray-700">/</span>
         <h1 className="text-lg font-bold text-white truncate">{c.name}</h1>
+        <div className="ml-auto">
+          <ClientStatementButton clientId={id} clientName={c.name ?? 'client'} />
+        </div>
         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${typeColor}`}>{c.type ?? 'B2B'}</span>
         {riskResult?.level && (
           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${RISK_STYLE[riskResult.level]}`}
