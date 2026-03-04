@@ -60,6 +60,7 @@ export default function InvoicesPage() {
   const [deleting, setDeleting] = useState(false)
   const [toast, setToast] = useState('')
   const [editingDueDate, setEditingDueDate] = useState<string | null>(null)
+  const [zipProgress, setZipProgress] = useState<{ current: number; total: number } | null>(null)
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const load = useCallback(async () => {
@@ -232,19 +233,28 @@ export default function InvoicesPage() {
   async function exportZIP() {
     const ids = invoices.filter(i => selected.has(i.id)).map(i => i.id)
     if (!ids.length) return
-    showToast(`Génération de ${ids.length} PDF...`)
-    const res = await fetch('/api/invoices/zip', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids }),
-    })
-    if (!res.ok) { showToast('Erreur export ZIP'); return }
-    const blob = await res.blob()
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = `factures_${new Date().toISOString().slice(0,10)}.zip`
-    a.click()
-    showToast(`${ids.length} facture${ids.length>1?'s':''} exportée${ids.length>1?'s':''} en ZIP`)
+    setZipProgress({ current: 0, total: ids.length })
+    try {
+      const res = await fetch('/api/invoices/zip', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
+      })
+      if (!res.ok) { setZipProgress(null); showToast('Erreur export ZIP'); return }
+      // Simulate per-invoice progress while waiting for response
+      for (let i = 1; i <= ids.length; i++) {
+        setZipProgress({ current: i, total: ids.length })
+        await new Promise(r => setTimeout(r, Math.max(200, 1200 / ids.length)))
+      }
+      const blob = await res.blob()
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = `factures_${new Date().toISOString().slice(0,10)}.zip`
+      a.click()
+    } finally {
+      setZipProgress(null)
+      showToast(`${ids.length} facture${ids.length>1?'s':''} exportée${ids.length>1?'s':''} en ZIP`)
+    }
   }
 
   async function bulkDeleteDrafts() {
@@ -280,6 +290,37 @@ export default function InvoicesPage() {
   return (
     <div className="space-y-4">
       {toast && <div className="fixed top-20 right-4 z-50 bg-[#0f1118] border border-[#2dd4a0]/40 text-[#2dd4a0] text-sm px-4 py-3 rounded-xl shadow-2xl">{toast}</div>}
+
+      {/* ZIP export progress overlay */}
+      {zipProgress && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl px-8 py-7 w-80 shadow-2xl">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-8 h-8 rounded-lg bg-[#d4a843]/10 border border-[#d4a843]/30 flex items-center justify-center">
+                <Download size={15} className="text-[#d4a843]" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-white">Export ZIP PDF</p>
+                <p className="text-[11px] text-gray-500 mt-0.5">
+                  {zipProgress.current < zipProgress.total
+                    ? `Génération ${zipProgress.current} / ${zipProgress.total}...`
+                    : 'Compression en cours...'}
+                </p>
+              </div>
+            </div>
+            <div className="w-full h-2 bg-[#1a1b22] rounded-full overflow-hidden">
+              <div
+                className="h-full bg-[#d4a843] rounded-full transition-all duration-300"
+                style={{ width: `${Math.round((zipProgress.current / zipProgress.total) * 100)}%` }}
+              />
+            </div>
+            <div className="mt-2 flex justify-between text-[10px] text-gray-600">
+              <span>{zipProgress.current} facture{zipProgress.current !== 1 ? 's' : ''}</span>
+              <span>{Math.round((zipProgress.current / zipProgress.total) * 100)}%</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div className="flex items-center justify-between">
