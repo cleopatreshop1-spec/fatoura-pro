@@ -1,7 +1,8 @@
 ﻿'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Bell, Check, CheckCheck, X } from 'lucide-react'
+import Link from 'next/link'
+import { Bell, Check, CheckCheck, X, AlertTriangle, Clock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useCompany } from '@/contexts/CompanyContext'
 
@@ -14,6 +15,12 @@ type Notif = {
   created_at: string
 }
 
+type InvoiceAlert = {
+  overdueCount: number
+  unpaidCount: number
+  overdueAmount: number
+}
+
 const TYPE_CONFIG: Record<string, { icon: string; color: string }> = {
   invoice_validated: { icon: 'OK',  color: 'text-[#2dd4a0]' },
   invoice_rejected:  { icon: 'KO',  color: 'text-[#e05a5a]' },
@@ -21,10 +28,13 @@ const TYPE_CONFIG: Record<string, { icon: string; color: string }> = {
   cert_expiring:     { icon: 'CRT', color: 'text-[#4a9eff]' },
 }
 
+const fmtTND = (n: number) =>
+  new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(n)
+
 function timeAgo(date: string): string {
   const diff = Date.now() - new Date(date).getTime()
   const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'a l\'instant'
+  if (mins < 1) return 'à l\'instant'
   if (mins < 60) return `il y a ${mins}min`
   const h = Math.floor(mins / 60)
   if (h < 24) return `il y a ${h}h`
@@ -37,25 +47,52 @@ export function NotificationsDropdown() {
   const [open, setOpen] = useState(false)
   const [notifs, setNotifs] = useState<Notif[]>([])
   const [loading, setLoading] = useState(false)
+  const [invoiceAlert, setInvoiceAlert] = useState<InvoiceAlert | null>(null)
   const ref = useRef<HTMLDivElement>(null)
 
   const unreadCount = notifs.filter(n => !n.is_read).length
+  const totalBadge  = unreadCount + (invoiceAlert?.overdueCount ?? 0)
 
   async function fetchNotifs() {
     if (!activeCompany?.id) return
     setLoading(true)
-    const { data } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('company_id', activeCompany.id)
-      .order('created_at', { ascending: false })
-      .limit(20)
-    setNotifs((data ?? []) as Notif[])
+    const todayStr = new Date().toISOString().slice(0, 10)
+
+    const [{ data: notifData }, { data: unpaidData }] = await Promise.all([
+      supabase
+        .from('notifications')
+        .select('*')
+        .eq('company_id', activeCompany.id)
+        .order('created_at', { ascending: false })
+        .limit(20),
+      (supabase as any)
+        .from('invoices')
+        .select('id, ttc_amount, due_date, payment_status')
+        .eq('company_id', activeCompany.id)
+        .in('status', ['valid', 'validated'])
+        .neq('payment_status', 'paid')
+        .is('deleted_at', null),
+    ])
+
+    setNotifs((notifData ?? []) as Notif[])
+
+    const unpaid = (unpaidData ?? []) as any[]
+    const overdue = unpaid.filter((i: any) => i.due_date && i.due_date < todayStr)
+    if (unpaid.length > 0) {
+      setInvoiceAlert({
+        overdueCount:  overdue.length,
+        unpaidCount:   unpaid.length,
+        overdueAmount: overdue.reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0),
+      })
+    } else {
+      setInvoiceAlert(null)
+    }
     setLoading(false)
   }
 
   useEffect(() => {
     fetchNotifs()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeCompany?.id])
 
   useEffect(() => {
@@ -89,9 +126,9 @@ export function NotificationsDropdown() {
         aria-label="Notifications"
       >
         <Bell size={17} strokeWidth={1.8} />
-        {unreadCount > 0 && (
+        {totalBadge > 0 && (
           <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full text-[9px] font-black text-white flex items-center justify-center leading-none">
-            {unreadCount > 9 ? '9+' : unreadCount}
+            {totalBadge > 9 ? '9+' : totalBadge}
           </span>
         )}
       </button>
@@ -124,7 +161,51 @@ export function NotificationsDropdown() {
             </div>
           </div>
 
-          <div className="max-h-80 overflow-y-auto">
+          {/* Smart invoice alerts */}
+          {invoiceAlert && (
+            <div className="border-b border-[#1a1b22]">
+              {invoiceAlert.overdueCount > 0 && (
+                <Link
+                  href="/dashboard/invoices"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 bg-red-950/20 hover:bg-red-950/30 transition-colors"
+                >
+                  <div className="w-7 h-7 rounded-full bg-red-950/40 border border-red-900/50 flex items-center justify-center shrink-0">
+                    <AlertTriangle size={13} className="text-red-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-red-300">
+                      {invoiceAlert.overdueCount} facture{invoiceAlert.overdueCount > 1 ? 's' : ''} en retard
+                    </p>
+                    <p className="text-[10px] text-red-500 mt-0.5">
+                      {fmtTND(invoiceAlert.overdueAmount)} TND non encaissés
+                    </p>
+                  </div>
+                  <span className="text-[10px] text-red-500">→</span>
+                </Link>
+              )}
+              {invoiceAlert.unpaidCount > invoiceAlert.overdueCount && (
+                <Link
+                  href="/dashboard/invoices"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-[#161b27] transition-colors"
+                >
+                  <div className="w-7 h-7 rounded-full bg-[#161b27] border border-[#252830] flex items-center justify-center shrink-0">
+                    <Clock size={13} className="text-[#f59e0b]" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-gray-300">
+                      {invoiceAlert.unpaidCount - invoiceAlert.overdueCount} facture{invoiceAlert.unpaidCount - invoiceAlert.overdueCount > 1 ? 's' : ''} en attente
+                    </p>
+                    <p className="text-[10px] text-gray-600 mt-0.5">Non encore échues</p>
+                  </div>
+                  <span className="text-[10px] text-gray-600">→</span>
+                </Link>
+              )}
+            </div>
+          )}
+
+          <div className="max-h-72 overflow-y-auto">
             {loading ? (
               <div className="px-4 py-6 text-xs text-gray-600 text-center">Chargement...</div>
             ) : notifs.length === 0 ? (
@@ -134,7 +215,7 @@ export function NotificationsDropdown() {
               </div>
             ) : (
               notifs.slice(0, 5).map(n => {
-                const cfg = TYPE_CONFIG[n.type] ?? { icon: '', color: 'text-gray-400' }
+                const cfg = TYPE_CONFIG[n.type] ?? { icon: '•', color: 'text-gray-400' }
                 return (
                   <button
                     key={n.id}
@@ -163,13 +244,13 @@ export function NotificationsDropdown() {
           </div>
 
           <div className="border-t border-[#1a1b22] px-4 py-2.5">
-            <a
+            <Link
               href="/dashboard/settings?tab=notifications"
               onClick={() => setOpen(false)}
               className="text-xs text-gray-500 hover:text-[#d4a843] transition-colors"
             >
-              Voir toutes les notifications
-            </a>
+              Voir toutes les notifications →
+            </Link>
           </div>
         </div>
       )}

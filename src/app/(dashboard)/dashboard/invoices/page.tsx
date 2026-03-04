@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Plus, Search, MoreVertical, FileText, ChevronUp, ChevronDown, CheckSquare, Trash2, Download } from 'lucide-react'
+import { Plus, Search, MoreVertical, FileText, ChevronUp, ChevronDown, CheckSquare, Trash2, Download, DollarSign } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useCompany } from '@/contexts/CompanyContext'
 import { InvoiceStatusBadge } from '@/components/invoice/InvoiceStatusBadge'
@@ -190,6 +190,17 @@ export default function InvoicesPage() {
     const a = document.createElement('a')
     a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}))
     a.download = 'factures.csv'; a.click()
+  }
+
+  async function quickMarkPaid(id: string, currentStatus: string) {
+    const newStatus = currentStatus === 'paid' ? 'unpaid' : 'paid'
+    await supabase.from('invoices').update({
+      payment_status: newStatus,
+      paid_at: newStatus === 'paid' ? new Date().toISOString() : null,
+    }).eq('id', id)
+    showToast(newStatus === 'paid' ? 'Facture marquée comme payée' : 'Marquée non payée')
+    load()
+    setDropdown(null)
   }
 
   async function bulkMarkPaid() {
@@ -440,11 +451,28 @@ export default function InvoicesPage() {
                           {dropdown === inv.id && (
                             <>
                               <div className="fixed inset-0 z-10" onClick={() => setDropdown(null)} />
-                              <div className="absolute right-0 top-8 z-20 w-48 bg-[#161b27] border border-[#252830] rounded-xl shadow-2xl overflow-hidden py-1">
+                              <div className="absolute right-0 top-8 z-20 w-52 bg-[#161b27] border border-[#252830] rounded-xl shadow-2xl overflow-hidden py-1">
                                 <Link href={`/dashboard/invoices/${inv.id}`} onClick={()=>setDropdown(null)}
                                   className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-300 hover:bg-[#252830] hover:text-white transition-colors">
-                                  Voir le detail
+                                  Voir le détail
                                 </Link>
+                                {/* Quick pay toggle */}
+                                {!['draft'].includes(inv.status) && (
+                                  <>
+                                    <div className="my-1 border-t border-[#1a1b22]" />
+                                    <button
+                                      onClick={() => quickMarkPaid(inv.id, inv.payment_status ?? 'unpaid')}
+                                      className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors text-left ${
+                                        inv.payment_status === 'paid'
+                                          ? 'text-gray-400 hover:bg-[#252830] hover:text-white'
+                                          : 'text-[#2dd4a0] hover:bg-[#2dd4a0]/10'
+                                      }`}>
+                                      <DollarSign size={13} />
+                                      {inv.payment_status === 'paid' ? 'Marquer non payée' : 'Marquer payée ✔'}
+                                    </button>
+                                    <div className="my-1 border-t border-[#1a1b22]" />
+                                  </>
+                                )}
                                 <button onClick={() => handleDuplicate(inv)}
                                   className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-300 hover:bg-[#252830] hover:text-white transition-colors text-left">
                                   Dupliquer
