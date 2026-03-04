@@ -267,6 +267,7 @@ export default function ClientsPage() {
                       ['count',   'Factures',         'count'],
                       ['ca',      'CA Total',         'ca'],
                       ['balance', 'Solde dû',         'balance'],
+                      [null,      'Plafond',           null],
                       [null,      '',                 null],
                     ] as [SortField | null, string, string | null][]).map(([field, label]) => (
                       <th key={label}
@@ -319,6 +320,19 @@ export default function ClientsPage() {
                           {balance > 0
                             ? <span className="text-[#f59e0b] font-bold">{fmtTND(balance)} TND</span>
                             : count > 0 ? <span className="text-[#2dd4a0] text-[10px]">✓ Soldé</span> : ''}
+                        </td>
+                        <td className="px-4 py-3 font-mono text-xs whitespace-nowrap">
+                          {c.credit_limit ? (
+                            <span className={`${
+                              balance > Number(c.credit_limit)
+                                ? 'text-red-400 font-bold'
+                                : balance > Number(c.credit_limit) * 0.8
+                                ? 'text-amber-400'
+                                : 'text-gray-500'
+                            }`}>
+                              {fmtTND(Number(c.credit_limit))} TND
+                            </span>
+                          ) : <span className="text-gray-700">—</span>}
                         </td>
                         <td className="px-4 py-3">
                           <div className="relative">
