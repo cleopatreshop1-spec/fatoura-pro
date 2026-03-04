@@ -787,6 +787,17 @@ export default async function DashboardPage() {
                   }`}>{avgDaysToPayment}j</span>
                 </div>
               )}
+              {cashCollectedMonth > 0 && (
+                <div className="flex items-center justify-between pt-2 mt-1 border-t border-[#1a1b22]">
+                  <span className="text-[10px] text-gray-600">Marge nette (ce mois)</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                    netCashPct >= 50 ? 'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20' :
+                    netCashPct >= 20 ? 'text-[#f59e0b] bg-[#f59e0b]/10 border-[#f59e0b]/20' :
+                    netCashPct >= 0  ? 'text-gray-400 bg-[#1a1b22] border-[#252830]' :
+                    'text-red-400 bg-red-950/30 border-red-900/30'
+                  }`}>{netCashPct > 0 ? '+' : ''}{netCashPct}%</span>
+                </div>
+              )}
             </div>
           )}
 
