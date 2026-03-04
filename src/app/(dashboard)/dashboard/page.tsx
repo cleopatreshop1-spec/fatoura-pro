@@ -480,6 +480,12 @@ export default async function DashboardPage() {
   const velocityPrev     = Math.round((validatedPrior90.length / 90) * 7 * 10) / 10
   const velocityDelta    = velocityPrev > 0 ? Math.round(((velocityPerWeek - velocityPrev) / velocityPrev) * 100) : null
 
+  // ── Avg days to payment ───────────────────────────────────────────────
+  const paidWithDates = (clientInvRaw as any[]).filter(i => i.payment_status === 'paid' && i.paid_at && i.issue_date)
+  const avgDaysToPayment = paidWithDates.length > 0
+    ? Math.round(paidWithDates.reduce((s: number, i: any) => s + Math.max(0, Math.floor((new Date(i.paid_at).getTime() - new Date(i.issue_date).getTime()) / 86400000)), 0) / paidWithDates.length)
+    : null
+
   // ── Net Cash Position (this month) ───────────────────────────────────
   const cashCollectedMonth = (paidThisMonth as any[]).reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
   const netCash = cashCollectedMonth - expensesTotal
@@ -771,6 +777,16 @@ export default async function DashboardPage() {
                   </div>
                 )
               })()}
+              {avgDaysToPayment !== null && (
+                <div className="flex items-center justify-between pt-2 mt-1 border-t border-[#1a1b22]">
+                  <span className="text-[10px] text-gray-600">Délai moyen de paiement</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                    avgDaysToPayment <= 30 ? 'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20' :
+                    avgDaysToPayment <= 60 ? 'text-[#f59e0b] bg-[#f59e0b]/10 border-[#f59e0b]/20' :
+                    'text-red-400 bg-red-950/30 border-red-900/30'
+                  }`}>{avgDaysToPayment}j</span>
+                </div>
+              )}
             </div>
           )}
 
