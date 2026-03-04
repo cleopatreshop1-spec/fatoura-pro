@@ -49,6 +49,28 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
       }, 0) / paidWithDue.length)
     : 0
 
+  // ── Aging buckets (unpaid invoices by days overdue) ────────────────────
+  const agingBuckets = (() => {
+    const buckets = [
+      { label: 'Courant (0–30j)',  min: 0,  max: 30,  color: '#f59e0b', bg: 'bg-[#f59e0b]' },
+      { label: '31–60 jours',      min: 31, max: 60,  color: '#f97316', bg: 'bg-[#f97316]' },
+      { label: '61–90 jours',      min: 61, max: 90,  color: '#ef4444', bg: 'bg-[#ef4444]' },
+      { label: '> 90 jours',       min: 91, max: Infinity, color: '#7f1d1d', bg: 'bg-red-900' },
+    ]
+    return buckets.map(b => {
+      const matching = unpaidInvs.filter(i => {
+        if (!i.due_date) return false
+        const days = Math.floor((now.getTime() - new Date(i.due_date).getTime()) / 86400000)
+        return days >= b.min && days <= b.max
+      })
+      return {
+        ...b,
+        count: matching.length,
+        amount: matching.reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0),
+      }
+    }).filter(b => b.count > 0)
+  })()
+
   // Risk score for most recent unpaid invoice
   const latestUnpaid = unpaidInvs[0]
   const riskResult = latestUnpaid
@@ -173,6 +195,37 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
               </div>
             </div>
           </div>
+          {/* Aging buckets card */}
+          {agingBuckets.length > 0 && (
+            <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-5">
+              <div className="text-xs font-bold text-red-400 uppercase tracking-wider mb-4">Créances en retard</div>
+              <div className="space-y-3">
+                {agingBuckets.map(b => (
+                  <div key={b.label}>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-xs text-gray-500">{b.label}</span>
+                      <span className="text-xs font-mono font-bold text-gray-200">
+                        {fmtTND(b.amount)} TND
+                        <span className="ml-1.5 text-[10px] text-gray-600">({b.count} fact.)</span>
+                      </span>
+                    </div>
+                    <div className="h-1.5 bg-[#161b27] rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${b.bg}`}
+                        style={{ width: `${Math.min(100, (b.amount / (unpaidTTC || 1)) * 100)}%`, opacity: 0.85 }}
+                      />
+                    </div>
+                  </div>
+                ))}
+                <div className="pt-1 border-t border-[#1a1b22] flex justify-between">
+                  <span className="text-xs text-gray-600">Total en retard</span>
+                  <span className="text-xs font-mono font-bold text-red-400">
+                    {fmtTND(agingBuckets.reduce((s, b) => s + b.amount, 0))} TND
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right: invoice history */}
