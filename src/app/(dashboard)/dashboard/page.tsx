@@ -778,6 +778,41 @@ export default async function DashboardPage() {
             scoreD={scoreD}
           />
 
+          {/* WIDGET: Day-of-week revenue heatmap */}
+          {(() => {
+            const DAYS_FR = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
+            const allPaid = [...(paidThisMonth as any[]), ...(paidLastMonth as any[])]
+            if (allPaid.length < 4) return null
+            const byDow = Array.from({ length: 7 }, () => 0)
+            for (const inv of allPaid) {
+              const d = new Date(inv.paid_at ?? inv.issue_date ?? inv.created_at)
+              const dow = (d.getDay() + 6) % 7 // Mon=0
+              byDow[dow] += Number(inv.ttc_amount ?? 0)
+            }
+            const maxDow = Math.max(...byDow, 1)
+            return (
+              <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Encaissements par jour</p>
+                <div className="flex items-end gap-1.5 h-14">
+                  {byDow.map((amt, i) => {
+                    const h = Math.max(3, Math.round((amt / maxDow) * 52))
+                    const isWeekend = i >= 5
+                    return (
+                      <div key={i} className="flex-1 flex flex-col items-center gap-1"
+                        title={`${DAYS_FR[i]}: ${new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 0 }).format(amt)} TND`}>
+                        <div className="w-full flex items-end justify-center" style={{ height: 52 }}>
+                          <div className={`w-full rounded-t-sm ${amt > 0 ? (isWeekend ? 'bg-[#4a9eff]/50' : 'bg-[#2dd4a0]/60') : 'bg-[#1a1b22]'}`}
+                            style={{ height: h }} />
+                        </div>
+                        <span className={`text-[9px] ${isWeekend ? 'text-[#4a9eff]/60' : 'text-gray-600'}`}>{DAYS_FR[i]}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })()}
+
           {/* WIDGET 6 — Recent Invoices */}
           <RecentInvoicesTable invoices={recentInvoices} />
         </div>
