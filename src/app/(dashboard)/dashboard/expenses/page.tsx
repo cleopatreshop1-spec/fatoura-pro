@@ -450,6 +450,39 @@ export default function ExpensesPage() {
         )
       })()}
 
+      {/* Top expense day of week */}
+      {expenses.length >= 5 && (() => {
+        const DOW = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
+        const byDay = Array(7).fill(0)
+        for (const e of expenses) {
+          if (e.date) byDay[new Date(e.date).getDay()] += Number(e.amount ?? 0)
+        }
+        const maxAmt = Math.max(...byDay, 1)
+        const bestIdx = byDay.indexOf(Math.max(...byDay))
+        return (
+          <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl px-4 py-3">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[10px] text-gray-600 uppercase tracking-wider font-semibold">Dépenses par jour</p>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded border text-red-400 bg-red-950/30 border-red-900/30">{DOW[bestIdx]} le + cher</span>
+            </div>
+            <div className="flex items-end gap-1 h-8">
+              {byDay.map((amt, i) => {
+                const h = Math.max(2, Math.round((amt / maxAmt) * 28))
+                return (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-0.5"
+                    title={`${DOW[i]}: ${fmtTND(amt)} TND`}>
+                    <div className="w-full flex items-end justify-center" style={{ height: 28 }}>
+                      <div className={`w-full rounded-t-sm ${i === bestIdx ? 'bg-red-500' : amt > 0 ? 'bg-red-500/30' : 'bg-[#1a1b22]'}`} style={{ height: h }} />
+                    </div>
+                    <span className="text-[7px] text-gray-700">{DOW[i].slice(0,1)}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Monthly trend chart */}
       {expenses.length > 0 && (
         <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-5">
