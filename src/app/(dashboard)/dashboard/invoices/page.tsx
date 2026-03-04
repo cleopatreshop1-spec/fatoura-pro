@@ -1085,9 +1085,11 @@ export default function InvoicesPage() {
                             title="Cliquer pour modifier l'échéance"
                             className={`text-xs cursor-pointer hover:text-white transition-colors group ${isOverdue(inv) ? 'text-red-400' : 'text-gray-400'}`}>
                             {inv.due_date ? new Date(inv.due_date).toLocaleDateString('fr-FR') : <span className="text-gray-700 hover:text-gray-500">+ Ajouter</span>}
-                            {isOverdue(inv) ? (
-                              <span className="ml-1.5 text-[9px] font-bold px-1 py-0.5 rounded bg-red-950/40 text-red-400 border border-red-900/30">Retard</span>
-                            ) : inv.payment_status !== 'paid' && inv.due_date && (() => {
+                            {isOverdue(inv) ? (() => {
+                              const daysLate = Math.floor((Date.now() - new Date(inv.due_date!).getTime()) / 86400000)
+                              const col = daysLate > 90 ? 'bg-red-900/60 text-red-300 border-red-800/40' : daysLate > 30 ? 'bg-red-950/60 text-red-400 border-red-900/30' : 'bg-amber-950/40 text-amber-400 border-amber-900/30'
+                              return <span className={`ml-1.5 text-[9px] font-bold px-1 py-0.5 rounded border ${col}`}>+{daysLate}j</span>
+                            })() : inv.payment_status !== 'paid' && inv.due_date && (() => {
                               const daysLeft = Math.ceil((new Date(inv.due_date).getTime() - Date.now()) / 86400000)
                               return daysLeft >= 0 && daysLeft <= 7
                                 ? <span className="ml-1.5 text-[9px] font-bold px-1 py-0.5 rounded bg-amber-950/40 text-amber-400 border border-amber-900/30">J-{daysLeft}</span>
