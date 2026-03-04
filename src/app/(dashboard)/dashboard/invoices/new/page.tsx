@@ -942,6 +942,26 @@ export default function NewInvoicePage() {
         </div>
       )}
 
+      {/* Sticky mobile TTC bar */}
+      {totals.total_ttc > 0 && (
+        <div className="xl:hidden fixed bottom-0 left-0 right-0 z-30 bg-[#080a0e]/95 backdrop-blur-md border-t border-[#1a1b22] px-4 py-3 flex items-center justify-between shadow-2xl">
+          <div>
+            <p className="text-[10px] text-gray-600 uppercase tracking-wider">Total TTC</p>
+            <p className="font-mono text-lg font-black text-[#d4a843] leading-tight">{fmtTND(totals.total_ttc)} <span className="text-sm font-normal text-gray-500">TND</span></p>
+          </div>
+          <div className="flex gap-2">
+            <button type="button" onClick={handleSaveDraft} disabled={saving || submitting}
+              className="px-4 py-2 rounded-xl border border-[#252830] bg-[#161b27] text-xs text-gray-300 hover:text-white transition-colors disabled:opacity-50">
+              {saving ? '...' : 'Brouillon'}
+            </button>
+            <button type="button" onClick={handleFinalise} disabled={saving || submitting}
+              className="px-4 py-2 rounded-xl bg-[#d4a843] hover:bg-[#f0c060] text-black text-xs font-bold transition-colors disabled:opacity-50">
+              {submitting ? '...' : 'Finaliser'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Add client modal */}
       {activeCompany && (
         <ClientModal
