@@ -17,6 +17,7 @@ import { ProfitLossWidget } from '@/components/dashboard/ProfitLossWidget'
 import { TopClientsWidget } from '@/components/dashboard/TopClientsWidget'
 import { RevenueComparisonChart } from '@/components/dashboard/RevenueComparisonChart'
 import { ExpenseCategoryDonut } from '@/components/dashboard/ExpenseCategoryDonut'
+import { RevenueGoalWidget } from '@/components/dashboard/RevenueGoalWidget'
 import { format, subDays, addDays, parseISO, endOfWeek, eachWeekOfInterval } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
@@ -27,7 +28,7 @@ export default async function DashboardPage() {
 
   const { data: companies } = await supabase
     .from('companies')
-    .select('id, name, matricule_fiscal, address, logo_url, bank_rib')
+    .select('id, name, matricule_fiscal, address, logo_url, bank_rib, monthly_revenue_goal, annual_revenue_goal')
     .eq('owner_id', user.id).order('created_at', { ascending: true }).limit(1)
   const company: any = (companies as any)?.[0]
   const companyId: string | undefined = company?.id
@@ -479,6 +480,14 @@ export default async function DashboardPage() {
             </a>
           )}
 
+          <RevenueGoalWidget
+            caHT={caHT}
+            ytdHT={ytdHT}
+            monthlyGoal={company?.monthly_revenue_goal ?? null}
+            annualGoal={company?.annual_revenue_goal ?? null}
+            year={y}
+            monthLabel={monthLabel}
+          />
           <TopClientsWidget clients={topClients} />
           <AIInsightsPanel />
           <RemindersPanel />
