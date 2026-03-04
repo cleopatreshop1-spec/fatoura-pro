@@ -18,6 +18,7 @@ import type { ComboClient } from '@/components/invoice/ClientCombobox'
 import type { InvLine, TvaRate } from '@/components/invoice/InvoiceLineItem'
 import { InvoiceScannerModal } from '@/components/ai/InvoiceScannerModal'
 import { AIDraftInvoice } from '@/components/ai/AIDraftInvoice'
+import { SaveAsTemplateButton } from '@/components/invoice/SaveAsTemplateButton'
 import { ConfettiCelebration } from '@/components/shared/ConfettiCelebration'
 import type { ScannedInvoice } from '@/types/scanner'
 
@@ -857,6 +858,8 @@ export default function NewInvoicePage() {
 
             {/* Action buttons */}
             <div className="space-y-2">
+              <SaveAsTemplateButton lines={lines} notes={notes} />
+
               <button type="button" onClick={handleSaveDraft} disabled={saving || submitting}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-[#252830] bg-[#161b27] text-sm text-gray-300 hover:text-white hover:bg-[#252830] transition-colors disabled:opacity-50">
                 <Save size={15} />
