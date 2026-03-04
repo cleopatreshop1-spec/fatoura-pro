@@ -581,6 +581,50 @@ export default async function DashboardPage() {
             bestMonthLabel={bestMonthLabel}
           />
 
+          {/* WIDGET: TVA Quarterly Estimate */}
+          {tvaQtr > 0 && (() => {
+            const qtrLabel = `T${qtr + 1} ${y}`
+            const monthsElapsed = (m % 3) + 1
+            const qtrProjected  = Math.round((tvaQtr / monthsElapsed) * 3)
+            const prevQtrStart  = `${y}-${String(Math.max(1, qtr * 3 - 2)).padStart(2, '0')}-01`
+            const prevQtrEnd    = `${y}-${String(qtr * 3).padStart(2, '0')}-28`
+            const prevQtrTVA    = (tvaQtrRows ?? [])
+              .filter((i: any) => { const d = invDate(i); return d >= prevQtrStart && d <= prevQtrEnd })
+              .reduce((s: number, i: any) => s + Number(i.tva_amount ?? 0), 0)
+            const trend = prevQtrTVA > 0 ? Math.round(((tvaQtr - prevQtrTVA) / prevQtrTVA) * 100) : null
+            return (
+              <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-xs font-bold text-[#d4a843] uppercase tracking-wider">TVA due — {qtrLabel}</h2>
+                  <div className="flex items-center gap-1.5">
+                    {trend !== null && (
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${
+                        trend > 10  ? 'text-red-400 bg-red-950/30 border-red-900/30' :
+                        trend < -10 ? 'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20' :
+                        'text-gray-500 bg-[#1a1b22] border-[#252830]'
+                      }`}>{trend > 0 ? '+' : ''}{trend}% vs T{qtr}</span>
+                    )}
+                    <a href="/dashboard/tva" className="text-[10px] text-gray-600 hover:text-[#d4a843] transition-colors">Détail →</a>
+                  </div>
+                </div>
+                <div className="flex items-end gap-3 mb-3">
+                  <span className="text-2xl font-mono font-black text-[#d4a843]">
+                    {new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(tvaQtr)}
+                  </span>
+                  <span className="text-xs text-gray-600 mb-1">TND accumulé</span>
+                </div>
+                <div className="flex items-center justify-between text-[10px] text-gray-600">
+                  <span>Projection fin {qtrLabel}</span>
+                  <span className="font-mono text-gray-400 font-semibold">~{new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(qtrProjected)} TND</span>
+                </div>
+                <div className="h-1.5 bg-[#1a1b22] rounded-full mt-1.5 overflow-hidden">
+                  <div className="h-full bg-[#d4a843]/60 rounded-full transition-all duration-700"
+                    style={{ width: `${Math.min(100, Math.round((monthsElapsed / 3) * 100))}%` }} />
+                </div>
+              </div>
+            )
+          })()}
+
           {/* WIDGET: Profit / Loss */}
           <ProfitLossWidget
             revenueHT={caHT}
