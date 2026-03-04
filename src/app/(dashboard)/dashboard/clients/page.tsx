@@ -170,6 +170,9 @@ export default function ClientsPage() {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const topCaClientId = clients.length > 1
+    ? clients.reduce((best, c) => getStats(c).ca > getStats(best).ca ? c : best, clients[0])?.id ?? null
+    : null
 
   async function handleDelete() {
     if (!deleteId) return
@@ -512,7 +515,8 @@ export default function ClientsPage() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <Link href={`/dashboard/clients/${c.id}`} className="font-medium text-gray-200 hover:text-[#d4a843] transition-colors">
+                            <Link href={`/dashboard/clients/${c.id}`} className="font-medium text-gray-200 hover:text-[#d4a843] transition-colors flex items-center gap-1">
+                              {c.id === topCaClientId && <span title="Meilleur client CA" className="text-[#d4a843] text-[11px]">♛</span>}
                               {c.name}
                             </Link>
                             {risk && (
