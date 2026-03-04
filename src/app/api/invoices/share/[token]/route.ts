@@ -29,6 +29,15 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
     return Response.json({ error: 'Facture introuvable' }, { status: 404 })
   }
 
+  // Increment view counter (fire-and-forget, no await to keep response fast)
+  ;(supabase as any)
+    .from('invoices')
+    .update({
+      share_view_count:    ((data as any).share_view_count ?? 0) + 1,
+      share_last_viewed_at: new Date().toISOString(),
+    })
+    .eq('share_token', token)
+
   return Response.json({ invoice: data })
 }
 

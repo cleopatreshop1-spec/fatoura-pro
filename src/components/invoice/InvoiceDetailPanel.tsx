@@ -24,6 +24,8 @@ type InvoiceData = {
   client_email?: string | null
   client_phone?: string | null
   share_token?: string | null
+  share_view_count?: number | null
+  share_last_viewed_at?: string | null
 }
 
 interface Props {
@@ -298,6 +300,17 @@ export function InvoiceDetailPanel({ invoice: initial, companyPrefix }: Props) {
         </button>
 
         {/* Share link */}
+        {shareUrl && (inv.share_view_count ?? 0) > 0 && (
+          <div className="flex items-center gap-2 px-3 py-2 bg-[#161b27] border border-[#1a1b22] rounded-xl">
+            <span className="text-[10px] text-gray-500">👁 Vu</span>
+            <span className="text-xs font-bold text-[#d4a843]">{inv.share_view_count}×</span>
+            {inv.share_last_viewed_at && (
+              <span className="text-[10px] text-gray-600 ml-auto">
+                dernière fois {new Date(inv.share_last_viewed_at).toLocaleDateString('fr-FR')}
+              </span>
+            )}
+          </div>
+        )}
         {!shareUrl ? (
           <button onClick={handleShare} disabled={sharing}
             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#1a1b22] text-sm text-gray-400 hover:text-[#4a9eff] hover:border-[#4a9eff]/30 transition-colors disabled:opacity-50">
