@@ -2,6 +2,18 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
+import { X, Clock } from 'lucide-react'
+
+const DISMISS_KEY = 'fp_dismissed_reminders'
+const SNOOZE_KEY  = 'fp_snoozed_reminders'
+const SNOOZE_MS   = 60 * 60 * 1000 // 1 hour
+
+function getDismissed(): Set<string> {
+  try { return new Set(JSON.parse(localStorage.getItem(DISMISS_KEY) ?? '[]')) } catch { return new Set() }
+}
+function getSnoozed(): Record<string, number> {
+  try { return JSON.parse(localStorage.getItem(SNOOZE_KEY) ?? '{}') } catch { return {} }
+}
 
 type Priority = 'critical' | 'warning' | 'info' | 'neutral'
 
@@ -38,9 +50,16 @@ const DOT: Record<Priority, string> = {
 }
 
 export function RemindersPanel() {
-  const [reminders, setReminders] = useState<Reminder[]>([])
-  const [loading, setLoading]     = useState(true)
-  const [showAll, setShowAll]     = useState(false)
+  const [reminders, setReminders]   = useState<Reminder[]>([])
+  const [loading, setLoading]       = useState(true)
+  const [showAll, setShowAll]       = useState(false)
+  const [dismissed, setDismissed]   = useState<Set<string>>(new Set())
+  const [snoozed, setSnoozed]       = useState<Record<string, number>>({})
+
+  useEffect(() => {
+    setDismissed(getDismissed())
+    setSnoozed(getSnoozed())
+  }, [])
 
   const fetchReminders = useCallback(async () => {
     try {
@@ -57,9 +76,33 @@ export function RemindersPanel() {
     return () => clearInterval(interval)
   }, [fetchReminders])
 
-  const displayed  = showAll ? reminders : reminders.slice(0, 5)
-  const hasMore    = reminders.length > 5
-  const critCount  = reminders.filter(r => r.priority === 'critical').length
+  function dismiss(id: string) {
+    const next = new Set(dismissed)
+    next.add(id)
+    setDismissed(next)
+    localStorage.setItem(DISMISS_KEY, JSON.stringify([...next]))
+  }
+
+  function snooze(id: string) {
+    const next = { ...snoozed, [id]: Date.now() + SNOOZE_MS }
+    setSnoozed(next)
+    localStorage.setItem(SNOOZE_KEY, JSON.stringify(next))
+  }
+
+  function clearAll() {
+    const ids = reminders.map(r => r.id)
+    const next = new Set([...dismissed, ...ids])
+    setDismissed(next)
+    localStorage.setItem(DISMISS_KEY, JSON.stringify([...next]))
+  }
+
+  const now = Date.now()
+  const visible = reminders.filter(r =>
+    !dismissed.has(r.id) && !(snoozed[r.id] && snoozed[r.id] > now)
+  )
+  const displayed  = showAll ? visible : visible.slice(0, 5)
+  const hasMore    = visible.length > 5
+  const critCount  = visible.filter(r => r.priority === 'critical').length
 
   return (
     <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl overflow-hidden">
@@ -73,10 +116,18 @@ export function RemindersPanel() {
             </span>
           )}
         </div>
-        <button onClick={fetchReminders}
-          className="text-gray-600 hover:text-gray-400 transition-colors text-xs">
-          ↺
-        </button>
+        <div className="flex items-center gap-2">
+          {visible.length > 1 && (
+            <button onClick={clearAll}
+              className="text-[10px] text-gray-600 hover:text-gray-400 transition-colors border border-[#1a1b22] px-2 py-1 rounded-lg">
+              Tout ignorer
+            </button>
+          )}
+          <button onClick={fetchReminders}
+            className="text-gray-600 hover:text-gray-400 transition-colors text-xs">
+            ↺
+          </button>
+        </div>
       </div>
 
       {/* Body */}
@@ -95,7 +146,7 @@ export function RemindersPanel() {
               </div>
             ))}
           </div>
-        ) : reminders.length === 0 ? (
+        ) : visible.length === 0 ? (
           <div className="py-8 text-center">
             <div className="text-3xl mb-2">✅</div>
             <p className="text-sm text-gray-500 font-medium">Tout est en ordre !</p>
@@ -104,7 +155,7 @@ export function RemindersPanel() {
         ) : (
           displayed.map(r => (
             <div key={r.id}
-              className={`border-l-2 ${BORDER[r.priority]} ${BG[r.priority]} rounded-r-xl px-3 py-3`}>
+              className={`group border-l-2 ${BORDER[r.priority]} ${BG[r.priority]} rounded-r-xl px-3 py-3`}>
               <div className="flex items-start gap-2.5">
                 <span className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${DOT[r.priority]}`} />
                 <div className="flex-1 min-w-0">
@@ -120,6 +171,23 @@ export function RemindersPanel() {
                     )}
                   </div>
                 </div>
+                {/* Snooze + Dismiss */}
+                <div className="flex flex-col gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => snooze(r.id)}
+                    title="Reporter 1h"
+                    className="w-5 h-5 flex items-center justify-center rounded text-gray-600 hover:text-yellow-400 hover:bg-yellow-950/20 transition-colors"
+                  >
+                    <Clock size={11} />
+                  </button>
+                  <button
+                    onClick={() => dismiss(r.id)}
+                    title="Ignorer"
+                    className="w-5 h-5 flex items-center justify-center rounded text-gray-600 hover:text-red-400 hover:bg-red-950/20 transition-colors"
+                  >
+                    <X size={11} />
+                  </button>
+                </div>
               </div>
             </div>
           ))
@@ -128,7 +196,7 @@ export function RemindersPanel() {
         {hasMore && !showAll && (
           <button onClick={() => setShowAll(true)}
             className="w-full py-2 text-xs text-gray-500 hover:text-gray-300 transition-colors border border-[#1a1b22] rounded-lg mt-1">
-            Voir {reminders.length - 5} de plus...
+            Voir {visible.length - 5} de plus...
           </button>
         )}
       </div>
