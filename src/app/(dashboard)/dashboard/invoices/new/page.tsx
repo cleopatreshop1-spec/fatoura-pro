@@ -833,6 +833,23 @@ export default function NewInvoicePage() {
               ))}
             </div>
 
+            {(() => {
+              const descCounts: Record<string, number> = {}
+              for (const l of lines) {
+                const key = l.description.trim().toLowerCase()
+                if (key) descCounts[key] = (descCounts[key] ?? 0) + 1
+              }
+              const dupes = Object.entries(descCounts).filter(([, c]) => c > 1).map(([d]) => d)
+              return dupes.length > 0 ? (
+                <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-950/20 border border-amber-900/30">
+                  <span className="text-amber-400 text-xs shrink-0">⚠</span>
+                  <p className="text-[10px] text-amber-300">
+                    Ligne en double : <span className="font-bold">{dupes.map(d => `"${d.slice(0, 40)}"`).join(', ')}</span>
+                  </p>
+                </div>
+              ) : null
+            })()}
+
             <button type="button" onClick={addDiscount}
               className="mt-3 text-xs text-gray-600 hover:text-gray-300 transition-colors">
               + Ajouter une remise globale
