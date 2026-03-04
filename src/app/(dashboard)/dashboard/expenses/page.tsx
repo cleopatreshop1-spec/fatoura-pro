@@ -227,11 +227,17 @@ export default function ExpensesPage() {
   }, [expenses, catFilter, dateFrom, dateTo, search])
 
   const totals = useMemo(() => {
-    const thisMonth = new Date().toISOString().slice(0, 7)
+    const now0 = new Date()
+    const thisMonth = `${now0.getFullYear()}-${String(now0.getMonth() + 1).padStart(2, '0')}`
+    const prevD = new Date(now0.getFullYear(), now0.getMonth() - 1, 1)
+    const prevMonth = `${prevD.getFullYear()}-${String(prevD.getMonth() + 1).padStart(2, '0')}`
     const monthly = expenses.filter(e => e.date.startsWith(thisMonth)).reduce((s, e) => s + Number(e.amount), 0)
     const total   = expenses.reduce((s, e) => s + Number(e.amount), 0)
     const byCat   = Object.fromEntries(
-      CATEGORIES.map(c => [c.value, expenses.filter(e => e.category === c.value).reduce((s, e) => s + Number(e.amount), 0)])
+      CATEGORIES.map(c => [c.value, expenses.filter(e => e.category === c.value && e.date.startsWith(thisMonth)).reduce((s, e) => s + Number(e.amount), 0)])
+    )
+    const byCatPrev = Object.fromEntries(
+      CATEGORIES.map(c => [c.value, expenses.filter(e => e.category === c.value && e.date.startsWith(prevMonth)).reduce((s, e) => s + Number(e.amount), 0)])
     )
     // 12 months of selected year + prev year for YoY
     const byMonth = Array.from({ length: 12 }, (_, i) => {
@@ -253,7 +259,7 @@ export default function ExpensesPage() {
       return expenses.filter(e => e.date.startsWith(key)).reduce((s, e) => s + Number(e.amount), 0)
     })
     const nextMonthForecast = Math.round(last3.reduce((s, v) => s + v, 0) / 3)
-    return { monthly, total, byCat, byMonth, nextMonthForecast }
+    return { monthly, total, byCat, byCatPrev, byMonth, nextMonthForecast }
   }, [expenses, chartYear])
 
   async function handleReceiptFile(file: File) {
@@ -837,16 +843,26 @@ export default function ExpensesPage() {
             }`}>
             Tout
           </button>
-          {CATEGORIES.filter(c => (totals.byCat[c.value] ?? 0) > 0).map(c => (
-            <button key={c.value} onClick={() => setCatFilter(catFilter === c.value ? 'all' : c.value)}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
-                catFilter === c.value
-                  ? 'bg-[#d4a843]/15 border-[#d4a843]/40 text-[#d4a843]'
-                  : 'border-[#1a1b22] text-gray-600 hover:text-gray-300'
-              }`}>
-              {c.label.split(' ')[0]}
-            </button>
-          ))}
+          {CATEGORIES.filter(c => (totals.byCat[c.value] ?? 0) > 0).map(c => {
+            const curr = totals.byCat[c.value] ?? 0
+            const prev = totals.byCatPrev[c.value] ?? 0
+            const delta = prev > 0 ? Math.round(((curr - prev) / prev) * 100) : null
+            return (
+              <button key={c.value} onClick={() => setCatFilter(catFilter === c.value ? 'all' : c.value)}
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
+                  catFilter === c.value
+                    ? 'bg-[#d4a843]/15 border-[#d4a843]/40 text-[#d4a843]'
+                    : 'border-[#1a1b22] text-gray-600 hover:text-gray-300'
+                }`}>
+                {c.label.split(' ')[0]}
+                {delta !== null && delta !== 0 && (
+                  <span className={`text-[8px] font-bold ${delta > 0 ? 'text-red-400' : 'text-[#2dd4a0]'}`}>
+                    {delta > 0 ? '▲' : '▼'}{Math.abs(delta)}%
+                  </span>
+                )}
+              </button>
+            )
+          })}
         </div>
         <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
           title="Date de début"
