@@ -883,6 +883,11 @@ export default function NewInvoicePage() {
                 <Save size={15} />
                 {saving ? 'Enregistrement...' : 'Enregistrer en brouillon'}
               </button>
+              {lastSaved && !saving && (
+                <p className="text-center text-[10px] text-gray-600">
+                  ✓ Sauvegardé à {lastSaved.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                </p>
+              )}
 
               <button type="button" onClick={handleFinalise} disabled={saving || submitting}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-[#d4a843]/40 bg-[#d4a843]/10 text-sm text-[#d4a843] hover:bg-[#d4a843]/20 transition-colors disabled:opacity-50">
