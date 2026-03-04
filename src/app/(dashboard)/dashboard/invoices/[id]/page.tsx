@@ -6,6 +6,7 @@ import { InvoiceDetailPanel } from '@/components/invoice/InvoiceDetailPanel'
 import { InvoiceStatusBadge } from '@/components/invoice/InvoiceStatusBadge'
 import { PrintButton } from '@/components/invoice/PrintButton'
 import { CopyLinkButton } from '@/components/invoice/CopyLinkButton'
+import { WhatsAppShareButton } from '@/components/invoice/WhatsAppShareButton'
 import { InvoiceTimeline } from '@/components/invoice/InvoiceTimeline'
 import { RecurringInvoiceSetup } from '@/components/invoice/RecurringInvoiceSetup'
 import { fmtTND, STAMP_DUTY } from '@/lib/utils/tva-calculator'
@@ -218,6 +219,12 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
           {/* Quick actions */}
           <div className="flex flex-wrap gap-2 print:hidden">
             <CopyLinkButton invoiceId={i.id} />
+            <WhatsAppShareButton
+              invoiceId={i.id}
+              invoiceNumber={i.number ?? null}
+              clientName={i.clients?.name ?? null}
+              amountTTC={Number(i.ttc_amount ?? 0)}
+            />
           </div>
           {/* Status timeline */}
           <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl px-4 py-4 print:hidden">
