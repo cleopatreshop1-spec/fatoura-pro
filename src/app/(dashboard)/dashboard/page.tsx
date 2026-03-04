@@ -505,6 +505,11 @@ export default async function DashboardPage() {
   const netCash = cashCollectedMonth - expensesTotal
   const netCashPct = cashCollectedMonth > 0 ? Math.round((netCash / cashCollectedMonth) * 100) : 0
 
+  // ── Collection efficiency rate (paid TTC / invoiced TTC last 90d) ────
+  const invoiced90TTC = (allInvoices90 as any[]).filter(i => i.status !== 'draft').reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
+  const collected90TTC = (allInvoices90 as any[]).filter(i => i.payment_status === 'paid').reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
+  const collectionRate = invoiced90TTC > 0 ? Math.round((collected90TTC / invoiced90TTC) * 100) : null
+
   // ── Avg invoice size trend (this month vs prev month) ────────────────
   const thisMonthPrefix = todayStr.slice(0, 7)
   const prevMonthDate   = new Date(now.getFullYear(), now.getMonth() - 1, 1)
@@ -921,6 +926,34 @@ export default async function DashboardPage() {
               </div>
             )
           })()}
+
+          {/* WIDGET: Collection efficiency rate */}
+          {collectionRate !== null && invoiced90TTC > 0 && (
+            <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Taux de recouvrement — 90j</p>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                  collectionRate >= 80 ? 'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20' :
+                  collectionRate >= 50 ? 'text-[#d4a843] bg-[#d4a843]/10 border-[#d4a843]/20' :
+                  'text-red-400 bg-red-950/30 border-red-900/30'
+                }`}>{collectionRate >= 80 ? '✓ Bon' : collectionRate >= 50 ? '~ Moyen' : '⚠ Faible'}</span>
+              </div>
+              <div className="flex items-baseline gap-1.5 mb-2">
+                <span className={`text-2xl font-mono font-black ${
+                  collectionRate >= 80 ? 'text-[#2dd4a0]' : collectionRate >= 50 ? 'text-[#d4a843]' : 'text-red-400'
+                }`}>{collectionRate}%</span>
+                <span className="text-xs text-gray-500">encaissé</span>
+              </div>
+              <div className="h-1.5 bg-[#1a1b22] rounded-full overflow-hidden">
+                <div className={`h-full rounded-full transition-all ${
+                  collectionRate >= 80 ? 'bg-[#2dd4a0]' : collectionRate >= 50 ? 'bg-[#d4a843]' : 'bg-red-500'
+                }`} style={{ width: `${collectionRate}%` }} />
+              </div>
+              <p className="text-[9px] text-gray-600 mt-1.5">
+                {new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 0 }).format(Math.round(collected90TTC))} / {new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 0 }).format(Math.round(invoiced90TTC))} TND
+              </p>
+            </div>
+          )}
 
           {/* WIDGET: Invoice velocity (avg/week 90d) */}
           {validatedInvs90.length >= 4 && (
