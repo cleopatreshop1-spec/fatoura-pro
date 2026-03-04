@@ -79,7 +79,17 @@ export function SignatureTab() {
   const fmtDate = (d: string) => new Date(d).toLocaleDateString('fr-FR')
   const daysLeft = mandate ? Math.ceil((new Date(mandate.seal_valid_until).getTime() - Date.now()) / 86400000) : 0
 
-  if (loading) return <div className="py-12 text-center text-sm text-gray-600">Chargement...</div>
+  if (loading) return (
+    <div className="space-y-4 animate-pulse">
+      {[1,2].map(i => (
+        <div key={i} className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-5 space-y-3">
+          <div className="h-4 bg-[#1a1b22] rounded w-40" />
+          <div className="h-3 bg-[#1a1b22] rounded w-64" />
+          <div className="h-9 bg-[#1a1b22] rounded-xl w-48" />
+        </div>
+      ))}
+    </div>
+  )
 
   return (
     <div className="space-y-6">

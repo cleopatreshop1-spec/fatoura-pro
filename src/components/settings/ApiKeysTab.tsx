@@ -88,7 +88,18 @@ export function ApiKeysTab() {
       {/* Keys list */}
       <div className="bg-[#161b27] border border-[#1a1b22] rounded-2xl overflow-hidden">
         {loading ? (
-          <div className="px-5 py-8 text-sm text-gray-600 text-center">Chargement...</div>
+          <div className="divide-y divide-[#252830]">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4 px-5 py-4 animate-pulse">
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3.5 bg-[#252830] rounded w-32" />
+                  <div className="h-3 bg-[#252830] rounded w-56" />
+                </div>
+                <div className="h-7 bg-[#252830] rounded-lg w-20" />
+                <div className="h-7 bg-[#252830] rounded-lg w-16" />
+              </div>
+            ))}
+          </div>
         ) : keys.length === 0 ? (
           <div className="px-5 py-8 text-sm text-gray-600 text-center">Aucune cle API.</div>
         ) : (

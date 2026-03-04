@@ -143,7 +143,20 @@ export function TTNStatusCard() {
     showToast('Configuration TTN sauvegardée')
   }
 
-  if (loading) return <div className="py-8 text-center text-sm text-gray-600">Chargement...</div>
+  if (loading) return (
+    <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-5 space-y-4 animate-pulse">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-[#1a1b22]" />
+        <div className="space-y-1.5 flex-1">
+          <div className="h-4 bg-[#1a1b22] rounded w-36" />
+          <div className="h-3 bg-[#1a1b22] rounded w-52" />
+        </div>
+      </div>
+      <div className="space-y-2">
+        {[1,2,3].map(i => <div key={i} className="h-9 bg-[#1a1b22] rounded-xl" />)}
+      </div>
+    </div>
+  )
 
   const status = (data?.ttn_subscription_status ?? 'not_registered') as TTNStatus
   const cfg    = STATUS_CONFIG[status]

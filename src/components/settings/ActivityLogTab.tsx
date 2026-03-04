@@ -125,7 +125,15 @@ export function ActivityLogTab() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={3} className="text-center py-12 text-gray-600 text-sm">Chargement...</td></tr>
+              <>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="border-b border-[#1a1b22] animate-pulse">
+                    <td className="px-4 py-3"><div className="h-3 bg-[#1a1b22] rounded w-28" /></td>
+                    <td className="px-4 py-3"><div className="h-5 bg-[#1a1b22] rounded-full w-24" /></td>
+                    <td className="px-4 py-3 hidden md:table-cell"><div className="h-3 bg-[#1a1b22] rounded w-48" /></td>
+                  </tr>
+                ))}
+              </>
             ) : logs.length === 0 ? (
               <tr><td colSpan={3} className="text-center py-12 text-gray-600 text-sm">Aucune activité trouvée</td></tr>
             ) : (
