@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Plus, Search, Trash2, Receipt, TrendingDown, Download, Paperclip, X as XIcon, RefreshCw, ChevronDown, ChevronUp, Pencil, Target } from 'lucide-react'
+import { Plus, Search, Trash2, Receipt, TrendingDown, Download, Paperclip, X as XIcon, RefreshCw, ChevronDown, ChevronUp, Pencil, Target, CheckSquare } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { createClient } from '@/lib/supabase/client'
 import { useCompany } from '@/contexts/CompanyContext'
@@ -99,6 +99,23 @@ export default function ExpensesPage() {
   const [chartYear, setChartYear] = useState(new Date().getFullYear())
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [bulkDeleting, setBulkDeleting] = useState(false)
+
+  function toggleRow(id: string) { setSelected(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n }) }
+  function toggleAll(ids: string[]) {
+    if (ids.every(id => selected.has(id))) setSelected(s => { const n = new Set(s); ids.forEach(id => n.delete(id)); return n })
+    else setSelected(s => { const n = new Set(s); ids.forEach(id => n.add(id)); return n })
+  }
+  async function bulkDelete() {
+    if (!selected.size) return
+    setBulkDeleting(true)
+    await Promise.all([...selected].map(id => supabase.from('expenses').delete().eq('id', id)))
+    setBulkDeleting(false)
+    setSelected(new Set())
+    showToast(`${selected.size} dépense${selected.size > 1 ? 's' : ''} supprimée${selected.size > 1 ? 's' : ''}`)
+    load()
+  }
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(''), 3000) }
 
@@ -750,6 +767,23 @@ export default function ExpensesPage() {
         )}
       </div>
 
+      {/* Bulk action bar */}
+      {selected.size > 0 && (
+        <div className="bg-[#0d1420] border border-red-900/40 rounded-xl px-4 py-2.5 flex items-center gap-3 flex-wrap">
+          <span className="text-sm text-red-400 font-bold shrink-0">
+            {selected.size} sélectionnée{selected.size > 1 ? 's' : ''}
+          </span>
+          <button onClick={bulkDelete} disabled={bulkDeleting}
+            className="flex items-center gap-1.5 text-xs text-red-400 border border-red-900/40 bg-red-950/20 hover:bg-red-950/40 px-3 py-1.5 rounded-lg transition-colors font-medium disabled:opacity-50">
+            <Trash2 size={12} />{bulkDeleting ? 'Suppression...' : 'Supprimer'}
+          </button>
+          <button onClick={() => setSelected(new Set())}
+            className="text-xs text-gray-500 hover:text-gray-300 transition-colors ml-auto">
+            Annuler
+          </button>
+        </div>
+      )}
+
       {/* Table */}
       <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl overflow-hidden">
         {loading ? (
@@ -782,6 +816,12 @@ export default function ExpensesPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#1a1b22]">
+                  <th className="px-4 py-3 w-8">
+                    <input type="checkbox"
+                      checked={filtered.length > 0 && filtered.every(e => selected.has(e.id))}
+                      onChange={() => toggleAll(filtered.map(e => e.id))}
+                      className="w-3.5 h-3.5 rounded accent-[#d4a843] cursor-pointer" />
+                  </th>
                   {['Date', 'Description', 'Catégorie', 'Montant', ''].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-[10px] text-gray-600 uppercase tracking-wider font-semibold whitespace-nowrap">{h}</th>
                   ))}
@@ -789,7 +829,11 @@ export default function ExpensesPage() {
               </thead>
               <tbody className="divide-y divide-[#1a1b22]">
                   {filtered.map(e => (
-                  <tr key={e.id} className="hover:bg-[#161b27]/50 transition-colors group">
+                  <tr key={e.id} className={`hover:bg-[#161b27]/50 transition-colors group ${selected.has(e.id) ? 'bg-red-950/10' : ''}`}>
+                    <td className="px-4 py-3">
+                      <input type="checkbox" checked={selected.has(e.id)} onChange={() => toggleRow(e.id)}
+                        className="w-3.5 h-3.5 rounded accent-[#d4a843] cursor-pointer" />
+                    </td>
                     <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap font-mono">
                       {new Date(e.date).toLocaleDateString('fr-FR')}
                     </td>
