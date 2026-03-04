@@ -1,7 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Plus, Search, Trash2, Receipt, TrendingDown, Download } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Plus, Search, Trash2, Receipt, TrendingDown, Download, Paperclip, X as XIcon } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { createClient } from '@/lib/supabase/client'
 import { useCompany } from '@/contexts/CompanyContext'
@@ -15,6 +15,7 @@ type Expense = {
   date: string
   invoice_id: string | null
   notes: string | null
+  receipt_url: string | null
   created_at: string
 }
 
@@ -68,6 +69,9 @@ export default function ExpensesPage() {
   const [form, setForm]          = useState<FormState>(emptyForm())
   const [saving, setSaving]      = useState(false)
   const [toast, setToast]        = useState('')
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(null)
+  const [uploading, setUploading]   = useState(false)
+  const receiptRef = useRef<HTMLInputElement>(null)
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(''), 3000) }
 
@@ -105,6 +109,20 @@ export default function ExpensesPage() {
     return { monthly, total, byCat }
   }, [expenses])
 
+  async function handleReceiptFile(file: File) {
+    if (!activeCompany?.id) return
+    if (file.size > 5 * 1024 * 1024) { showToast('Fichier trop lourd (max 5 Mo)'); return }
+    setUploading(true)
+    const ext  = file.name.split('.').pop()
+    const path = `${activeCompany.id}/${Date.now()}.${ext}`
+    const { error } = await supabase.storage.from('receipts').upload(path, file, { upsert: true })
+    if (error) { showToast('Erreur upload reçu'); setUploading(false); return }
+    const { data: { publicUrl } } = supabase.storage.from('receipts').getPublicUrl(path)
+    setReceiptUrl(publicUrl)
+    setUploading(false)
+    showToast('Reçu joint')
+  }
+
   async function handleSave() {
     if (!activeCompany?.id || !form.description || !form.amount) return
     setSaving(true)
@@ -115,10 +133,12 @@ export default function ExpensesPage() {
       category:    form.category,
       date:        form.date,
       notes:       form.notes || null,
+      receipt_url: receiptUrl || null,
     })
     setSaving(false)
     if (error) { showToast('Erreur lors de la sauvegarde'); return }
     setForm(emptyForm())
+    setReceiptUrl(null)
     setFormOpen(false)
     showToast('Dépense ajoutée')
     load()
@@ -256,6 +276,43 @@ export default function ExpensesPage() {
                 placeholder="Optionnel" className={IC} />
             </div>
           </div>
+
+          {/* Receipt upload */}
+          <div>
+            <label className={LC}>Reçu / Justificatif</label>
+            <input
+              ref={receiptRef}
+              type="file"
+              accept="image/*,application/pdf"
+              className="hidden"
+              onChange={e => { const f = e.target.files?.[0]; if (f) handleReceiptFile(f) }}
+            />
+            {receiptUrl ? (
+              <div className="flex items-center gap-2 px-3 py-2 bg-[#2dd4a0]/5 border border-[#2dd4a0]/20 rounded-xl">
+                <Paperclip size={12} className="text-[#2dd4a0] shrink-0" />
+                <a href={receiptUrl} target="_blank" rel="noreferrer"
+                  className="text-xs text-[#2dd4a0] hover:underline truncate flex-1">
+                  Justificatif joint ✓
+                </a>
+                <button onClick={() => setReceiptUrl(null)} className="text-gray-600 hover:text-red-400 transition-colors">
+                  <XIcon size={12} />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => receiptRef.current?.click()}
+                disabled={uploading}
+                className="flex items-center gap-2 px-3 py-2 border border-dashed border-[#252830] rounded-xl text-xs text-gray-500 hover:text-gray-300 hover:border-[#d4a843]/30 transition-colors disabled:opacity-50"
+              >
+                {uploading
+                  ? <div className="w-3 h-3 border border-gray-600 border-t-gray-300 rounded-full animate-spin" />
+                  : <Paperclip size={12} />}
+                {uploading ? 'Upload en cours...' : 'Joindre un reçu (JPG, PNG, PDF — max 5 Mo)'}
+              </button>
+            )}
+          </div>
+
           <div className="flex gap-3">
             <button onClick={handleSave} disabled={saving || !form.description || !form.amount}
               className="flex items-center gap-2 px-5 py-2.5 bg-[#d4a843] hover:bg-[#f0c060] disabled:opacity-50 text-black font-bold rounded-xl text-sm transition-colors">
@@ -327,7 +384,15 @@ export default function ExpensesPage() {
                       {new Date(e.date).toLocaleDateString('fr-FR')}
                     </td>
                     <td className="px-4 py-3">
-                      <p className="text-sm text-gray-200 font-medium">{e.description}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm text-gray-200 font-medium">{e.description}</p>
+                        {e.receipt_url && (
+                          <a href={e.receipt_url} target="_blank" rel="noreferrer" title="Voir le justificatif"
+                            className="text-[#2dd4a0] hover:text-[#2dd4a0]/80 transition-colors shrink-0">
+                            <Paperclip size={11} />
+                          </a>
+                        )}
+                      </div>
                       {e.notes && <p className="text-[10px] text-gray-600 mt-0.5">{e.notes}</p>}
                     </td>
                     <td className="px-4 py-3">
