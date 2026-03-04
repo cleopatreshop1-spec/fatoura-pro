@@ -97,6 +97,7 @@ export default function ExpensesPage() {
   const [inlineEdit, setInlineEdit] = useState<{ amount: string; category: string; description: string }>({ amount: '', category: 'autre', description: '' })
   const [savingInline, setSavingInline] = useState(false)
   const [chartYear, setChartYear] = useState(new Date().getFullYear())
+  const [showYoY, setShowYoY] = useState(false)
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -232,14 +233,17 @@ export default function ExpensesPage() {
     const byCat   = Object.fromEntries(
       CATEGORIES.map(c => [c.value, expenses.filter(e => e.category === c.value).reduce((s, e) => s + Number(e.amount), 0)])
     )
-    // 12 months of selected year
+    // 12 months of selected year + prev year for YoY
     const byMonth = Array.from({ length: 12 }, (_, i) => {
-      const key = `${chartYear}-${String(i + 1).padStart(2, '0')}`
+      const key  = `${chartYear}-${String(i + 1).padStart(2, '0')}`
+      const keyP = `${chartYear - 1}-${String(i + 1).padStart(2, '0')}`
       const label = new Date(chartYear, i, 1).toLocaleDateString('fr-FR', { month: 'short' })
       const monthExpenses = expenses.filter(e => e.date.startsWith(key))
+      const prevExpenses  = expenses.filter(e => e.date.startsWith(keyP))
       const amount = monthExpenses.reduce((s, e) => s + Number(e.amount), 0)
+      const amountPrev = prevExpenses.reduce((s, e) => s + Number(e.amount), 0)
       const count = monthExpenses.length
-      return { key, label, amount, count }
+      return { key, label, amount, amountPrev, count }
     })
     return { monthly, total, byCat, byMonth }
   }, [expenses, chartYear])
@@ -397,7 +401,15 @@ export default function ExpensesPage() {
         <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xs font-bold text-[#d4a843] uppercase tracking-wider">Dépenses mensuelles</h3>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
+              <button onClick={() => setShowYoY(v => !v)}
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors ${
+                  showYoY
+                    ? 'bg-[#4a9eff]/15 border border-[#4a9eff]/40 text-[#4a9eff]'
+                    : 'border border-[#1a1b22] text-gray-600 hover:text-gray-400'
+                }`}>
+                N-1
+              </button>
               {[new Date().getFullYear() - 1, new Date().getFullYear()].map(y => (
                 <button key={y} onClick={() => setChartYear(y)}
                   className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors ${
@@ -416,20 +428,22 @@ export default function ExpensesPage() {
                 <XAxis dataKey="label" tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} />
                 <YAxis tickFormatter={v => fmtTND(v)} tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} width={52} />
                 <Tooltip
-                  contentStyle={{ background: '#0a0b0f', border: '1px solid #1a1b22', borderRadius: '8px', fontSize: '11px', padding: '8px 12px' }}
-                  labelStyle={{ color: '#9ca3af', marginBottom: 4 }}
                   content={({ active, payload, label }: any) => {
                     if (!active || !payload?.length) return null
                     const d = payload[0].payload
                     return (
                       <div className="bg-[#0a0b0f] border border-[#1a1b22] rounded-xl px-3 py-2 text-xs shadow-2xl">
                         <p className="text-gray-400 font-semibold mb-1.5">{label}</p>
-                        <p className="font-mono font-bold text-red-400">{fmtTND(d.amount)} TND</p>
-                        {d.count > 0 && <p className="text-gray-600 mt-0.5">{d.count} dépense{d.count > 1 ? 's' : ''}</p>}
+                        <p className="font-mono font-bold text-red-400">{fmtTND(d.amount)} TND <span className="text-gray-600">({chartYear})</span></p>
+                        {showYoY && d.amountPrev > 0 && (
+                          <p className="font-mono text-[#4a9eff] mt-0.5">{fmtTND(d.amountPrev)} TND <span className="text-gray-600">({chartYear - 1})</span></p>
+                        )}
+                        {d.count > 0 && <p className="text-gray-600 mt-0.5">{d.count} entrée{d.count > 1 ? 's' : ''}</p>}
                       </div>
                     )
                   }}
                 />
+                {showYoY && <Bar dataKey="amountPrev" radius={[3, 3, 0, 0]} fill="#4a9eff" fillOpacity={0.35} />}
                 <Bar dataKey="amount" radius={[4, 4, 0, 0]} fill="#ef4444" fillOpacity={0.75} />
               </BarChart>
             </ResponsiveContainer>
