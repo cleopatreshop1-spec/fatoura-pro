@@ -30,10 +30,10 @@ export async function POST(request: NextRequest) {
     const prompt = `Tu es un assistant de facturation tunisien expert.
 L'utilisateur a tapé ce mot-clé pour une ligne de facture : "${keyword.trim()}"
 
-Génère une description professionnelle courte (max 80 caractères) et suggère un prix unitaire HT raisonnable en TND pour le marché tunisien, ainsi que le taux TVA approprié.
+Génère une description professionnelle courte (max 80 caractères), suggère un prix unitaire HT raisonnable en TND pour le marché tunisien, le taux TVA approprié, et une catégorie parmi : "service", "produit", "conseil", "formation", "transport", "fourniture", "travaux", "abonnement", "autre".
 
 Réponds UNIQUEMENT en JSON valide, sans markdown, sans explication :
-{"description":"...","unit_price":0.000,"tva_rate":19}
+{"description":"...","unit_price":0.000,"tva_rate":19,"category":"service"}
 
 Règles TVA Tunisie : 19% (services standard), 7% (biens de première nécessité), 0% (exonéré).
 Prix réalistes pour la Tunisie en TND. Ne jamais laisser unit_price à 0.`
@@ -41,7 +41,7 @@ Prix réalistes pour la Tunisie en TND. Ne jamais laisser unit_price à 0.`
     const result = await model.generateContent(prompt)
     const raw = result.response.text().replace(/```json\n?|```\n?/g, '').trim()
 
-    let parsed: { description: string; unit_price: number; tva_rate: number }
+    let parsed: { description: string; unit_price: number; tva_rate: number; category?: string }
     try {
       parsed = JSON.parse(raw)
     } catch {
@@ -52,10 +52,13 @@ Prix réalistes pour la Tunisie en TND. Ne jamais laisser unit_price à 0.`
       return err('Données IA incomplètes', 500)
     }
 
+    const VALID_CATEGORIES = ['service','produit','conseil','formation','transport','fourniture','travaux','abonnement','autre']
+
     return Response.json({
       description: parsed.description,
       unit_price:  Math.round(Number(parsed.unit_price) * 1000) / 1000,
       tva_rate:    [0, 7, 13, 19].includes(Number(parsed.tva_rate)) ? Number(parsed.tva_rate) : 19,
+      category:    VALID_CATEGORIES.includes(parsed.category ?? '') ? parsed.category : 'autre',
     })
 
   } catch (e: any) {

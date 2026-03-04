@@ -14,6 +14,7 @@ export type InvLine = {
   tva_rate: TvaRate
   line_ht: number
   line_ttc: number
+  category?: string
 }
 
 interface Props {
@@ -54,6 +55,7 @@ export function InvoiceLineItem({ line, index, isOnly, onChange, onRemove }: Pro
       if (data.description) onChange(line.id, 'description', data.description)
       if (data.unit_price)  onChange(line.id, 'unit_price',  data.unit_price)
       if (data.tva_rate != null) onChange(line.id, 'tva_rate', data.tva_rate)
+      if (data.category)    onChange(line.id, 'category',   data.category)
     } catch (e: any) {
       setAiError(e.message)
     } finally {
@@ -145,10 +147,15 @@ export function InvoiceLineItem({ line, index, isOnly, onChange, onRemove }: Pro
       </button>
       </div>
 
-      {/* AI error */}
-      {aiError && (
-        <p className="text-[10px] text-red-400 px-1">{aiError}</p>
-      )}
+      {/* Category badge + AI error */}
+      <div className="flex items-center gap-2 px-0.5">
+        {line.category && (
+          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full border border-[#252830] text-gray-500 bg-[#161b27] uppercase tracking-wide">
+            {line.category}
+          </span>
+        )}
+        {aiError && <p className="text-[10px] text-red-400">{aiError}</p>}
+      </div>
     </div>
   )
 }
