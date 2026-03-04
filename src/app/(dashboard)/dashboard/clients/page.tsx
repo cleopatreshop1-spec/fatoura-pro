@@ -564,7 +564,20 @@ export default function ClientsPage() {
                         </td>
                         <td className="px-4 py-3 text-xs text-gray-400">{c.phone ?? ''}</td>
                         <td className="px-4 py-3 text-xs text-gray-400 max-w-[140px] truncate">{c.email ?? ''}</td>
-                        <td className="px-4 py-3 text-sm font-mono text-gray-300 text-center">{count}</td>
+                        <td className="px-4 py-3 text-sm font-mono text-gray-300 text-center">
+                          {count}
+                          {count >= 3 && (() => {
+                            const dates = (c.invoices ?? []).filter(i => i.status !== 'draft' && i.issue_date).map(i => i.issue_date!).sort()
+                            const gaps: number[] = []
+                            for (let gi = 1; gi < dates.length; gi++) {
+                              const d = Math.round((new Date(dates[gi]).getTime() - new Date(dates[gi-1]).getTime()) / 86400000)
+                              if (d > 0) gaps.push(d)
+                            }
+                            if (!gaps.length) return null
+                            const avg = Math.round(gaps.reduce((s, d) => s + d, 0) / gaps.length)
+                            return <div className="text-[8px] text-gray-700 font-sans mt-0.5">{avg}j/fact.</div>
+                          })()}
+                        </td>
                         <td className="px-4 py-3 font-mono text-xs text-gray-300 whitespace-nowrap">
                           {ca > 0 ? fmtTND(ca) + ' TND' : ''}
                           {ca > 0 && count > 1 && (
