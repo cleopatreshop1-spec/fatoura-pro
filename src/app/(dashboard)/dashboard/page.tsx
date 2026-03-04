@@ -369,6 +369,20 @@ export default async function DashboardPage() {
   }
   const worstOverdue = Object.values(overdueByClient).sort((a, b) => b.overdue - a.overdue)[0] ?? null
 
+  // ── Invoice Aging Summary (TTC amounts by bucket) ─────────────────────
+  const agingSummaryAmt = { current: 0, d30: 0, d60: 0, d90: 0, d90plus: 0 }
+  for (const inv of clientInvRaw as any[]) {
+    if (inv.payment_status === 'paid') continue
+    if (!inv.due_date) { agingSummaryAmt.current += Number(inv.ttc_amount ?? 0); continue }
+    const daysLate = Math.floor((new Date(todayStr).getTime() - new Date(inv.due_date).getTime()) / 86400000)
+    if (daysLate <= 0)      agingSummaryAmt.current += Number(inv.ttc_amount ?? 0)
+    else if (daysLate <= 30) agingSummaryAmt.d30     += Number(inv.ttc_amount ?? 0)
+    else if (daysLate <= 60) agingSummaryAmt.d60     += Number(inv.ttc_amount ?? 0)
+    else if (daysLate <= 90) agingSummaryAmt.d90     += Number(inv.ttc_amount ?? 0)
+    else                     agingSummaryAmt.d90plus += Number(inv.ttc_amount ?? 0)
+  }
+  const agingSummaryTotal = agingSummaryAmt.current + agingSummaryAmt.d30 + agingSummaryAmt.d60 + agingSummaryAmt.d90 + agingSummaryAmt.d90plus
+
   const firstName = user.user_metadata?.first_name ?? user.email?.split('@')[0] ?? 'vous'
 
   return (
@@ -494,6 +508,37 @@ export default async function DashboardPage() {
                 <span className="text-gray-600 group-hover:text-red-400 transition-colors text-sm">→</span>
               </div>
             </a>
+          )}
+
+          {/* Aging summary card */}
+          {agingSummaryTotal > 0 && (
+            <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4 space-y-3">
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Créances impayées</p>
+              {([
+                { label: 'Non échu',    amt: agingSummaryAmt.current, color: 'bg-[#2dd4a0]', text: 'text-[#2dd4a0]' },
+                { label: '1–30 j',      amt: agingSummaryAmt.d30,     color: 'bg-[#d4a843]', text: 'text-[#d4a843]' },
+                { label: '31–60 j',     amt: agingSummaryAmt.d60,     color: 'bg-orange-500', text: 'text-orange-400' },
+                { label: '61–90 j',     amt: agingSummaryAmt.d90,     color: 'bg-red-500',    text: 'text-red-400' },
+                { label: '> 90 j',      amt: agingSummaryAmt.d90plus, color: 'bg-red-700',    text: 'text-red-500' },
+              ] as { label: string; amt: number; color: string; text: string }[]).map(b => b.amt > 0 && (
+                <div key={b.label}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] text-gray-500">{b.label}</span>
+                    <span className={`text-[10px] font-mono font-bold ${b.text}`}>
+                      {new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 3 }).format(b.amt)} TND
+                    </span>
+                  </div>
+                  <div className="h-1 bg-[#1a1b22] rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full ${b.color}`}
+                      style={{ width: `${Math.min(100, Math.round((b.amt / agingSummaryTotal) * 100))}%` }} />
+                  </div>
+                </div>
+              ))}
+              <a href="/dashboard/invoices?payment=unpaid"
+                className="block text-center text-[10px] text-gray-600 hover:text-[#d4a843] transition-colors pt-1">
+                Voir les impayées →
+              </a>
+            </div>
           )}
 
           <RevenueGoalWidget
