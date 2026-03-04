@@ -883,6 +883,49 @@ export default function InvoicesPage() {
         )
       })()}
 
+      {/* Payment delay heatmap per client */}
+      {invoices.length >= 3 && (() => {
+        const byClient: Record<string, { name: string; delays: number[] }> = {}
+        for (const inv of invoices) {
+          if (inv.payment_status !== 'paid' || !inv.paid_at || !inv.due_date) continue
+          const delay = Math.round((new Date((inv as any).paid_at).getTime() - new Date(inv.due_date).getTime()) / 86400000)
+          const cid   = inv.clients?.id ?? '__none__'
+          const name  = inv.clients?.name ?? '—'
+          if (!byClient[cid]) byClient[cid] = { name, delays: [] }
+          byClient[cid].delays.push(delay)
+        }
+        const rows = Object.values(byClient)
+          .map(c => ({ name: c.name, avg: Math.round(c.delays.reduce((s, d) => s + d, 0) / c.delays.length), count: c.delays.length }))
+          .filter(c => c.count >= 2)
+          .sort((a, b) => b.avg - a.avg)
+          .slice(0, 6)
+        if (rows.length < 2) return null
+        const maxAbs = Math.max(...rows.map(r => Math.abs(r.avg)), 1)
+        return (
+          <div className="bg-[#0f1118] border border-[#1a1b22] rounded-xl px-4 py-3">
+            <p className="text-[10px] text-gray-600 uppercase tracking-wider font-semibold mb-2">Délai paiement moyen / client</p>
+            <div className="space-y-1.5">
+              {rows.map(r => {
+                const pct = Math.round((Math.abs(r.avg) / maxAbs) * 100)
+                const isLate = r.avg > 0
+                return (
+                  <div key={r.name}>
+                    <div className="flex justify-between items-center mb-0.5">
+                      <span className="text-[9px] text-gray-500 truncate max-w-[120px]">{r.name}</span>
+                      <span className={`text-[9px] font-mono font-bold ${isLate ? 'text-red-400' : 'text-[#2dd4a0]'}`}>{isLate ? '+' : ''}{r.avg}j</span>
+                    </div>
+                    <div className="h-1 bg-[#1a1b22] rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full ${isLate ? 'bg-red-500' : 'bg-[#2dd4a0]'}`} style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <p className="text-[8px] text-gray-700 mt-2">+ = payé en retard · − = payé en avance</p>
+          </div>
+        )
+      })()}
+
       {/* Bulk action bar */}
       {selected.size > 0 && (
         <div className="bg-[#0d1420] border border-[#d4a843]/30 rounded-xl px-4 py-2.5 flex items-center gap-3 flex-wrap">
