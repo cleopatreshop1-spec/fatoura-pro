@@ -345,6 +345,16 @@ export default async function DashboardPage() {
   const currentMonthLabel = new Date(y, m, 1).toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' })
   const prevMonthLabel    = new Date(prevY, prevM, 1).toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' })
 
+  // ── 4-week WoW cash collected sparkline ─────────────────────────────
+  const cashSparkline4w = Array.from({ length: 4 }, (_, i) => {
+    const wEnd   = format(subDays(now, i * 7),     'yyyy-MM-dd')
+    const wStart = format(subDays(now, i * 7 + 6), 'yyyy-MM-dd')
+    const amt = (recentPaid30 as any[])
+      .filter((inv: any) => (inv.payment_date ?? '') >= wStart && (inv.payment_date ?? '') <= wEnd)
+      .reduce((s: number, inv: any) => s + Number(inv.ttc_amount ?? 0), 0)
+    return { day: `S-${i === 0 ? 'cette' : i}`, amount: amt }
+  }).reverse()
+
   // ── 7-day Revenue Sparkline ──────────────────────────────────────────
   const sparkline7d = Array.from({ length: 7 }, (_, i) => {
     const d = format(subDays(now, 6 - i), 'yyyy-MM-dd')
@@ -489,6 +499,7 @@ export default async function DashboardPage() {
             paidThisMonth={paidAmt}
             unpaidTotal={unpaidTotal}
             caHT={caHT}
+            cashSparkline4w={cashSparkline4w}
           />
 
           {/* WIDGET 3 — Fiscal Health Score */}

@@ -14,11 +14,14 @@ type DataPoint = {
   tendance: number | null
 }
 
+type SparkPoint = { day: string; amount: number }
+
 type Props = {
   data: DataPoint[]
   paidThisMonth: number
   unpaidTotal: number
   caHT: number
+  cashSparkline4w?: SparkPoint[]
 }
 
 const fmt = (v: number) => {
@@ -53,7 +56,22 @@ const WINDOWS = [
   { label: '90j',  days: 90  },
 ]
 
-export function CashFlowChart({ data, paidThisMonth, unpaidTotal, caHT }: Props) {
+function MiniSparkline({ data, color }: { data: SparkPoint[]; color: string }) {
+  const max = Math.max(...data.map(d => d.amount), 1)
+  const W = 56, H = 18
+  const pts = data.map((d, i) => {
+    const x = (i / (data.length - 1)) * W
+    const y = H - (d.amount / max) * H
+    return `${x},${y}`
+  }).join(' ')
+  return (
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="overflow-visible">
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" opacity="0.7" />
+    </svg>
+  )
+}
+
+export function CashFlowChart({ data, paidThisMonth, unpaidTotal, caHT, cashSparkline4w }: Props) {
   const [window, setWindow] = useState(90)
 
   const today = new Date().toISOString().slice(0, 10)
@@ -133,7 +151,7 @@ export function CashFlowChart({ data, paidThisMonth, unpaidTotal, caHT }: Props)
       <div className="grid grid-cols-4 gap-3 mt-5 pt-4 border-t border-[#1a1b22]">
         {[
           { label: 'CA ce mois (HT)', value: fmtTND(caHT) + ' TND', color: 'text-white' },
-          { label: 'Encaissé', value: fmtTND(paidThisMonth) + ' TND', color: 'text-[#2dd4a0]' },
+          { label: 'Encaissé', value: fmtTND(paidThisMonth) + ' TND', color: 'text-[#2dd4a0]', sparkline: cashSparkline4w },
           { label: 'En attente', value: fmtTND(unpaidTotal) + ' TND', color: 'text-[#f59e0b]' },
           {
             label: 'Taux recouvrement',
@@ -150,6 +168,11 @@ export function CashFlowChart({ data, paidThisMonth, unpaidTotal, caHT }: Props)
           <div key={m.label} className="text-center">
             <p className={`text-sm font-mono font-bold ${m.color}`}>{m.value}</p>
             <p className="text-[10px] text-gray-600 mt-0.5">{m.label}</p>
+            {'sparkline' in m && m.sparkline && m.sparkline.some((p: SparkPoint) => p.amount > 0) && (
+              <div className="flex justify-center mt-1">
+                <MiniSparkline data={m.sparkline} color="#2dd4a0" />
+              </div>
+            )}
           </div>
         ))}
       </div>
