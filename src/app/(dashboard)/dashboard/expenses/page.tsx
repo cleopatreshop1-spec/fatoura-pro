@@ -245,7 +245,15 @@ export default function ExpensesPage() {
       const count = monthExpenses.length
       return { key, label, amount, amountPrev, count }
     })
-    return { monthly, total, byCat, byMonth }
+    // Forecast next month = avg of last 3 completed months
+    const now3 = new Date()
+    const last3 = Array.from({ length: 3 }, (_, i) => {
+      const d = new Date(now3.getFullYear(), now3.getMonth() - (i + 1), 1)
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+      return expenses.filter(e => e.date.startsWith(key)).reduce((s, e) => s + Number(e.amount), 0)
+    })
+    const nextMonthForecast = Math.round(last3.reduce((s, v) => s + v, 0) / 3)
+    return { monthly, total, byCat, byMonth, nextMonthForecast }
   }, [expenses, chartYear])
 
   async function handleReceiptFile(file: File) {
@@ -395,6 +403,30 @@ export default function ExpensesPage() {
           </div>
         ))}
       </div>
+      {totals.nextMonthForecast > 0 && (() => {
+        const next = new Date(); next.setMonth(next.getMonth() + 1)
+        const nextLabel = next.toLocaleDateString('fr-FR', { month: 'long' })
+        const delta = totals.nextMonthForecast - totals.monthly
+        const deltaPct = totals.monthly > 0 ? Math.round((delta / totals.monthly) * 100) : null
+        return (
+          <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl px-4 py-3 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] text-gray-600 uppercase tracking-wider mb-1">Prévision — {nextLabel}</p>
+              <p className="text-lg font-mono font-bold text-[#4a9eff]">{fmtTND(totals.nextMonthForecast)} TND</p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] text-gray-600 mb-1">Moy. 3 mois</p>
+              {deltaPct !== null && (
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                  deltaPct > 10  ? 'text-red-400 bg-red-950/30 border-red-900/30' :
+                  deltaPct < -10 ? 'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20' :
+                  'text-gray-500 bg-[#1a1b22] border-[#252830]'
+                }`}>{deltaPct > 0 ? '+' : ''}{deltaPct}% vs ce mois</span>
+              )}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Monthly trend chart */}
       {expenses.length > 0 && (
