@@ -258,7 +258,28 @@ export default function TVAPage() {
       </div>
 
       {loading ? (
-        <div className="py-12 text-center text-sm text-gray-600">Chargement...</div>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-5 animate-pulse">
+                <div className="h-3 bg-[#1a1b22] rounded w-24 mb-3" />
+                <div className="h-6 bg-[#1a1b22] rounded w-20 mb-1" />
+                <div className="h-3 bg-[#1a1b22] rounded w-12" />
+              </div>
+            ))}
+          </div>
+          <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-5 animate-pulse">
+            <div className="h-4 bg-[#1a1b22] rounded w-48 mb-4" />
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex gap-4 mb-3">
+                <div className="h-3 bg-[#1a1b22] rounded w-12" />
+                <div className="h-3 bg-[#1a1b22] rounded flex-1" />
+                <div className="h-3 bg-[#1a1b22] rounded w-24" />
+                <div className="h-3 bg-[#1a1b22] rounded w-16" />
+              </div>
+            ))}
+          </div>
+        </div>
       ) : (
         <>
           {/* SECTION 2: KPI Cards */}

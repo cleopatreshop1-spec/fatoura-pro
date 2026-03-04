@@ -157,7 +157,20 @@ export default function ClientsPage() {
       {/* Table */}
       <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl overflow-hidden">
         {loading ? (
-          <div className="py-16 text-center text-sm text-gray-600">Chargement...</div>
+          <div className="divide-y divide-[#1a1b22]">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4 px-4 py-4 animate-pulse">
+                <div className="h-4 bg-[#1a1b22] rounded w-36" />
+                <div className="h-5 bg-[#1a1b22] rounded-full w-12 ml-2" />
+                <div className="h-3.5 bg-[#1a1b22] rounded flex-1 max-w-[160px] hidden md:block" />
+                <div className="h-3.5 bg-[#1a1b22] rounded w-24 hidden lg:block" />
+                <div className="h-3.5 bg-[#1a1b22] rounded w-32 hidden lg:block" />
+                <div className="h-3.5 bg-[#1a1b22] rounded w-12 ml-auto" />
+                <div className="h-3.5 bg-[#1a1b22] rounded w-20" />
+                <div className="w-6 h-6 rounded bg-[#1a1b22]" />
+              </div>
+            ))}
+          </div>
         ) : filtered.length === 0 ? (
           <div className="py-16 flex flex-col items-center gap-3 text-center">
             <Users size={40} className="text-gray-700" />

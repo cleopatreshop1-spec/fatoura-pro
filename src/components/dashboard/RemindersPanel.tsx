@@ -82,7 +82,19 @@ export function RemindersPanel() {
       {/* Body */}
       <div className="p-3 space-y-2">
         {loading ? (
-          <div className="py-8 text-center text-xs text-gray-600">Chargement...</div>
+          <div className="space-y-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="border-l-2 border-l-gray-700 bg-[#161b27] rounded-r-xl px-3 py-3 animate-pulse">
+                <div className="flex items-start gap-2.5">
+                  <div className="w-1.5 h-1.5 rounded-full mt-1.5 bg-[#252830] shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 bg-[#252830] rounded w-3/4" />
+                    <div className="h-2.5 bg-[#252830] rounded w-1/2" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         ) : reminders.length === 0 ? (
           <div className="py-8 text-center">
             <div className="text-3xl mb-2">✅</div>

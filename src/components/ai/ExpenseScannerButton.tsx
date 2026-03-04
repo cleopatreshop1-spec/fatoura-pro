@@ -29,13 +29,11 @@ export function ExpenseScannerButton({ compact = false }: Props) {
     setError(null)
     setResult(null)
     setSaved(false)
-    console.log('[ExpenseScanner] Scanning file:', file.name, file.type)
     try {
       const fd = new FormData()
       fd.append('file', file)
       const res  = await fetch('/api/ai/scan-receipt', { method: 'POST', body: fd })
       const data = await res.json()
-      console.log('[ExpenseScanner] Response:', data)
       if (!res.ok) throw new Error(data.error ?? 'Erreur scan')
       setResult(data.data)
     } catch (e: any) {

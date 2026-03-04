@@ -116,7 +116,6 @@ Types : success = bonne nouvelle, warning = attention requise, info = informatio
     return Response.json({ insights, context })
 
   } catch (e: any) {
-    console.error('[insights]', e)
     return err(e.message ?? 'Erreur IA', 500)
   }
 }

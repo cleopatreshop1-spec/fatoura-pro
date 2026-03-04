@@ -94,9 +94,42 @@ function SettingsContent() {
   )
 }
 
+function SettingsSkeleton() {
+  return (
+    <div className="space-y-4 animate-pulse">
+      <div>
+        <div className="h-6 bg-[#1a1b22] rounded w-28 mb-2" />
+        <div className="h-3.5 bg-[#1a1b22] rounded w-64" />
+      </div>
+      <div className="flex gap-6 items-start">
+        <div className="w-48 shrink-0 bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-2 space-y-1">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3 px-4 py-3">
+              <div className="w-4 h-4 bg-[#1a1b22] rounded" />
+              <div className="h-3 bg-[#1a1b22] rounded flex-1" />
+            </div>
+          ))}
+        </div>
+        <div className="flex-1 space-y-4">
+          <div className="h-5 bg-[#1a1b22] rounded w-36 mb-1" />
+          <div className="h-3 bg-[#1a1b22] rounded w-48 mb-4" />
+          <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-5 space-y-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="space-y-1.5">
+                <div className="h-3 bg-[#1a1b22] rounded w-24" />
+                <div className="h-9 bg-[#1a1b22] rounded-xl" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function SettingsPage() {
   return (
-    <Suspense fallback={<div className="py-12 text-center text-sm text-gray-600">Chargement...</div>}>
+    <Suspense fallback={<SettingsSkeleton />}>
       <SettingsContent />
     </Suspense>
   )

@@ -287,7 +287,22 @@ export default function InvoicesPage() {
       {/* Table */}
       <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl overflow-hidden">
         {loading ? (
-          <div className="py-16 text-center text-sm text-gray-600">Chargement...</div>
+          <div className="divide-y divide-[#1a1b22]">
+            {Array.from({ length: 7 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4 px-4 py-3.5 animate-pulse">
+                <div className="w-3.5 h-3.5 rounded bg-[#1a1b22]" />
+                <div className="h-3.5 bg-[#1a1b22] rounded w-24" />
+                <div className="h-3.5 bg-[#1a1b22] rounded flex-1 max-w-[140px]" />
+                <div className="h-3.5 bg-[#1a1b22] rounded w-20 hidden sm:block" />
+                <div className="h-3.5 bg-[#1a1b22] rounded w-20 hidden md:block" />
+                <div className="h-3.5 bg-[#1a1b22] rounded w-20 hidden lg:block" />
+                <div className="h-3.5 bg-[#1a1b22] rounded w-20 hidden lg:block" />
+                <div className="h-3.5 bg-[#1a1b22] rounded w-24" />
+                <div className="h-5 bg-[#1a1b22] rounded-full w-20" />
+                <div className="w-6 h-6 rounded bg-[#1a1b22] ml-auto" />
+              </div>
+            ))}
+          </div>
         ) : filtered.length === 0 ? (
           <div className="py-16 flex flex-col items-center gap-3 text-center">
             <FileText size={40} className="text-gray-700" />

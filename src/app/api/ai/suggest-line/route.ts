@@ -59,7 +59,6 @@ Prix réalistes pour la Tunisie en TND. Ne jamais laisser unit_price à 0.`
     })
 
   } catch (e: any) {
-    console.error('[suggest-line]', e)
     return err(e.message ?? 'Erreur IA', 500)
   }
 }

@@ -175,7 +175,6 @@ ${cleaned}`,
     return NextResponse.json({ success: true, data: parsed, rawText })
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Scan échoué'
-    console.error('Invoice scan error:', error)
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 }

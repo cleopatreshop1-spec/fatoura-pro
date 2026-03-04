@@ -354,8 +354,56 @@ export default function NewInvoicePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-sm text-gray-500">Chargement...</div>
+      <div className="space-y-5 animate-pulse">
+        <div className="flex items-center justify-between">
+          <div className="h-6 bg-[#1a1b22] rounded w-40" />
+          <div className="flex gap-2">
+            <div className="h-9 bg-[#1a1b22] rounded-xl w-28" />
+            <div className="h-9 bg-[#1a1b22] rounded-xl w-32" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <div className="lg:col-span-2 space-y-4">
+            <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-5 space-y-4">
+              <div className="h-4 bg-[#1a1b22] rounded w-24" />
+              <div className="grid grid-cols-2 gap-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="space-y-1.5">
+                    <div className="h-3 bg-[#1a1b22] rounded w-20" />
+                    <div className="h-9 bg-[#1a1b22] rounded-xl" />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-5 space-y-3">
+              <div className="h-4 bg-[#1a1b22] rounded w-32" />
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className="flex gap-2">
+                  <div className="h-9 bg-[#1a1b22] rounded-xl flex-1" />
+                  <div className="h-9 bg-[#1a1b22] rounded-xl w-20" />
+                  <div className="h-9 bg-[#1a1b22] rounded-xl w-24" />
+                  <div className="h-9 bg-[#1a1b22] rounded-xl w-24" />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-4">
+            <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-5 space-y-3">
+              <div className="h-4 bg-[#1a1b22] rounded w-20" />
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex justify-between">
+                  <div className="h-3 bg-[#1a1b22] rounded w-24" />
+                  <div className="h-3 bg-[#1a1b22] rounded w-16" />
+                </div>
+              ))}
+              <div className="h-px bg-[#1a1b22]" />
+              <div className="flex justify-between">
+                <div className="h-4 bg-[#1a1b22] rounded w-16" />
+                <div className="h-4 bg-[#1a1b22] rounded w-24" />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
