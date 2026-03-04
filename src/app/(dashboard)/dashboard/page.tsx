@@ -516,6 +516,16 @@ export default async function DashboardPage() {
   const avgSizeDelta = avgSizeThis !== null && avgSizePrev !== null && avgSizePrev > 0
     ? Math.round(((avgSizeThis - avgSizePrev) / avgSizePrev) * 100) : null
 
+  // ── Net revenue sparkline (6 months) ─────────────────────────────────
+  const netSparkline = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1)
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    const rev = (clientInvRaw as any[]).filter(inv => inv.status !== 'draft' && (inv.issue_date ?? '').startsWith(key)).reduce((s: number, inv: any) => s + Number(inv.ttc_amount ?? 0), 0)
+    const exp = (expenses6mRaw as any[]).filter((e: any) => (e.date ?? '').startsWith(key)).reduce((s: number, e: any) => s + Number(e.amount ?? 0), 0)
+    return { label: d.toLocaleDateString('fr-FR', { month: 'short' }), net: rev - exp, rev, exp }
+  })
+  const sparkHasData = netSparkline.some(m => m.rev > 0 || m.exp > 0)
+
   // ── Repeat client rate ───────────────────────────────────────────────
   const invsByClient: Record<string, number> = {}
   for (const i of clientInvRaw as any[]) {
@@ -1029,6 +1039,45 @@ export default async function DashboardPage() {
               )}
             </div>
           )}
+
+          {/* WIDGET: Net revenue 6-month sparkline */}
+          {sparkHasData && (() => {
+            const maxAbs = Math.max(...netSparkline.map(m => Math.abs(m.net)), 1)
+            const lastNet = netSparkline[netSparkline.length - 1].net
+            return (
+              <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Revenu net — 6 mois</p>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                    lastNet > 0 ? 'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20' :
+                    lastNet < 0 ? 'text-red-400 bg-red-950/30 border-red-900/30' :
+                    'text-gray-500 bg-[#1a1b22] border-[#252830]'
+                  }`}>
+                    {lastNet >= 0 ? '+' : ''}{new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(lastNet)} TND
+                  </span>
+                </div>
+                <div className="flex items-end gap-1 h-10">
+                  {netSparkline.map((m, i) => {
+                    const h = Math.max(2, Math.round((Math.abs(m.net) / maxAbs) * 36))
+                    const isPos = m.net >= 0
+                    return (
+                      <div key={i} className="flex-1 flex flex-col items-center gap-0.5"
+                        title={`${m.label}: ${m.net >= 0 ? '+' : ''}${new Intl.NumberFormat('fr-TN').format(Math.round(m.net))} TND`}>
+                        <div className="w-full flex items-end justify-center" style={{ height: 36 }}>
+                          <div className={`w-full rounded-t-sm ${isPos ? 'bg-[#2dd4a0]' : 'bg-red-500'}`} style={{ height: h }} />
+                        </div>
+                        <span className="text-[7px] text-gray-700">{m.label}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className="flex justify-between mt-1.5">
+                  <span className="text-[8px] text-gray-700">▲ CA − Dépenses</span>
+                  <span className="text-[8px] text-[#2dd4a0]/60">vert = positif</span>
+                </div>
+              </div>
+            )
+          })()}
 
           {/* WIDGET: Invoice size distribution histogram */}
           {(() => {
