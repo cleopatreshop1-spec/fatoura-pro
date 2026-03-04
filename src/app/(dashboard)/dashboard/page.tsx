@@ -511,9 +511,23 @@ export default async function DashboardPage() {
           )}
 
           {/* Aging summary card */}
-          {agingSummaryTotal > 0 && (
+          {agingSummaryTotal > 0 && (() => {
+            const overdueAmt = agingSummaryAmt.d30 + agingSummaryAmt.d60 + agingSummaryAmt.d90 + agingSummaryAmt.d90plus
+            const overduePct = agingSummaryTotal > 0 ? Math.round((overdueAmt / agingSummaryTotal) * 100) : 0
+            return (
             <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4 space-y-3">
-              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Créances impayées</p>
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Créances impayées</p>
+                {overdueAmt > 0 && (
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                    overduePct >= 50 ? 'text-red-400 bg-red-950/30 border-red-900/40' :
+                    overduePct >= 25 ? 'text-orange-400 bg-orange-950/30 border-orange-900/40' :
+                                       'text-[#f59e0b] bg-amber-950/30 border-amber-900/40'
+                  }`}>
+                    ↑ {overduePct}% en retard
+                  </span>
+                )}
+              </div>
               {([
                 { label: 'Non échu',    amt: agingSummaryAmt.current, color: 'bg-[#2dd4a0]', text: 'text-[#2dd4a0]' },
                 { label: '1–30 j',      amt: agingSummaryAmt.d30,     color: 'bg-[#d4a843]', text: 'text-[#d4a843]' },
@@ -539,7 +553,8 @@ export default async function DashboardPage() {
                 Voir les impayées →
               </a>
             </div>
-          )}
+            )
+          })()}
 
           <RevenueGoalWidget
             caHT={caHT}
