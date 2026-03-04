@@ -18,6 +18,7 @@ import { TopClientsWidget } from '@/components/dashboard/TopClientsWidget'
 import { RevenueComparisonChart } from '@/components/dashboard/RevenueComparisonChart'
 import { ExpenseCategoryDonut } from '@/components/dashboard/ExpenseCategoryDonut'
 import { RevenueGoalWidget } from '@/components/dashboard/RevenueGoalWidget'
+import { PendingActionsWidget } from '@/components/dashboard/PendingActionsWidget'
 import { format, subDays, addDays, parseISO, endOfWeek, eachWeekOfInterval } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
@@ -407,6 +408,16 @@ export default async function DashboardPage() {
   }
   const agingSummaryTotal = agingSummaryAmt.current + agingSummaryAmt.d30 + agingSummaryAmt.d60 + agingSummaryAmt.d90 + agingSummaryAmt.d90plus
 
+  // ── Pending actions ─────────────────────────────────────────────────
+  const overdueInvsAll = (clientInvRaw as any[]).filter(i => i.payment_status !== 'paid' && i.due_date && i.due_date < todayStr)
+  const overdueAmtAll  = overdueInvsAll.reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
+  const unpaidOld60    = (clientInvRaw as any[]).filter(i => i.payment_status !== 'paid' && i.due_date && Math.floor((new Date(todayStr).getTime() - new Date(i.due_date).getTime()) / 86400000) > 60).length
+  const expiredTTN     = (allInvoices90 as any[]).filter(i => i.ttn_rejection_reason).length
+  const missingFields: string[] = []
+  if (!company.matricule_fiscal) missingFields.push('MF')
+  if (!company.address)          missingFields.push('Adresse')
+  if (!company.bank_rib)         missingFields.push('RIB')
+
   const firstName = user.user_metadata?.first_name ?? user.email?.split('@')[0] ?? 'vous'
 
   return (
@@ -452,6 +463,16 @@ export default async function DashboardPage() {
               </a>
             ))}
           </div>
+
+          {/* WIDGET: Pending Actions */}
+          <PendingActionsWidget
+            overdueCount={overdueInvsAll.length}
+            overdueTotal={overdueAmtAll}
+            draftCount={draftCount}
+            missingProfile={missingFields}
+            unpaidOld={unpaidOld60}
+            expiredTTN={expiredTTN}
+          />
 
           {/* WIDGET 4 — KPI Cards */}
           <KpiCards
