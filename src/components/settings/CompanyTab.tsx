@@ -27,6 +27,8 @@ const schema = z.object({
   invoice_prefix: z.string().min(1).max(5).regex(/^[A-Z0-9-]+$/).optional(),
   default_payment_terms: z.string().optional(),
   invoice_footer: z.string().max(500).optional(),
+  monthly_revenue_goal: z.string().optional(),
+  annual_revenue_goal:  z.string().optional(),
 })
 type F = z.infer<typeof schema>
 const IC = 'w-full bg-[#161b27] border border-[#1a1b22] rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#d4a843] transition-colors'
@@ -79,6 +81,8 @@ export function CompanyTab() {
       invoice_prefix: c.invoice_prefix ?? 'FP',
       default_payment_terms: c.default_payment_terms ?? '',
       invoice_footer: c.invoice_footer ?? '',
+      monthly_revenue_goal: c.monthly_revenue_goal != null ? String(c.monthly_revenue_goal) : '',
+      annual_revenue_goal:  c.annual_revenue_goal  != null ? String(c.annual_revenue_goal)  : '',
     })
   }, [activeCompany, reset])
 
@@ -113,6 +117,8 @@ export function CompanyTab() {
       invoice_accent_color:    accentColor,
       invoice_logo_position:   logoPosition,
       invoice_footer:          data.invoice_footer ? sanitizeString(data.invoice_footer, 500) : null,
+      monthly_revenue_goal:    data.monthly_revenue_goal ? parseFloat(data.monthly_revenue_goal) : null,
+      annual_revenue_goal:     data.annual_revenue_goal  ? parseFloat(data.annual_revenue_goal)  : null,
     }).eq('id', activeCompany.id)
     await refreshCompanies()
     setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 3000)
@@ -315,6 +321,22 @@ export function CompanyTab() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Revenue Goals */}
+      <div>
+        <div className={SH}>Objectifs de chiffre d&apos;affaires</div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className={LC}>Objectif mensuel (TND HT)</label>
+            <input {...register('monthly_revenue_goal')} type="number" min="0" step="100" placeholder="ex: 10000" className={`${IC} font-mono`} />
+          </div>
+          <div>
+            <label className={LC}>Objectif annuel (TND HT)</label>
+            <input {...register('annual_revenue_goal')} type="number" min="0" step="1000" placeholder="ex: 120000" className={`${IC} font-mono`} />
+          </div>
+        </div>
+        <p className="text-[11px] text-gray-600 mt-2">Ces objectifs s&apos;affichent sur le tableau de bord avec une barre de progression.</p>
       </div>
 
       {saved && <div className="text-sm text-[#2dd4a0] bg-[#2dd4a0]/10 border border-[#2dd4a0]/20 rounded-xl px-4 py-3">Modifications enregistrees.</div>}
