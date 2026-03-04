@@ -78,6 +78,7 @@ export default function ExpensesPage() {
   const [toast, setToast]        = useState('')
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null)
   const [uploading, setUploading]   = useState(false)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
   const receiptRef = useRef<HTMLInputElement>(null)
 
   const [recurringList, setRecurringList]   = useState<RecurringExpense[]>([])
@@ -244,6 +245,34 @@ export default function ExpensesPage() {
       {toast && (
         <div className="fixed top-20 right-4 z-50 bg-[#0f1118] border border-[#2dd4a0]/40 text-[#2dd4a0] text-sm px-4 py-3 rounded-xl shadow-2xl">
           {toast}
+        </div>
+      )}
+
+      {/* Receipt lightbox */}
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <div className="relative max-w-3xl max-h-[90vh] p-2" onClick={e => e.stopPropagation()}>
+            <button
+              onClick={() => setLightboxUrl(null)}
+              className="absolute -top-3 -right-3 w-7 h-7 bg-[#0f1118] border border-[#252830] rounded-full flex items-center justify-center text-gray-400 hover:text-white z-10 transition-colors">
+              <XIcon size={14} />
+            </button>
+            {/\.(jpe?g|png|webp|gif)$/i.test(lightboxUrl) ? (
+              <img src={lightboxUrl} alt="justificatif" className="max-w-full max-h-[85vh] rounded-xl object-contain shadow-2xl" />
+            ) : (
+              <div className="bg-[#0f1118] border border-[#1a1b22] rounded-xl p-8 text-center space-y-4">
+                <Paperclip size={32} className="text-[#2dd4a0] mx-auto" />
+                <p className="text-sm text-gray-400">Ce justificatif est un fichier PDF ou non-image.</p>
+                <a href={lightboxUrl} target="_blank" rel="noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#d4a843] hover:bg-[#f0c060] text-black font-bold text-sm rounded-xl transition-colors">
+                  Ouvrir le fichier →
+                </a>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -593,10 +622,18 @@ export default function ExpensesPage() {
                       <div className="flex items-center gap-1.5">
                         <p className="text-sm text-gray-200 font-medium">{e.description}</p>
                         {e.receipt_url && (
-                          <a href={e.receipt_url} target="_blank" rel="noreferrer" title="Voir le justificatif"
-                            className="text-[#2dd4a0] hover:text-[#2dd4a0]/80 transition-colors shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setLightboxUrl(e.receipt_url)}
+                            title="Voir le justificatif"
+                            className="group relative text-[#2dd4a0] hover:text-[#2dd4a0]/80 transition-colors shrink-0">
                             <Paperclip size={11} />
-                          </a>
+                            {/\.(jpe?g|png|webp|gif)$/i.test(e.receipt_url) && (
+                              <span className="pointer-events-none absolute bottom-5 left-0 z-20 hidden group-hover:block">
+                                <img src={e.receipt_url} alt="reçu" className="w-28 h-28 object-cover rounded-lg border border-[#252830] shadow-2xl" />
+                              </span>
+                            )}
+                          </button>
                         )}
                       </div>
                       {e.notes && <p className="text-[10px] text-gray-600 mt-0.5">{e.notes}</p>}
