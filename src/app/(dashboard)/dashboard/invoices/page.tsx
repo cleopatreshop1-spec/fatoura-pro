@@ -62,6 +62,8 @@ export default function InvoicesPage() {
   const [toast, setToast] = useState('')
   const [editingDueDate, setEditingDueDate] = useState<string | null>(null)
   const [zipProgress, setZipProgress] = useState<{ current: number; total: number } | null>(null)
+  const [payDateInvoiceId, setPayDateInvoiceId] = useState<string | null>(null)
+  const [payDate, setPayDate] = useState(new Date().toISOString().slice(0,10))
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const load = useCallback(async () => {
@@ -213,15 +215,16 @@ export default function InvoicesPage() {
     showToast('Échéance mise à jour')
   }
 
-  async function quickMarkPaid(id: string, currentStatus: string) {
+  async function quickMarkPaid(id: string, currentStatus: string, date?: string) {
     const newStatus = currentStatus === 'paid' ? 'unpaid' : 'paid'
     await supabase.from('invoices').update({
       payment_status: newStatus,
-      paid_at: newStatus === 'paid' ? new Date().toISOString() : null,
+      paid_at: newStatus === 'paid' ? (date ? new Date(date).toISOString() : new Date().toISOString()) : null,
     }).eq('id', id)
     showToast(newStatus === 'paid' ? 'Facture marquée comme payée' : 'Marquée non payée')
     load()
     setDropdown(null)
+    setPayDateInvoiceId(null)
   }
 
   async function bulkMarkPaid() {
@@ -692,16 +695,47 @@ export default function InvoicesPage() {
                                 {!['draft'].includes(inv.status) && (
                                   <>
                                     <div className="my-1 border-t border-[#1a1b22]" />
-                                    <button
-                                      onClick={() => quickMarkPaid(inv.id, inv.payment_status ?? 'unpaid')}
-                                      className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors text-left ${
-                                        inv.payment_status === 'paid'
-                                          ? 'text-gray-400 hover:bg-[#252830] hover:text-white'
-                                          : 'text-[#2dd4a0] hover:bg-[#2dd4a0]/10'
-                                      }`}>
-                                      <DollarSign size={13} />
-                                      {inv.payment_status === 'paid' ? 'Marquer non payée' : 'Marquer payée ✔'}
-                                    </button>
+                                    {inv.payment_status !== 'paid' && payDateInvoiceId === inv.id ? (
+                                      <div className="px-3 py-2 space-y-2">
+                                        <p className="text-[10px] text-gray-500 uppercase tracking-wider">Date de paiement</p>
+                                        <input
+                                          type="date"
+                                          value={payDate}
+                                          onChange={e => setPayDate(e.target.value)}
+                                          className="w-full bg-[#0a0b0f] border border-[#d4a843]/50 rounded-lg px-2 py-1.5 text-xs text-white outline-none"
+                                        />
+                                        <div className="flex gap-1.5">
+                                          <button
+                                            onClick={() => quickMarkPaid(inv.id, 'unpaid', payDate)}
+                                            className="flex-1 text-[10px] py-1.5 bg-[#2dd4a0] text-black font-bold rounded-lg hover:bg-[#2dd4a0]/80 transition-colors">
+                                            Confirmer ✔
+                                          </button>
+                                          <button
+                                            onClick={() => setPayDateInvoiceId(null)}
+                                            className="px-2 text-[10px] py-1.5 border border-[#252830] text-gray-500 rounded-lg hover:text-white transition-colors">
+                                            ✕
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <button
+                                        onClick={() => {
+                                          if (inv.payment_status === 'paid') {
+                                            quickMarkPaid(inv.id, 'paid')
+                                          } else {
+                                            setPayDate(new Date().toISOString().slice(0,10))
+                                            setPayDateInvoiceId(inv.id)
+                                          }
+                                        }}
+                                        className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors text-left ${
+                                          inv.payment_status === 'paid'
+                                            ? 'text-gray-400 hover:bg-[#252830] hover:text-white'
+                                            : 'text-[#2dd4a0] hover:bg-[#2dd4a0]/10'
+                                        }`}>
+                                        <DollarSign size={13} />
+                                        {inv.payment_status === 'paid' ? 'Marquer non payée' : 'Marquer payée ✔'}
+                                      </button>
+                                    )}
                                     <div className="my-1 border-t border-[#1a1b22]" />
                                   </>
                                 )}
