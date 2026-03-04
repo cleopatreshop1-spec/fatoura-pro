@@ -21,7 +21,7 @@ type ClientRow = {
   invoices: { id: string; ttc_amount: number | null; status: string; payment_status: string | null; due_date: string | null; issue_date: string | null; paid_at: string | null }[]
 }
 type FilterType = 'all' | 'B2B' | 'B2C'
-type SortField = 'name' | 'count' | 'ca' | 'balance' | 'credit' | 'lastInv'
+type SortField = 'name' | 'count' | 'ca' | 'balance' | 'credit' | 'lastInv' | 'overdue'
 
 const PAGE_SIZE = 25
 
@@ -161,6 +161,7 @@ export default function ClientsPage() {
       if (sort.field === 'balance') { av = sa.balance; bv = sb.balance }
       if (sort.field === 'credit')  { av = a.credit_limit ? (sa.balance / Number(a.credit_limit)) : -1; bv = b.credit_limit ? (sb.balance / Number(b.credit_limit)) : -1 }
       if (sort.field === 'lastInv') { av = aLast; bv = bLast }
+      if (sort.field === 'overdue') { av = sa.maxOverdueDays; bv = sb.maxOverdueDays }
       if (typeof av === 'string') return sort.dir === 'asc' ? av.localeCompare(bv as string) : (bv as string).localeCompare(av)
       return sort.dir === 'asc' ? av - (bv as number) : (bv as number) - av
     })
@@ -469,6 +470,7 @@ export default function ClientsPage() {
                       ['balance', 'Solde dû',         'balance'],
                       ['credit',  'Plafond',           'credit'],
                       ['lastInv', 'Dernière facture',  'lastInv'],
+                      ['overdue', 'Retard max',        'overdue'],
                       [null,      '',                 null],
                     ] as [SortField | null, string, string | null][]).map(([field, label]) => (
                       <th key={label}
@@ -609,6 +611,13 @@ export default function ClientsPage() {
                               ) : null
                             })()}
                           </div>
+                        </td>
+                        <td className="px-4 py-3 text-xs whitespace-nowrap hidden xl:table-cell">
+                          {maxOverdueDays > 0 ? (
+                            <span className={`font-mono font-bold ${maxOverdueDays > 90 ? 'text-red-400' : maxOverdueDays > 30 ? 'text-amber-400' : 'text-[#f59e0b]'}`}>
+                              {maxOverdueDays}j
+                            </span>
+                          ) : count > 0 ? <span className="text-[#2dd4a0] text-[10px]">✓</span> : <span className="text-gray-700">—</span>}
                         </td>
                         <td className="px-4 py-3">
                           <div className="relative">
