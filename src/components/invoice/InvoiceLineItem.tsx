@@ -1,7 +1,7 @@
 ﻿'use client'
 
 import { useRef, useState } from 'react'
-import { Sparkles, Loader2 } from 'lucide-react'
+import { Sparkles, Loader2, Copy } from 'lucide-react'
 import { fmtTND } from '@/lib/utils/tva-calculator'
 
 export type TvaRate = 0 | 7 | 13 | 19
@@ -23,6 +23,7 @@ interface Props {
   isOnly: boolean
   onChange: (id: string, field: keyof InvLine, value: any) => void
   onRemove: (id: string) => void
+  onDuplicate?: (id: string) => void
   suggestions?: string[]
 }
 
@@ -36,7 +37,7 @@ const TVA_OPTIONS: { value: TvaRate; label: string }[] = [
 const NI = 'bg-[#0a0b0f] border border-[#1a1b22] rounded-lg px-2.5 py-2 text-sm text-white outline-none focus:border-[#d4a843] transition-colors font-mono w-full [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none'
 const TI = 'bg-[#0a0b0f] border border-[#1a1b22] rounded-lg px-2.5 py-2 text-sm text-white outline-none focus:border-[#d4a843] transition-colors w-full'
 
-export function InvoiceLineItem({ line, index, isOnly, onChange, onRemove, suggestions = [] }: Props) {
+export function InvoiceLineItem({ line, index, isOnly, onChange, onRemove, onDuplicate, suggestions = [] }: Props) {
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError]     = useState<string | null>(null)
   const [showSugg, setShowSugg]   = useState(false)
@@ -159,16 +160,28 @@ export function InvoiceLineItem({ line, index, isOnly, onChange, onRemove, sugge
         {fmtTND(line.line_ttc)}
       </div>
 
-      {/* Remove */}
-      <button
-        type="button"
-        onClick={() => onRemove(line.id)}
-        disabled={isOnly}
-        className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-950/20 transition-colors disabled:opacity-20 disabled:cursor-not-allowed mt-0.5"
-        title="Supprimer la ligne"
-      >
-        ✕
-      </button>
+      {/* Duplicate + Remove */}
+      <div className="flex flex-col gap-0.5">
+        {onDuplicate && (
+          <button
+            type="button"
+            onClick={() => onDuplicate(line.id)}
+            className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-600 hover:text-[#d4a843] hover:bg-[#d4a843]/10 transition-colors mt-0.5"
+            title="Dupliquer la ligne"
+          >
+            <Copy size={12} />
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => onRemove(line.id)}
+          disabled={isOnly}
+          className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-950/20 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+          title="Supprimer la ligne"
+        >
+          ✕
+        </button>
+      </div>
       </div>
 
       {/* Category badge + AI error */}

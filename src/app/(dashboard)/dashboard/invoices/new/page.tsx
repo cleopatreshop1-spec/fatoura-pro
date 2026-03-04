@@ -235,6 +235,14 @@ export default function NewInvoicePage() {
 
   function addLine() { setLines(p => [...p, newLine()]) }
   function removeLine(id: string) { setLines(p => p.filter(l => l.id !== id)) }
+  function duplicateLine(id: string) {
+    setLines(p => {
+      const idx = p.findIndex(l => l.id === id)
+      if (idx === -1) return p
+      const copy = { ...p[idx], id: crypto.randomUUID() }
+      return [...p.slice(0, idx + 1), copy, ...p.slice(idx + 1)]
+    })
+  }
 
   function addDiscount() {
     setLines(p => [...p, { ...newLine(), description: 'Remise', unit_price: -0, tva_rate: 0 as TvaRate }])
@@ -718,6 +726,7 @@ export default function NewInvoicePage() {
                   isOnly={lines.length === 1}
                   onChange={updateLine}
                   onRemove={removeLine}
+                  onDuplicate={duplicateLine}
                   suggestions={pastDescriptions}
                 />
               ))}
