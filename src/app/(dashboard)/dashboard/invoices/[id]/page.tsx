@@ -192,6 +192,9 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
               {i.notes && (
                 <div className="text-[10px] text-gray-500 border-t border-gray-200 pt-2">{i.notes}</div>
               )}
+              {c?.invoice_footer && (
+                <div className="text-[10px] text-gray-400 border-t border-gray-200 pt-2 leading-relaxed">{c.invoice_footer}</div>
+              )}
             </div>
           </div>
         </div>
