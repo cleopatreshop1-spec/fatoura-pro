@@ -518,10 +518,29 @@ export default function ExpensesPage() {
                 const over   = limit > 0 && spent > limit
                 const near   = limit > 0 && !over && pct >= 80
                 const barCol = over ? 'bg-red-500' : near ? 'bg-amber-400' : 'bg-[#2dd4a0]'
+                const nowC   = new Date()
+                const trend3 = Array.from({ length: 3 }, (_, i) => {
+                  const d = new Date(nowC.getFullYear(), nowC.getMonth() - (2 - i), 1)
+                  const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+                  return expenses.filter(e => e.category === cat.value && e.date.startsWith(key)).reduce((s, e) => s + Number(e.amount), 0)
+                })
+                const maxTrend = Math.max(...trend3, 1)
+                const hasTrend = trend3.some(v => v > 0)
                 return (
                   <div key={cat.value} className="space-y-1">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs text-gray-400 flex-1 truncate">{cat.label}</span>
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <span className="text-xs text-gray-400 truncate">{cat.label}</span>
+                        {hasTrend && (
+                          <div className="flex items-end gap-0.5 h-4 shrink-0">
+                            {trend3.map((v, ti) => {
+                              const h = Math.max(2, Math.round((v / maxTrend) * 14))
+                              const isLast = ti === 2
+                              return <div key={ti} className={`w-1.5 rounded-sm ${isLast ? 'bg-[#d4a843]' : 'bg-[#252830]'}`} style={{ height: h }} />
+                            })}
+                          </div>
+                        )}
+                      </div>
                       <div className="flex items-center gap-2 shrink-0">
                         {limit > 0 && (
                           <span className={`text-[10px] font-mono ${over ? 'text-red-400' : near ? 'text-amber-400' : 'text-gray-500'}`}>
