@@ -975,7 +975,15 @@ export default function InvoicesPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">
-                        {inv.issue_date ? new Date(inv.issue_date).toLocaleDateString('fr-FR') : ''}
+                        {inv.issue_date ? (
+                          <>
+                            <div>{new Date(inv.issue_date).toLocaleDateString('fr-FR')}</div>
+                            {(() => {
+                              const days = Math.floor((Date.now() - new Date(inv.issue_date).getTime()) / 86400000)
+                              return days > 0 ? <div className="text-[9px] text-gray-600 mt-0.5">J+{days}</div> : null
+                            })()}
+                          </>
+                        ) : ''}
                       </td>
                       <td className={`px-4 py-3 whitespace-nowrap hidden md:table-cell ${hiddenCols.has('due') ? '!hidden' : ''}`}>
                         {editingDueDate === inv.id ? (
