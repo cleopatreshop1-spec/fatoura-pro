@@ -196,15 +196,26 @@ export default function InvoicesPage() {
   }
 
   function exportCSV() {
-    const headers = ['N Facture','Client','Date','Echeance','HT','TVA','TTC','Statut','TTN_ID']
-    const rows = selectedInvs.map(i => [
-      i.number??'',i.clients?.name??'',i.issue_date??'',i.due_date??'',
-      i.ht_amount,i.tva_amount,i.ttc_amount,i.status,i.ttn_id??''
+    const toExport = selected.size > 0 ? selectedInvs : filtered
+    const headers = ['N Facture','Client','Date','Echeance','HT','TVA','TTC','Statut','Paiement','Date paiement','TTN_ID']
+    const rows = toExport.map(i => [
+      i.number??'',
+      i.clients?.name??'',
+      i.issue_date??'',
+      i.due_date??'',
+      i.ht_amount,
+      i.tva_amount,
+      i.ttc_amount,
+      i.status,
+      i.payment_status??'',
+      i.paid_at ? i.paid_at.slice(0,10) : '',
+      i.ttn_id??'',
     ].map(v=>String(v).replace(/,/g,' ')))
     const csv = [headers, ...rows].map(r=>r.join(',')).join('\n')
     const a = document.createElement('a')
-    a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}))
-    a.download = 'factures.csv'; a.click()
+    a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}))
+    a.download = `factures_${new Date().toISOString().slice(0,10)}.csv`
+    a.click()
   }
 
   async function quickUpdateDueDate(id: string, newDate: string) {
@@ -337,10 +348,18 @@ export default function InvoicesPage() {
           </h1>
           <p className="text-gray-500 text-sm">Gestion et suivi de vos factures</p>
         </div>
-        <Link href="/dashboard/invoices/new"
-          className="flex items-center gap-2 px-4 py-2.5 bg-[#d4a843] hover:bg-[#f0c060] text-black text-sm font-bold rounded-xl transition-colors">
-          <Plus size={15} strokeWidth={2.5} />Nouvelle facture
-        </Link>
+        <div className="flex items-center gap-2">
+          {filtered.length > 0 && (
+            <button onClick={exportCSV}
+              className="flex items-center gap-2 px-3 py-2.5 border border-[#1a1b22] text-gray-400 hover:text-white text-sm rounded-xl transition-colors">
+              <Download size={13} />CSV
+            </button>
+          )}
+          <Link href="/dashboard/invoices/new"
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#d4a843] hover:bg-[#f0c060] text-black text-sm font-bold rounded-xl transition-colors">
+            <Plus size={15} strokeWidth={2.5} />Nouvelle facture
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
