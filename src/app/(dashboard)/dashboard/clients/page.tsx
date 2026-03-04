@@ -21,7 +21,7 @@ type ClientRow = {
   invoices: { id: string; ttc_amount: number | null; status: string; payment_status: string | null }[]
 }
 type FilterType = 'all' | 'B2B' | 'B2C'
-type SortField = 'name' | 'count' | 'ca' | 'balance'
+type SortField = 'name' | 'count' | 'ca' | 'balance' | 'credit'
 
 const PAGE_SIZE = 25
 
@@ -96,6 +96,7 @@ export default function ClientsPage() {
       if (sort.field === 'count')   { av = sa.count;  bv = sb.count }
       if (sort.field === 'ca')      { av = sa.ca;     bv = sb.ca }
       if (sort.field === 'balance') { av = sa.balance; bv = sb.balance }
+      if (sort.field === 'credit')  { av = a.credit_limit ? (sa.balance / Number(a.credit_limit)) : -1; bv = b.credit_limit ? (sb.balance / Number(b.credit_limit)) : -1 }
       if (typeof av === 'string') return sort.dir === 'asc' ? av.localeCompare(bv as string) : (bv as string).localeCompare(av)
       return sort.dir === 'asc' ? av - (bv as number) : (bv as number) - av
     })
@@ -299,7 +300,7 @@ export default function ClientsPage() {
                       ['count',   'Factures',         'count'],
                       ['ca',      'CA Total',         'ca'],
                       ['balance', 'Solde dû',         'balance'],
-                      [null,      'Plafond',           null],
+                      ['credit',  'Plafond',           'credit'],
                       [null,      '',                 null],
                     ] as [SortField | null, string, string | null][]).map(([field, label]) => (
                       <th key={label}

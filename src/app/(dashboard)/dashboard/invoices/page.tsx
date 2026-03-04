@@ -19,7 +19,7 @@ type InvRow = {
   issue_date: string | null; due_date: string | null
   ht_amount: number; tva_amount: number; ttc_amount: number
   ttn_id: string | null; ttn_rejection_reason: string | null
-  payment_status: string | null; created_at: string; currency: string | null
+  payment_status: string | null; paid_at: string | null; created_at: string; currency: string | null
   clients: { id: string; name: string; type: string; matricule_fiscal: string | null } | null
 }
 type SortField = 'number' | 'issue_date' | 'due_date' | 'ttc_amount' | 'status'
@@ -73,7 +73,7 @@ export default function InvoicesPage() {
     setClients((cls ?? []) as ClientRow[])
     const { data } = await supabase
       .from('invoices')
-      .select('id, number, status, issue_date, due_date, ht_amount, tva_amount, ttc_amount, ttn_id, ttn_rejection_reason, payment_status, created_at, clients(id, name, type, matricule_fiscal)')
+      .select('id, number, status, issue_date, due_date, ht_amount, tva_amount, ttc_amount, ttn_id, ttn_rejection_reason, payment_status, paid_at, created_at, clients(id, name, type, matricule_fiscal)')
       .eq('company_id', activeCompany.id)
       .order('created_at', { ascending: false })
     setInvoices((data ?? []) as unknown as InvRow[])
@@ -668,7 +668,14 @@ export default function InvoicesPage() {
                           )}
                         </td>
                       )}
-                      <td className="px-4 py-3"><InvoiceStatusBadge status={inv.status} /></td>
+                      <td className="px-4 py-3">
+                        <InvoiceStatusBadge status={inv.status} />
+                        {inv.payment_status === 'paid' && inv.paid_at && (
+                          <div className="text-[9px] text-[#2dd4a0]/60 font-mono mt-0.5">
+                            {new Date(inv.paid_at).toLocaleDateString('fr-FR')}
+                          </div>
+                        )}
+                      </td>
                       <td className="px-4 py-3 hidden xl:table-cell">
                         {inv.ttn_id ? (
                           <button onClick={() => copyTTN(inv.ttn_id!)}
