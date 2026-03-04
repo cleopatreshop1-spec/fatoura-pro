@@ -486,6 +486,14 @@ export default async function DashboardPage() {
     ? Math.round(paidWithDates.reduce((s: number, i: any) => s + Math.max(0, Math.floor((new Date(i.paid_at).getTime() - new Date(i.issue_date).getTime()) / 86400000)), 0) / paidWithDates.length)
     : null
 
+  // ── YTD revenue vs last year ──────────────────────────────────────────
+  const ytdPrefix  = `${now.getFullYear()}-`
+  const ytdPfxPrev = `${now.getFullYear() - 1}-`
+  const ytdMonthDay = format(now, 'MM-dd')
+  const ytdRevenue  = (clientInvRaw as any[]).filter(i => i.status !== 'draft' && (i.issue_date ?? '').startsWith(ytdPrefix) && (i.issue_date ?? '').slice(5) <= ytdMonthDay).reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
+  const ytdRevPrev  = (clientInvRaw as any[]).filter(i => i.status !== 'draft' && (i.issue_date ?? '').startsWith(ytdPfxPrev) && (i.issue_date ?? '').slice(5) <= ytdMonthDay).reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
+  const ytdDelta    = ytdRevPrev > 0 ? Math.round(((ytdRevenue - ytdRevPrev) / ytdRevPrev) * 100) : null
+
   // ── Net Cash Position (this month) ───────────────────────────────────
   const cashCollectedMonth = (paidThisMonth as any[]).reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
   const netCash = cashCollectedMonth - expensesTotal
@@ -909,6 +917,29 @@ export default async function DashboardPage() {
               </div>
               {draftCount > 0 && (
                 <p className="text-[9px] text-amber-400 mt-2">{draftCount} brouillon{draftCount > 1 ? 's' : ''} en attente de validation</p>
+              )}
+            </div>
+          )}
+
+          {/* WIDGET: YTD revenue vs last year */}
+          {ytdRevenue > 0 && (
+            <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">CA cumulé YTD</p>
+                {ytdDelta !== null && (
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                    ytdDelta > 0  ? 'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20' :
+                    ytdDelta < 0  ? 'text-red-400 bg-red-950/30 border-red-900/30' :
+                    'text-gray-500 bg-[#1a1b22] border-[#252830]'
+                  }`}>{ytdDelta > 0 ? '+' : ''}{ytdDelta}% vs {now.getFullYear() - 1}</span>
+                )}
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl font-mono font-black text-[#d4a843]">{new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(ytdRevenue)}</span>
+                <span className="text-xs text-gray-500">TND</span>
+              </div>
+              {ytdRevPrev > 0 && (
+                <p className="text-[9px] text-gray-600 mt-1">{now.getFullYear() - 1} : {new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(ytdRevPrev)} TND à la même date</p>
               )}
             </div>
           )}
