@@ -227,6 +227,20 @@ export default function NewInvoicePage() {
 
   useEffect(() => { loadData() }, [loadData])
 
+  // Auto-fill due date and reference when client is selected
+  useEffect(() => {
+    if (!selectedClient) return
+    if (!dueDate) {
+      const base = invoiceDate ? new Date(invoiceDate) : new Date()
+      base.setDate(base.getDate() + 30)
+      setDueDate(base.toISOString().slice(0, 10))
+    }
+    if (!reference && selectedClient.matricule_fiscal) {
+      setReference(selectedClient.matricule_fiscal)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedClient])
+
   function updateLine(id: string, field: keyof InvLine, value: any) {
     setLines(prev => prev.map(l => {
       if (l.id !== id) return l
