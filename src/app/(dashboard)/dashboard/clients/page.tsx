@@ -583,7 +583,18 @@ export default function ClientsPage() {
                           })() : <span className="text-gray-700">—</span>}
                         </td>
                         <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap hidden xl:table-cell">
-                          {lastInvDate ? new Date(lastInvDate).toLocaleDateString('fr-FR') : <span className="text-gray-700">—</span>}
+                          <div className="flex items-center gap-1.5">
+                            {lastInvDate ? new Date(lastInvDate).toLocaleDateString('fr-FR') : <span className="text-gray-700">—</span>}
+                            {(() => {
+                              const overdueCount = c.invoices?.filter(i => i.payment_status !== 'paid' && i.due_date && i.due_date < todayStr && i.status !== 'draft').length ?? 0
+                              return overdueCount > 0 ? (
+                                <span title={`${overdueCount} facture${overdueCount > 1 ? 's' : ''} en retard`}
+                                  className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-red-950/40 text-red-400 border border-red-900/30">
+                                  {overdueCount} retard{overdueCount > 1 ? 's' : ''}
+                                </span>
+                              ) : null
+                            })()}
+                          </div>
                         </td>
                         <td className="px-4 py-3">
                           <div className="relative">
