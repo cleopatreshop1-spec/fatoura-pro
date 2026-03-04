@@ -12,6 +12,7 @@ import { fmtTND } from '@/lib/utils/tva-calculator'
 import { nextInvoiceNumber } from '@/lib/utils/invoice-number'
 import { LatePaymentRisk } from '@/components/invoice/LatePaymentRisk'
 import { InvoiceGapDetector } from '@/components/invoice/InvoiceGapDetector'
+import { InvoiceQuickPreview } from '@/components/invoice/InvoiceQuickPreview'
 
 type InvRow = {
   id: string; number: string | null; status: string
@@ -474,10 +475,19 @@ export default function InvoicesPage() {
                           className="w-3.5 h-3.5 rounded accent-[#d4a843] cursor-pointer" />
                       </td>
                       <td className="px-4 py-3">
-                        <Link href={`/dashboard/invoices/${inv.id}`}
-                          className="font-mono text-xs text-[#d4a843] hover:text-[#f0c060] transition-colors">
-                          {inv.number ?? <span className="text-gray-600 italic">Brouillon</span>}
-                        </Link>
+                        <InvoiceQuickPreview
+                          id={inv.id}
+                          number={inv.number}
+                          status={inv.status}
+                          clientName={inv.clients?.name ?? null}
+                          clientType={inv.clients?.type ?? null}
+                          issueDate={inv.issue_date}
+                          dueDate={inv.due_date}
+                          htAmount={Number(inv.ht_amount ?? 0)}
+                          tvaAmount={Number(inv.tva_amount ?? 0)}
+                          ttcAmount={Number(inv.ttc_amount ?? 0)}
+                          paymentStatus={inv.payment_status}
+                        />
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center flex-wrap gap-0.5">
