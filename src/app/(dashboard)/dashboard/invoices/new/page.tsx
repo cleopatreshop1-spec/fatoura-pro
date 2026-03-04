@@ -249,6 +249,18 @@ export default function NewInvoicePage() {
     })
   }
 
+  function reorderLine(dragId: string, dropId: string) {
+    setLines(p => {
+      const from = p.findIndex(l => l.id === dragId)
+      const to   = p.findIndex(l => l.id === dropId)
+      if (from === -1 || to === -1) return p
+      const next = [...p]
+      const [item] = next.splice(from, 1)
+      next.splice(to, 0, item)
+      return next
+    })
+  }
+
   function addDiscount() {
     setLines(p => [...p, { ...newLine(), description: 'Remise', unit_price: -0, tva_rate: 0 as TvaRate }])
   }
@@ -749,8 +761,8 @@ export default function NewInvoicePage() {
 
             {/* Column headers */}
             <div className="hidden md:grid gap-2 px-0 pb-2 border-b border-[#1a1b22]"
-              style={{ gridTemplateColumns: '1fr 80px 100px 130px 90px 90px 28px' }}>
-              {['Description', 'Qte', 'Prix U. HT', 'TVA', 'HT', 'TTC', ''].map(h => (
+              style={{ gridTemplateColumns: '16px 1fr 80px 100px 70px 130px 90px 90px 28px' }}>
+              {['', 'Description', 'Qté', 'Prix U. HT', 'Remise', 'TVA', 'HT', 'TTC', ''].map(h => (
                 <div key={h} className="text-[10px] text-gray-600 uppercase tracking-wider font-semibold">{h}</div>
               ))}
             </div>
@@ -763,6 +775,7 @@ export default function NewInvoicePage() {
                   onChange={updateLine}
                   onRemove={removeLine}
                   onDuplicate={duplicateLine}
+                  onReorder={reorderLine}
                   suggestions={pastDescriptions}
                 />
               ))}

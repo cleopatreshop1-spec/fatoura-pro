@@ -1,7 +1,7 @@
 ﻿'use client'
 
 import { useRef, useState } from 'react'
-import { Sparkles, Loader2, Copy, MessageSquare } from 'lucide-react'
+import { Sparkles, Loader2, Copy, MessageSquare, GripVertical } from 'lucide-react'
 import { fmtTND } from '@/lib/utils/tva-calculator'
 
 export type TvaRate = 0 | 7 | 13 | 19
@@ -26,6 +26,7 @@ interface Props {
   onChange: (id: string, field: keyof InvLine, value: any) => void
   onRemove: (id: string) => void
   onDuplicate?: (id: string) => void
+  onReorder?: (dragId: string, dropId: string) => void
   suggestions?: string[]
 }
 
@@ -39,11 +40,12 @@ const TVA_OPTIONS: { value: TvaRate; label: string }[] = [
 const NI = 'bg-[#0a0b0f] border border-[#1a1b22] rounded-lg px-2.5 py-2 text-sm text-white outline-none focus:border-[#d4a843] transition-colors font-mono w-full [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none'
 const TI = 'bg-[#0a0b0f] border border-[#1a1b22] rounded-lg px-2.5 py-2 text-sm text-white outline-none focus:border-[#d4a843] transition-colors w-full'
 
-export function InvoiceLineItem({ line, index, isOnly, onChange, onRemove, onDuplicate, suggestions = [] }: Props) {
+export function InvoiceLineItem({ line, index, isOnly, onChange, onRemove, onDuplicate, onReorder, suggestions = [] }: Props) {
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError]     = useState<string | null>(null)
   const [showSugg, setShowSugg]   = useState(false)
   const [showNotes, setShowNotes] = useState(!!line.notes)
+  const [dragOver, setDragOver]   = useState(false)
   const descRef = useRef<HTMLDivElement>(null)
 
   const handleAISuggest = async () => {
@@ -77,9 +79,21 @@ export function InvoiceLineItem({ line, index, isOnly, onChange, onRemove, onDup
   ).slice(0, 6)
 
   return (
-    <div className="border-b border-[#1a1b22] last:border-0 py-3 space-y-1.5">
+    <div
+      draggable={!!onReorder}
+      onDragStart={e => { e.dataTransfer.setData('lineId', line.id); e.dataTransfer.effectAllowed = 'move' }}
+      onDragOver={e => { if (!onReorder) return; e.preventDefault(); setDragOver(true) }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={e => { setDragOver(false); const from = e.dataTransfer.getData('lineId'); if (from && from !== line.id && onReorder) onReorder(from, line.id) }}
+      className={`border-b border-[#1a1b22] last:border-0 py-3 space-y-1.5 transition-colors ${dragOver ? 'bg-[#d4a843]/5 border-l-2 border-l-[#d4a843]/40' : ''}`}
+    >
       <div className="grid gap-2 items-start"
-        style={{ gridTemplateColumns: '1fr 80px 100px 70px 130px 90px 90px 28px' }}>
+        style={{ gridTemplateColumns: '16px 1fr 80px 100px 70px 130px 90px 90px 28px' }}>
+
+      {/* Drag handle */}
+      <div className={`flex items-center justify-center h-full pt-1.5 ${onReorder ? 'cursor-grab active:cursor-grabbing text-gray-600 hover:text-gray-400' : 'invisible'}`}>
+        <GripVertical size={13} />
+      </div>
 
       {/* Description + AI button + autocomplete */}
       <div className="relative" ref={descRef}>
