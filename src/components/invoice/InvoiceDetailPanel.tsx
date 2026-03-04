@@ -10,6 +10,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { nextInvoiceNumber } from '@/lib/utils/invoice-number'
 import { PaymentReminderButton } from '@/components/invoice/PaymentReminderButton'
 import { InvoiceTranslator } from '@/components/invoice/InvoiceTranslator'
+import { RecurringInvoiceSetup } from '@/components/invoice/RecurringInvoiceSetup'
 
 type InvoiceData = {
   id: string; number: string | null; status: string
@@ -336,6 +337,10 @@ export function InvoiceDetailPanel({ invoice: initial, companyPrefix }: Props) {
                 dueDate={inv.due_date}
               />
             )}
+            <RecurringInvoiceSetup
+              invoiceId={inv.id}
+              invoiceNumber={inv.number ?? ''}
+            />
             <InvoiceTranslator invoiceData={inv as Record<string, unknown>} />
           </div>
         </div>
