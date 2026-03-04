@@ -20,6 +20,7 @@ type InvRow = {
   ht_amount: number; tva_amount: number; ttc_amount: number
   ttn_id: string | null; ttn_rejection_reason: string | null
   payment_status: string | null; paid_at: string | null; created_at: string; currency: string | null
+  reference: string | null; notes: string | null
   clients: { id: string; name: string; type: string; matricule_fiscal: string | null } | null
 }
 type SortField = 'number' | 'issue_date' | 'due_date' | 'ttc_amount' | 'status'
@@ -76,7 +77,7 @@ export default function InvoicesPage() {
     setClients((cls ?? []) as ClientRow[])
     const { data } = await supabase
       .from('invoices')
-      .select('id, number, status, issue_date, due_date, ht_amount, tva_amount, ttc_amount, ttn_id, ttn_rejection_reason, payment_status, paid_at, created_at, clients(id, name, type, matricule_fiscal)')
+      .select('id, number, status, issue_date, due_date, ht_amount, tva_amount, ttc_amount, ttn_id, ttn_rejection_reason, payment_status, paid_at, created_at, reference, notes, clients(id, name, type, matricule_fiscal)')
       .eq('company_id', activeCompany.id)
       .order('created_at', { ascending: false })
     setInvoices((data ?? []) as unknown as InvRow[])
@@ -120,7 +121,14 @@ export default function InvoicesPage() {
     let list = invoices
     if (search) {
       const q = search.toLowerCase()
-      list = list.filter(i => (i.number ?? '').toLowerCase().includes(q) || (i.clients?.name ?? '').toLowerCase().includes(q))
+      const qNum = parseFloat(search.replace(',', '.'))
+      list = list.filter(i =>
+        (i.number ?? '').toLowerCase().includes(q) ||
+        (i.clients?.name ?? '').toLowerCase().includes(q) ||
+        (i.reference ?? '').toLowerCase().includes(q) ||
+        (i.notes ?? '').toLowerCase().includes(q) ||
+        (!isNaN(qNum) && Math.abs(Number(i.ttc_amount ?? 0) - qNum) < 1)
+      )
     }
     if (statusFilter !== 'all') list = list.filter(i => i.status === statusFilter)
     if (clientFilter) list = list.filter(i => i.clients?.id === clientFilter)
