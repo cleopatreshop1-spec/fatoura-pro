@@ -16,6 +16,7 @@ type Props = {
   unpaidTotal: number
   avgOverdueDays: number
   sparkline7d?: SparkPoint[]
+  bestMonthLabel?: string | null
 }
 
 function Sparkline({ data, color }: { data: SparkPoint[]; color: string }) {
@@ -49,7 +50,7 @@ function AnimatedInt({ value, color }: { value: number; color: string }) {
   return <span className={`font-mono text-2xl font-black leading-none ${color}`}>{Math.round(anim)}</span>
 }
 
-export function KpiCards({ caHT, caTrend, ytdHT, ytdInvCount, tvaQtr, qtr, year, unpaidTotal, avgOverdueDays, sparkline7d }: Props) {
+export function KpiCards({ caHT, caTrend, ytdHT, ytdInvCount, tvaQtr, qtr, year, unpaidTotal, avgOverdueDays, sparkline7d, bestMonthLabel }: Props) {
   const isOverdue = avgOverdueDays > 0
 
   const cards = [
@@ -75,6 +76,7 @@ export function KpiCards({ caHT, caTrend, ytdHT, ytdInvCount, tvaQtr, qtr, year,
       glow:   'shadow-[0_0_24px_rgba(45,212,160,0.08)]',
       sub:    { text: `${ytdInvCount} facture${ytdInvCount > 1 ? 's' : ''} validée${ytdInvCount > 1 ? 's' : ''}`, up: null },
       href:   '/dashboard/invoices',
+      badge:  bestMonthLabel,
     },
     {
       label:  'TVA collectée',
@@ -120,6 +122,11 @@ export function KpiCards({ caHT, caTrend, ytdHT, ytdInvCount, tvaQtr, qtr, year,
               }`}>
                 {card.sub.up === true ? '↑ ' : card.sub.up === false ? '↓ ' : ''}{card.sub.text}
               </p>
+            )}
+            {'badge' in card && card.badge && (
+              <span className="inline-block mt-2 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[#2dd4a0]/10 text-[#2dd4a0] border border-[#2dd4a0]/20">
+                ★ {card.badge}
+              </span>
             )}
             {'sparkline' in card && card.sparkline && card.sparkline.some(p => p.amount > 0) && (
               <div className="mt-3 flex items-end justify-between gap-1">

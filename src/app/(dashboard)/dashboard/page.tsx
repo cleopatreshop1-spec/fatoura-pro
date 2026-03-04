@@ -115,8 +115,19 @@ export default async function DashboardPage() {
   const caTrend    = prevCaHT > 0 ? Math.round(((caHT - prevCaHT) / prevCaHT) * 100) : null
   const ytdStart   = `${y}-01-01`
   const ytdAll     = [...(r_thisMonthV.data ?? []), ...(r_thisMonthVld.data ?? [])]
-  const ytdHT      = ytdAll.filter((i: any) => { const d = invDate(i); return d >= ytdStart && d <= todayStr }).reduce((s: number, i: any) => s + Number(i.ht_amount ?? 0), 0)
-  const ytdInvCount= ytdAll.filter((i: any) => { const d = invDate(i); return d >= ytdStart && d <= todayStr }).length
+  const ytdFiltered = ytdAll.filter((i: any) => { const d = invDate(i); return d >= ytdStart && d <= todayStr })
+  const ytdHT      = ytdFiltered.reduce((s: number, i: any) => s + Number(i.ht_amount ?? 0), 0)
+  const ytdInvCount= ytdFiltered.length
+  // Best month this year
+  const monthlyHT: Record<string, number> = {}
+  for (const inv of ytdFiltered) {
+    const key = invDate(inv).slice(0, 7) // 'YYYY-MM'
+    monthlyHT[key] = (monthlyHT[key] ?? 0) + Number(inv.ht_amount ?? 0)
+  }
+  const bestMonthEntry = Object.entries(monthlyHT).sort((a, b) => b[1] - a[1])[0] ?? null
+  const bestMonthLabel = bestMonthEntry
+    ? new Date(bestMonthEntry[0] + '-01').toLocaleDateString('fr-FR', { month: 'short' })
+    : null
   const tvaQtr     = (tvaQtrRows ?? []).filter((i: any) => invDate(i) >= qtrStart).reduce((s: number, i: any) => s + Number(i.tva_amount ?? 0), 0)
   const paidAmt    = (paidThisMonth ?? []).reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
 
@@ -441,6 +452,7 @@ export default async function DashboardPage() {
             unpaidTotal={unpaidTotal}
             avgOverdueDays={avgOverdue}
             sparkline7d={sparkline7d}
+            bestMonthLabel={bestMonthLabel}
           />
 
           {/* WIDGET: Profit / Loss */}
