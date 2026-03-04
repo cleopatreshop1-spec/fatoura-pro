@@ -616,6 +616,39 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
             )
           })()}
 
+          {/* Best month for invoicing */}
+          {validInvs.length >= 4 && (() => {
+            const MONTHS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc']
+            const byMonth = Array(12).fill(0)
+            for (const inv of validInvs) {
+              if (inv.issue_date) byMonth[new Date(inv.issue_date).getMonth()] += Number((inv as any).ttc_amount ?? 0)
+            }
+            const bestIdx = byMonth.indexOf(Math.max(...byMonth))
+            if (byMonth[bestIdx] === 0) return null
+            const maxAmt = Math.max(...byMonth, 1)
+            return (
+              <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Meilleur mois de facturation</p>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded border text-[#d4a843] bg-[#d4a843]/10 border-[#d4a843]/20">{MONTHS[bestIdx]}</span>
+                </div>
+                <div className="flex items-end gap-1 h-8">
+                  {byMonth.map((amt, i) => {
+                    const h = Math.max(2, Math.round((amt / maxAmt) * 28))
+                    return (
+                      <div key={i} className="flex-1 flex flex-col items-center gap-0.5" title={`${MONTHS[i]}: ${fmtTND(amt)} TND`}>
+                        <div className="w-full flex items-end justify-center" style={{ height: 28 }}>
+                          <div className={`w-full rounded-t-sm ${i === bestIdx ? 'bg-[#d4a843]' : amt > 0 ? 'bg-[#d4a843]/30' : 'bg-[#1a1b22]'}`} style={{ height: h }} />
+                        </div>
+                        <span className="text-[7px] text-gray-700">{MONTHS[i].slice(0,1)}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })()}
+
           {/* Day-of-week invoice heatmap */}
           {validInvs.length >= 3 && (() => {
             const DOW_LABELS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
