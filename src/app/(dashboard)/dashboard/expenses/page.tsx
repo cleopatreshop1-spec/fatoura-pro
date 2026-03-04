@@ -218,8 +218,10 @@ export default function ExpensesPage() {
     const byMonth = Array.from({ length: 12 }, (_, i) => {
       const key = `${chartYear}-${String(i + 1).padStart(2, '0')}`
       const label = new Date(chartYear, i, 1).toLocaleDateString('fr-FR', { month: 'short' })
-      const amount = expenses.filter(e => e.date.startsWith(key)).reduce((s, e) => s + Number(e.amount), 0)
-      return { key, label, amount }
+      const monthExpenses = expenses.filter(e => e.date.startsWith(key))
+      const amount = monthExpenses.reduce((s, e) => s + Number(e.amount), 0)
+      const count = monthExpenses.length
+      return { key, label, amount, count }
     })
     return { monthly, total, byCat, byMonth }
   }, [expenses, chartYear])
@@ -396,9 +398,19 @@ export default function ExpensesPage() {
                 <XAxis dataKey="label" tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} />
                 <YAxis tickFormatter={v => fmtTND(v)} tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} width={52} />
                 <Tooltip
-                  contentStyle={{ background: '#0a0b0f', border: '1px solid #1a1b22', borderRadius: '8px', fontSize: '11px' }}
-                  formatter={(v: any) => [fmtTND(Number(v ?? 0)) + ' TND', 'Dépenses']}
-                  labelStyle={{ color: '#9ca3af' }}
+                  contentStyle={{ background: '#0a0b0f', border: '1px solid #1a1b22', borderRadius: '8px', fontSize: '11px', padding: '8px 12px' }}
+                  labelStyle={{ color: '#9ca3af', marginBottom: 4 }}
+                  content={({ active, payload, label }: any) => {
+                    if (!active || !payload?.length) return null
+                    const d = payload[0].payload
+                    return (
+                      <div className="bg-[#0a0b0f] border border-[#1a1b22] rounded-xl px-3 py-2 text-xs shadow-2xl">
+                        <p className="text-gray-400 font-semibold mb-1.5">{label}</p>
+                        <p className="font-mono font-bold text-red-400">{fmtTND(d.amount)} TND</p>
+                        {d.count > 0 && <p className="text-gray-600 mt-0.5">{d.count} dépense{d.count > 1 ? 's' : ''}</p>}
+                      </div>
+                    )
+                  }}
                 />
                 <Bar dataKey="amount" radius={[4, 4, 0, 0]} fill="#ef4444" fillOpacity={0.75} />
               </BarChart>
