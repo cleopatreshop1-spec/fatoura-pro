@@ -13,6 +13,7 @@ import { AIInsightsPanel } from '@/components/dashboard/AIInsightsPanel'
 import { RecentInvoicesTable } from '@/components/dashboard/RecentInvoicesTable'
 import type { InvoiceTableRow } from '@/components/dashboard/RecentInvoicesTable'
 import { InvoiceAgingReport } from '@/components/dashboard/InvoiceAgingReport'
+import { ProfitLossWidget } from '@/components/dashboard/ProfitLossWidget'
 import { format, subDays, addDays, parseISO, endOfWeek, eachWeekOfInterval } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
@@ -69,6 +70,7 @@ export default async function DashboardPage() {
     r_all90,
     r_upcomingDue,
     r_recentPaid,
+    r_expenses,
   ] = await Promise.all([
     db.from('invoices').select('id, ht_amount, status, issue_date, created_at').eq('company_id', companyId).eq('status', 'valid').is('deleted_at', null),
     db.from('invoices').select('id, ht_amount, status, issue_date, created_at').eq('company_id', companyId).eq('status', 'validated').is('deleted_at', null),
@@ -83,6 +85,7 @@ export default async function DashboardPage() {
     db.from('invoices').select('id, status, payment_status, issue_date, created_at, validated_at, due_date, payment_date, ttc_amount, ht_amount').eq('company_id', companyId).gte('created_at', ago90).is('deleted_at', null),
     db.from('invoices').select('id, ttc_amount, due_date').eq('company_id', companyId).in('status', ['valid', 'validated']).neq('payment_status', 'paid').gte('due_date', todayStr).lte('due_date', in90).is('deleted_at', null),
     db.from('invoices').select('id, ttc_amount, payment_date').eq('company_id', companyId).eq('payment_status', 'paid').gte('payment_date', ago90).lte('payment_date', todayStr).is('deleted_at', null),
+    db.from('expenses').select('amount, category, date').eq('company_id', companyId).gte('date', monthStart).lte('date', todayStr),
   ])
 
   const thisMonthValid  = [...(r_thisMonthV.data ?? []),   ...(r_thisMonthVld.data ?? [])]
@@ -95,6 +98,7 @@ export default async function DashboardPage() {
   const allInvoices90   = r_all90.data          ?? []
   const upcomingDue     = r_upcomingDue.data     ?? []
   const recentPaid30    = r_recentPaid.data      ?? []
+  const expensesMonth   = r_expenses.data        ?? []
 
   // ── KPIs ──────────────────────────────────────────────────────────────
   // Use issue_date when set, fall back to created_at (handles invoices saved without a date)
@@ -257,6 +261,24 @@ export default async function DashboardPage() {
     paymentStatus: r.payment_status ?? 'unpaid',
   }))
 
+  // ── Profit / Loss ─────────────────────────────────────────────────────
+  const EXPENSE_LABELS: Record<string, string> = {
+    loyer: 'Loyer', salaires: 'Salaires', materiel: 'Matériel',
+    transport: 'Transport', telecom: 'Télécom', fournitures: 'Fournitures',
+    marketing: 'Marketing', comptabilite: 'Comptabilité', impots: 'Impôts', autre: 'Autre',
+  }
+  const expensesTotal = (expensesMonth as any[]).reduce((s: number, e: any) => s + Number(e.amount ?? 0), 0)
+  const expByCat = Object.entries(
+    (expensesMonth as any[]).reduce((acc: Record<string, number>, e: any) => {
+      acc[e.category] = (acc[e.category] ?? 0) + Number(e.amount ?? 0)
+      return acc
+    }, {})
+  )
+    .sort((a, b) => b[1] - a[1])
+    .map(([cat, amt]) => ({ label: EXPENSE_LABELS[cat] ?? cat, amount: amt as number, color: 'red' }))
+
+  const monthLabel = new Date(monthStart).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+
   const firstName = user.user_metadata?.first_name ?? user.email?.split('@')[0] ?? 'vous'
 
   return (
@@ -292,6 +314,14 @@ export default async function DashboardPage() {
             year={y}
             unpaidTotal={unpaidTotal}
             avgOverdueDays={avgOverdue}
+          />
+
+          {/* WIDGET: Profit / Loss */}
+          <ProfitLossWidget
+            revenueHT={caHT}
+            expensesTotal={expensesTotal}
+            expensesByCategory={expByCat}
+            month={monthLabel}
           />
 
           {/* WIDGET: Aging Report */}
