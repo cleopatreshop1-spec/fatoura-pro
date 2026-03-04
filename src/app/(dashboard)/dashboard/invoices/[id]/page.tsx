@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { InvoiceDetailPanel } from '@/components/invoice/InvoiceDetailPanel'
 import { InvoiceStatusBadge } from '@/components/invoice/InvoiceStatusBadge'
 import { PrintButton } from '@/components/invoice/PrintButton'
+import { InvoiceTimeline } from '@/components/invoice/InvoiceTimeline'
 import { fmtTND, STAMP_DUTY } from '@/lib/utils/tva-calculator'
 import { amountToWords } from '@/lib/utils/amount-to-words'
 import Link from 'next/link'
@@ -188,7 +189,19 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
         </div>
 
         {/*  RIGHT: Status Panel (2/5)  */}
-        <div className="xl:col-span-2">
+        <div className="xl:col-span-2 space-y-4">
+          {/* Status timeline */}
+          <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl px-4 py-4 print:hidden">
+            <p className="text-[10px] text-gray-600 uppercase tracking-wider font-semibold mb-3">Progression</p>
+            <InvoiceTimeline
+              status={i.status ?? 'draft'}
+              payment_status={i.payment_status ?? null}
+              created_at={i.created_at ?? null}
+              issue_date={i.issue_date ?? null}
+              ttn_id={i.ttn_id ?? null}
+              paid_at={i.paid_at ?? null}
+            />
+          </div>
           <InvoiceDetailPanel
             invoice={{
               id: i.id, number: i.number, status: i.status ?? 'draft',
