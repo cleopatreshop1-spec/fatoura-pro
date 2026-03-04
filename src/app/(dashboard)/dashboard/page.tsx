@@ -486,6 +486,12 @@ export default async function DashboardPage() {
     ? Math.round(paidWithDates.reduce((s: number, i: any) => s + Math.max(0, Math.floor((new Date(i.paid_at).getTime() - new Date(i.issue_date).getTime()) / 86400000)), 0) / paidWithDates.length)
     : null
 
+  // ── On-time vs late payment rate ─────────────────────────────────────
+  const paidWithDue = (clientInvRaw as any[]).filter(i => i.payment_status === 'paid' && i.paid_at && i.due_date)
+  const onTimeCount = paidWithDue.filter(i => i.paid_at <= i.due_date).length
+  const lateCount   = paidWithDue.length - onTimeCount
+  const onTimePct   = paidWithDue.length > 0 ? Math.round((onTimeCount / paidWithDue.length) * 100) : null
+
   // ── YTD revenue vs last year ──────────────────────────────────────────
   const ytdPrefix  = `${now.getFullYear()}-`
   const ytdPfxPrev = `${now.getFullYear() - 1}-`
@@ -793,6 +799,16 @@ export default async function DashboardPage() {
                     avgDaysToPayment <= 60 ? 'text-[#f59e0b] bg-[#f59e0b]/10 border-[#f59e0b]/20' :
                     'text-red-400 bg-red-950/30 border-red-900/30'
                   }`}>{avgDaysToPayment}j</span>
+                </div>
+              )}
+              {onTimePct !== null && paidWithDue.length >= 3 && (
+                <div className="flex items-center justify-between pt-2 mt-1 border-t border-[#1a1b22]">
+                  <span className="text-[10px] text-gray-600">Payé à temps</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                    onTimePct >= 80 ? 'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20' :
+                    onTimePct >= 50 ? 'text-[#f59e0b] bg-[#f59e0b]/10 border-[#f59e0b]/20' :
+                    'text-red-400 bg-red-950/30 border-red-900/30'
+                  }`}>{onTimePct}% <span className="font-normal opacity-60">({onTimeCount}/{paidWithDue.length})</span></span>
                 </div>
               )}
               {cashCollectedMonth > 0 && (
