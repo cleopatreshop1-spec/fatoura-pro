@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Plus, Search, MoreVertical, FileText, ChevronUp, ChevronDown, CheckSquare, Trash2, Download, DollarSign } from 'lucide-react'
+import { Plus, Search, MoreVertical, FileText, ChevronUp, ChevronDown, CheckSquare, Trash2, Download, DollarSign, Columns2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useCompany } from '@/contexts/CompanyContext'
 import { InvoiceStatusBadge } from '@/components/invoice/InvoiceStatusBadge'
@@ -52,6 +52,9 @@ export default function InvoicesPage() {
   const [clientFilter, setClientFilter] = useState('')
   const [amountMin, setAmountMin] = useState('')
   const [amountMax, setAmountMax] = useState('')
+  const [colMenuOpen, setColMenuOpen] = useState(false)
+  const [hiddenCols, setHiddenCols] = useState<Set<string>>(new Set())
+  function toggleCol(col: string) { setHiddenCols(prev => { const s = new Set(prev); s.has(col) ? s.delete(col) : s.add(col); return s }) }
   const [paymentFilter, setPaymentFilter] = useState<'all'|'paid'|'unpaid'|'overdue'>('all')
   const [sort, setSort] = useState<{ field: SortField; dir: 'asc'|'desc' }>({ field: 'issue_date', dir: 'desc' })
   const [page, setPage] = useState(1)
@@ -419,6 +422,30 @@ export default function InvoicesPage() {
             Réinitialiser
           </button>
         )}
+        {/* Column visibility */}
+        <div className="relative ml-auto">
+          <button onClick={() => setColMenuOpen(o => !o)}
+            className={`flex items-center gap-1.5 px-3 py-2 text-xs border rounded-xl transition-colors ${colMenuOpen ? 'border-[#d4a843]/40 text-[#d4a843]' : 'border-[#1a1b22] text-gray-500 hover:text-white'}`}>
+            <Columns2 size={12} />Colonnes
+          </button>
+          {colMenuOpen && (
+            <div className="absolute right-0 top-full mt-1 z-30 bg-[#161b27] border border-[#252830] rounded-xl shadow-2xl p-3 min-w-[160px] space-y-1">
+              {[
+                { key: 'ht',     label: 'Montant HT' },
+                { key: 'tva',    label: 'Montant TVA' },
+                { key: 'due',    label: 'Échéance' },
+                { key: 'ttn',    label: 'TTN ID' },
+                { key: 'paidat', label: 'Payé le' },
+              ].map(col => (
+                <label key={col.key} className="flex items-center gap-2 cursor-pointer group">
+                  <input type="checkbox" checked={!hiddenCols.has(col.key)} onChange={() => toggleCol(col.key)}
+                    className="w-3 h-3 rounded accent-[#d4a843]" />
+                  <span className="text-xs text-gray-400 group-hover:text-white transition-colors">{col.label}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Quick-filter chip bar */}
@@ -602,11 +629,19 @@ export default function InvoicesPage() {
                       <input type="checkbox" checked={allPageSelected} onChange={toggleAll}
                         className="w-3.5 h-3.5 rounded accent-[#d4a843] cursor-pointer" />
                     </th>
-                    {([['number','N° Facture',''],['','Client',''],['issue_date','Date',''],['due_date','Échéance','hidden md:table-cell'],
-                       ['ht_amount','HT','hidden lg:table-cell'],['tva_amount','TVA','hidden lg:table-cell'],['ttc_amount','TTC',''],
-                       ...(hasMultiCurrency ? [['','Devise','hidden xl:table-cell']] as [SortField|'',string,string][] : []),
-                       ['status','Statut',''],['','TTN_ID','hidden xl:table-cell'],['','']
-                    ] as [SortField|'',string,string][]).map(([field, label, hide]) => (
+                    {([
+                      { field: 'number'    as SortField|'', label: 'N° Facture', hide: '' },
+                      { field: ''         as SortField|'', label: 'Client',      hide: '' },
+                      { field: 'issue_date'as SortField|'', label: 'Date',        hide: '' },
+                      { field: 'due_date'  as SortField|'', label: 'Échéance',    hide: `hidden md:table-cell${hiddenCols.has('due') ? ' !hidden' : ''}` },
+                      { field: 'ht_amount' as SortField|'', label: 'HT',          hide: `hidden lg:table-cell${hiddenCols.has('ht')  ? ' !hidden' : ''}` },
+                      { field: 'tva_amount'as SortField|'', label: 'TVA',         hide: `hidden lg:table-cell${hiddenCols.has('tva') ? ' !hidden' : ''}` },
+                      { field: 'ttc_amount'as SortField|'', label: 'TTC',         hide: '' },
+                      ...(hasMultiCurrency ? [{ field: '' as SortField|'', label: 'Devise', hide: 'hidden xl:table-cell' }] : []),
+                      { field: 'status'    as SortField|'', label: 'Statut',      hide: '' },
+                      { field: ''          as SortField|'', label: 'TTN_ID',      hide: `hidden xl:table-cell${hiddenCols.has('ttn') ? ' !hidden' : ''}` },
+                      { field: ''          as SortField|'', label: '',            hide: '' },
+                    ]).map(({ field, label, hide }) => (
                       <th key={label} onClick={() => field && toggleSort(field as SortField)}
                         className={`px-4 py-3 text-left text-[10px] text-gray-600 uppercase tracking-wider font-semibold whitespace-nowrap ${hide} ${field?'cursor-pointer hover:text-gray-400 select-none':''}`}>
                         <span className="flex items-center">
@@ -670,7 +705,7 @@ export default function InvoicesPage() {
                       <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">
                         {inv.issue_date ? new Date(inv.issue_date).toLocaleDateString('fr-FR') : ''}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap hidden md:table-cell">
+                      <td className={`px-4 py-3 whitespace-nowrap hidden md:table-cell ${hiddenCols.has('due') ? '!hidden' : ''}`}>
                         {editingDueDate === inv.id ? (
                           <input
                             type="date"
@@ -700,8 +735,8 @@ export default function InvoicesPage() {
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3 font-mono text-xs text-gray-400 whitespace-nowrap text-right hidden lg:table-cell">{fmtTND(Number(inv.ht_amount??0))}</td>
-                      <td className="px-4 py-3 font-mono text-xs text-gray-500 whitespace-nowrap text-right hidden lg:table-cell">{fmtTND(Number(inv.tva_amount??0))}</td>
+                      <td className={`px-4 py-3 font-mono text-xs text-gray-400 whitespace-nowrap text-right hidden lg:table-cell ${hiddenCols.has('ht') ? '!hidden' : ''}`}>{fmtTND(Number(inv.ht_amount??0))}</td>
+                      <td className={`px-4 py-3 font-mono text-xs text-gray-500 whitespace-nowrap text-right hidden lg:table-cell ${hiddenCols.has('tva') ? '!hidden' : ''}`}>{fmtTND(Number(inv.tva_amount??0))}</td>
                       <td className="px-4 py-3 font-mono text-xs text-gray-200 font-bold whitespace-nowrap text-right">
                         {fmtTND(Number(inv.ttc_amount??0))}
                       </td>
@@ -722,7 +757,7 @@ export default function InvoicesPage() {
                           </div>
                         )}
                       </td>
-                      <td className="px-4 py-3 hidden xl:table-cell">
+                      <td className={`px-4 py-3 hidden xl:table-cell${hiddenCols.has('ttn') ? ' !hidden' : ''}`}>
                         {inv.ttn_rejection_reason ? (
                           <span
                             title={inv.ttn_rejection_reason}
