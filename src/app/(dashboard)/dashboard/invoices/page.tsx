@@ -589,19 +589,29 @@ export default function InvoicesPage() {
                           className="w-3.5 h-3.5 rounded accent-[#d4a843] cursor-pointer" />
                       </td>
                       <td className="px-4 py-3">
-                        <InvoiceQuickPreview
-                          id={inv.id}
-                          number={inv.number}
-                          status={inv.status}
-                          clientName={inv.clients?.name ?? null}
-                          clientType={inv.clients?.type ?? null}
-                          issueDate={inv.issue_date}
-                          dueDate={inv.due_date}
-                          htAmount={Number(inv.ht_amount ?? 0)}
-                          tvaAmount={Number(inv.tva_amount ?? 0)}
-                          ttcAmount={Number(inv.ttc_amount ?? 0)}
-                          paymentStatus={inv.payment_status}
-                        />
+                        <div className="flex items-center gap-2">
+                          <span
+                            title={inv.payment_status === 'paid' ? 'Payée' : isOverdue(inv) ? 'En retard' : 'Impayée'}
+                            className={`shrink-0 w-2 h-2 rounded-full ${
+                              inv.payment_status === 'paid' ? 'bg-[#2dd4a0]' :
+                              isOverdue(inv)               ? 'bg-red-500' :
+                                                             'bg-[#f59e0b]'
+                            }`}
+                          />
+                          <InvoiceQuickPreview
+                            id={inv.id}
+                            number={inv.number}
+                            status={inv.status}
+                            clientName={inv.clients?.name ?? null}
+                            clientType={inv.clients?.type ?? null}
+                            issueDate={inv.issue_date}
+                            dueDate={inv.due_date}
+                            htAmount={Number(inv.ht_amount ?? 0)}
+                            tvaAmount={Number(inv.tva_amount ?? 0)}
+                            ttcAmount={Number(inv.ttc_amount ?? 0)}
+                            paymentStatus={inv.payment_status}
+                          />
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center flex-wrap gap-0.5">
