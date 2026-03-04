@@ -193,6 +193,9 @@ export default async function DashboardPage() {
   const totalInvCount = (allInvoices90 ?? []).length
   const isNewUser     = totalInvCount < 5
 
+  // ── Draft count ───────────────────────────────────────────────────────
+  const draftCount = (allInvoices90 ?? []).filter((i: any) => i.status === 'draft').length
+
   // ── Pending TTN alert ─────────────────────────────────────────────────
   const stalePending = (allInvoices90 ?? []).filter((i: any) =>
     i.status === 'pending' && i.issue_date && i.issue_date < ago14
@@ -422,7 +425,7 @@ export default async function DashboardPage() {
           {/* Quick-action row */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {([
-              { href: '/dashboard/invoices/new', icon: '📄', label: 'Nouvelle facture',  color: 'border-[#d4a843]/30 hover:border-[#d4a843]/60 hover:bg-[#d4a843]/5', badge: null },
+              { href: '/dashboard/invoices/new', icon: '📄', label: 'Nouvelle facture',  color: 'border-[#d4a843]/30 hover:border-[#d4a843]/60 hover:bg-[#d4a843]/5', badge: draftCount > 0 ? draftCount : null },
               { href: '/dashboard/clients',      icon: '👤', label: 'Ajouter un client', color: 'border-[#2dd4a0]/20 hover:border-[#2dd4a0]/50 hover:bg-[#2dd4a0]/5', badge: null },
               { href: '/dashboard/expenses',     icon: '💸', label: 'Saisir une dépense',color: 'border-[#f59e0b]/20 hover:border-[#f59e0b]/50 hover:bg-[#f59e0b]/5', badge: null },
               { href: '/dashboard/invoices',     icon: '📋', label: 'Voir les factures', color: 'border-[#4a9eff]/20 hover:border-[#4a9eff]/50 hover:bg-[#4a9eff]/5', badge: unpaidCount > 0 ? unpaidCount : null },
