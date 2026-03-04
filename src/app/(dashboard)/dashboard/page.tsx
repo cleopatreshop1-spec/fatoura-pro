@@ -510,6 +510,11 @@ export default async function DashboardPage() {
   const collected90TTC = (allInvoices90 as any[]).filter(i => i.payment_status === 'paid').reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
   const collectionRate = invoiced90TTC > 0 ? Math.round((collected90TTC / invoiced90TTC) * 100) : null
 
+  // ── Biggest single payment received (last 90d) ───────────────────────
+  const biggestPayment = (recentPaid30 as any[]).length > 0
+    ? (recentPaid30 as any[]).reduce((best: any, i: any) => Number(i.ttc_amount ?? 0) > Number(best?.ttc_amount ?? 0) ? i : best, null)
+    : null
+
   // ── Avg invoice size trend (this month vs prev month) ────────────────
   const thisMonthPrefix = todayStr.slice(0, 7)
   const prevMonthDate   = new Date(now.getFullYear(), now.getMonth() - 1, 1)
@@ -952,6 +957,24 @@ export default async function DashboardPage() {
               <p className="text-[9px] text-gray-600 mt-1.5">
                 {new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 0 }).format(Math.round(collected90TTC))} / {new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 0 }).format(Math.round(invoiced90TTC))} TND
               </p>
+            </div>
+          )}
+
+          {/* WIDGET: Biggest single payment received */}
+          {biggestPayment && Number(biggestPayment.ttc_amount ?? 0) > 0 && (
+            <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Plus grand encaissement — 30j</p>
+                <p className="text-xl font-mono font-black text-[#2dd4a0]">
+                  {new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(Number(biggestPayment.ttc_amount ?? 0))} TND
+                </p>
+                {biggestPayment.payment_date && (
+                  <p className="text-[9px] text-gray-600 mt-0.5">
+                    {new Date(biggestPayment.payment_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
+                  </p>
+                )}
+              </div>
+              <span className="text-3xl">🏆</span>
             </div>
           )}
 
