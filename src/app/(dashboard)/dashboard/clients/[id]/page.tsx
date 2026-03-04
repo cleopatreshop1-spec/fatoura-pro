@@ -96,7 +96,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
         <span className="text-gray-700">/</span>
         <h1 className="text-lg font-bold text-white truncate">{c.name}</h1>
         <div className="ml-auto">
-          <ClientStatementButton clientId={id} clientName={c.name ?? 'client'} />
+          <ClientStatementButton clientId={id} clientName={c.name ?? 'client'} clientEmail={c.email ?? null} />
         </div>
         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${typeColor}`}>{c.type ?? 'B2B'}</span>
         {riskResult?.level && (

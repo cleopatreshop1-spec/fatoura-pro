@@ -11,15 +11,18 @@ function getResend(): Resend {
   return _resend
 }
 
+type Attachment = { filename: string; content: Buffer }
+
 export async function sendEmail({
-  to, subject, html,
-}: { to: string; subject: string; html: string }) {
+  to, subject, html, attachments,
+}: { to: string; subject: string; html: string; attachments?: Attachment[] }) {
   try {
     await getResend().emails.send({
       from: process.env.EMAIL_FROM ?? 'Fatoura Pro <noreply@fatoura.pro>',
       to,
       subject,
       html,
+      attachments: attachments?.map(a => ({ filename: a.filename, content: a.content })),
     })
   } catch (err) {
     console.error('[Email] Échec envoi:', err)
