@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Plus, Search, Trash2, Receipt, TrendingDown, Download, Paperclip, X as XIcon, RefreshCw, ChevronDown, ChevronUp, Pencil } from 'lucide-react'
+import { Plus, Search, Trash2, Receipt, TrendingDown, Download, Paperclip, X as XIcon, RefreshCw, ChevronDown, ChevronUp, Pencil, Target } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { createClient } from '@/lib/supabase/client'
 import { useCompany } from '@/contexts/CompanyContext'
@@ -87,8 +87,38 @@ export default function ExpensesPage() {
   const [addingRecurring, setAddingRecurring] = useState(false)
   const [savingRecurring, setSavingRecurring] = useState(false)
   const [editingRecurringId, setEditingRecurringId] = useState<string | null>(null)
+  const [budgets, setBudgets] = useState<Record<string, number>>({}) 
+  const [budgetOpen, setBudgetOpen] = useState(false)
+  const [editingBudget, setEditingBudget] = useState<string | null>(null)
+  const [budgetInput, setBudgetInput] = useState('')
+  const [savingBudget, setSavingBudget] = useState(false)
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(''), 3000) }
+
+  const loadBudgets = useCallback(async () => {
+    if (!activeCompany?.id) return
+    const { data } = await (supabase as any)
+      .from('expense_budgets')
+      .select('category, monthly_limit')
+      .eq('company_id', activeCompany.id)
+    const map: Record<string, number> = {}
+    for (const row of data ?? []) map[row.category] = Number(row.monthly_limit)
+    setBudgets(map)
+  }, [activeCompany?.id, supabase])
+
+  async function saveBudget(category: string, value: string) {
+    if (!activeCompany?.id) return
+    const limit = parseFloat(value) || 0
+    setSavingBudget(true)
+    await (supabase as any).from('expense_budgets').upsert(
+      { company_id: activeCompany.id, category, monthly_limit: limit },
+      { onConflict: 'company_id,category' }
+    )
+    setSavingBudget(false)
+    setBudgets(prev => ({ ...prev, [category]: limit }))
+    setEditingBudget(null)
+    setBudgetInput('')
+  }
 
   const loadRecurring = useCallback(async () => {
     if (!activeCompany?.id) return
@@ -157,6 +187,7 @@ export default function ExpensesPage() {
 
   useEffect(() => { load() }, [load])
   useEffect(() => { loadRecurring() }, [loadRecurring])
+  useEffect(() => { loadBudgets() }, [loadBudgets])
 
   const filtered = useMemo(() => {
     let list = expenses
@@ -340,6 +371,90 @@ export default function ExpensesPage() {
           </div>
         </div>
       )}
+
+      {/* Budget Panel */}
+      <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl overflow-hidden">
+        <button
+          onClick={() => setBudgetOpen(o => !o)}
+          className="w-full flex items-center justify-between px-5 py-4 hover:bg-[#161b27]/50 transition-colors"
+        >
+          <div className="flex items-center gap-2.5">
+            <Target size={14} className="text-[#d4a843]" />
+            <span className="text-sm font-bold text-white">Budgets mensuels</span>
+            {Object.keys(budgets).filter(k => budgets[k] > 0).length > 0 && (
+              <span className="text-[10px] px-2 py-0.5 bg-[#d4a843]/10 text-[#d4a843] border border-[#d4a843]/20 rounded-full font-bold">
+                {Object.keys(budgets).filter(k => budgets[k] > 0).length} configuré{Object.keys(budgets).filter(k => budgets[k] > 0).length > 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
+          {budgetOpen ? <ChevronUp size={14} className="text-gray-500" /> : <ChevronDown size={14} className="text-gray-500" />}
+        </button>
+
+        {budgetOpen && (
+          <div className="border-t border-[#1a1b22] px-5 py-4 space-y-3">
+            <p className="text-xs text-gray-600">Définissez un plafond mensuel par catégorie. Une barre de progression s&apos;affichera automatiquement.</p>
+            <div className="space-y-2">
+              {CATEGORIES.map(cat => {
+                const spent  = totals.byCat[cat.value] ?? 0
+                const limit  = budgets[cat.value] ?? 0
+                const pct    = limit > 0 ? Math.min(100, Math.round((spent / limit) * 100)) : 0
+                const over   = limit > 0 && spent > limit
+                const near   = limit > 0 && !over && pct >= 80
+                const barCol = over ? 'bg-red-500' : near ? 'bg-amber-400' : 'bg-[#2dd4a0]'
+                return (
+                  <div key={cat.value} className="space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs text-gray-400 flex-1 truncate">{cat.label}</span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {limit > 0 && (
+                          <span className={`text-[10px] font-mono ${over ? 'text-red-400' : near ? 'text-amber-400' : 'text-gray-500'}`}>
+                            {fmtTND(spent)} / {fmtTND(limit)} TND
+                          </span>
+                        )}
+                        {editingBudget === cat.value ? (
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number" step="0.001" min="0"
+                              value={budgetInput}
+                              onChange={e => setBudgetInput(e.target.value)}
+                              autoFocus
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') saveBudget(cat.value, budgetInput)
+                                if (e.key === 'Escape') { setEditingBudget(null); setBudgetInput('') }
+                              }}
+                              className="w-24 bg-[#0a0b0f] border border-[#d4a843]/60 rounded-lg px-2 py-1 text-xs text-white outline-none font-mono"
+                            />
+                            <button onClick={() => saveBudget(cat.value, budgetInput)} disabled={savingBudget}
+                              className="text-[10px] px-2 py-1 bg-[#d4a843] text-black font-bold rounded-lg hover:bg-[#f0c060] transition-colors disabled:opacity-50">
+                              OK
+                            </button>
+                            <button onClick={() => { setEditingBudget(null); setBudgetInput('') }}
+                              className="text-[10px] px-2 py-1 border border-[#252830] text-gray-500 rounded-lg hover:text-white transition-colors">
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => { setEditingBudget(cat.value); setBudgetInput(limit > 0 ? String(limit) : '') }}
+                            className="text-[10px] text-gray-600 hover:text-[#d4a843] transition-colors flex items-center gap-1"
+                          >
+                            <Pencil size={10} />{limit > 0 ? 'Modifier' : 'Définir'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    {limit > 0 && (
+                      <div className="w-full h-1.5 bg-[#1a1b22] rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full transition-all duration-500 ${barCol}`} style={{ width: `${pct}%` }} />
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Recurring Expenses Panel */}
       <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl overflow-hidden">
