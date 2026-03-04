@@ -70,6 +70,7 @@ export default function NewInvoicePage() {
   const [pastDescriptions, setPastDescriptions] = useState<string[]>([])
   const [pastNotes, setPastNotes] = useState<string[]>([])
   const [applyStamp, setApplyStamp] = useState(true)
+  const [prefillLoading, setPrefillLoading] = useState(false)
 
   const autoSaveRef    = useRef<ReturnType<typeof setTimeout> | null>(null)
   const buildAndSaveRef = useRef<((status: string) => Promise<string | null>) | null>(null)
@@ -123,6 +124,44 @@ export default function NewInvoicePage() {
       })))
     }
     showToast('Données scannées importées — vérifiez avant de sauvegarder', 'success')
+  }
+
+  async function prefillFromLastInvoice() {
+    if (!selectedClient || !activeCompany?.id) return
+    setPrefillLoading(true)
+    const { data: inv } = await supabase
+      .from('invoices')
+      .select('id, due_date, notes, reference')
+      .eq('company_id', activeCompany.id)
+      .eq('client_id', selectedClient.id)
+      .neq('status', 'draft')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (inv) {
+      const { data: lineData } = await (supabase as any)
+        .from('invoice_line_items')
+        .select('description, quantity, unit_price, tva_rate, notes')
+        .eq('invoice_id', inv.id)
+      if (lineData?.length) {
+        setLines((lineData as any[]).map(l => ({
+          id: crypto.randomUUID(),
+          description: l.description ?? '',
+          quantity: Number(l.quantity ?? 1),
+          unit_price: Number(l.unit_price ?? 0),
+          tva_rate: ([0,7,13,19].includes(Number(l.tva_rate)) ? Number(l.tva_rate) : 19) as TvaRate,
+          line_ht: Number(l.quantity ?? 1) * Number(l.unit_price ?? 0),
+          line_ttc: Number(l.quantity ?? 1) * Number(l.unit_price ?? 0) * (1 + Number(l.tva_rate ?? 19) / 100),
+          notes: l.notes ?? undefined,
+        })))
+      }
+      if ((inv as any).notes) setNotes((inv as any).notes)
+      if ((inv as any).reference) setReference((inv as any).reference)
+      showToast('Lignes pré-remplies depuis la dernière facture', 'success')
+    } else {
+      showToast('Aucune facture précédente trouvée pour ce client', 'error')
+    }
+    setPrefillLoading(false)
   }
 
   const loadData = useCallback(async () => {
@@ -769,6 +808,17 @@ export default function NewInvoicePage() {
               onSelect={setSelectedClient}
               onAddNew={() => setAddClientOpen(true)}
             />
+            {selectedClient && (
+              <button
+                type="button"
+                onClick={prefillFromLastInvoice}
+                disabled={prefillLoading}
+                title="Pré-remplir les lignes depuis la dernière facture de ce client"
+                className="mt-2 flex items-center gap-1.5 text-[10px] text-[#d4a843] hover:text-[#f0c060] border border-[#d4a843]/20 hover:border-[#d4a843]/50 bg-[#d4a843]/5 hover:bg-[#d4a843]/10 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
+                <RefreshCw size={10} className={prefillLoading ? 'animate-spin' : ''} />
+                {prefillLoading ? 'Chargement…' : 'Reprendre dernière facture'}
+              </button>
+            )}
           </div>
 
           {/* Credit limit warning */}
