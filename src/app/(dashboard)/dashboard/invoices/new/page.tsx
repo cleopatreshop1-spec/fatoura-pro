@@ -681,7 +681,20 @@ export default function NewInvoicePage() {
                 <label className={LC}>Date d'echeance</label>
                 <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
                   className={IC} placeholder="Optionnel" />
-                <p className="text-[10px] text-gray-600 mt-1">J+30 recommande</p>
+                <div className="flex gap-1 mt-1.5">
+                  {[15, 30, 60, 90].map(days => (
+                    <button key={days} type="button"
+                      onClick={() => {
+                        if (!invoiceDate) return
+                        const d = new Date(invoiceDate)
+                        d.setDate(d.getDate() + days)
+                        setDueDate(d.toISOString().slice(0, 10))
+                      }}
+                      className="flex-1 text-[10px] px-1.5 py-1 rounded-lg border border-[#1a1b22] text-gray-600 hover:text-[#d4a843] hover:border-[#d4a843]/30 transition-colors">
+                      J+{days}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div>
                 <label className={LC}>Reference (optionnel)</label>
