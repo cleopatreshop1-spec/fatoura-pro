@@ -782,11 +782,26 @@ export default function ExpensesPage() {
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher..."
             className="w-full bg-[#0f1118] border border-[#1a1b22] rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#d4a843] transition-colors" />
         </div>
-        <select value={catFilter} onChange={e => setCatFilter(e.target.value)}
-          className="bg-[#0f1118] border border-[#1a1b22] rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-[#d4a843] transition-colors">
-          <option value="all">Toutes catégories</option>
-          {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-        </select>
+        <div className="flex gap-1 flex-wrap">
+          <button onClick={() => setCatFilter('all')}
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
+              catFilter === 'all'
+                ? 'bg-[#d4a843]/15 border-[#d4a843]/40 text-[#d4a843]'
+                : 'border-[#1a1b22] text-gray-600 hover:text-gray-300'
+            }`}>
+            Tout
+          </button>
+          {CATEGORIES.filter(c => (totals.byCat[c.value] ?? 0) > 0).map(c => (
+            <button key={c.value} onClick={() => setCatFilter(catFilter === c.value ? 'all' : c.value)}
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
+                catFilter === c.value
+                  ? 'bg-[#d4a843]/15 border-[#d4a843]/40 text-[#d4a843]'
+                  : 'border-[#1a1b22] text-gray-600 hover:text-gray-300'
+              }`}>
+              {c.label.split(' ')[0]}
+            </button>
+          ))}
+        </div>
         <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
           title="Date de début"
           className="bg-[#0f1118] border border-[#1a1b22] rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-[#d4a843] transition-colors" />
