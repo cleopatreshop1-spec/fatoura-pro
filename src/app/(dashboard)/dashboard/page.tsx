@@ -1248,6 +1248,33 @@ export default async function DashboardPage() {
             </a>
           )}
 
+          {/* Overdue escalation breakdown */}
+          {agingSummaryTotal > 0 && (() => {
+            const esc30  = (clientInvRaw as any[]).filter(i => i.payment_status !== 'paid' && i.due_date && i.due_date < todayStr && i.status !== 'draft').filter(i => { const d = Math.floor((new Date(todayStr).getTime() - new Date(i.due_date).getTime()) / 86400000); return d > 0 && d <= 30 }).length
+            const esc60  = (clientInvRaw as any[]).filter(i => i.payment_status !== 'paid' && i.due_date && i.due_date < todayStr && i.status !== 'draft').filter(i => { const d = Math.floor((new Date(todayStr).getTime() - new Date(i.due_date).getTime()) / 86400000); return d > 30 && d <= 60 }).length
+            const esc90  = (clientInvRaw as any[]).filter(i => i.payment_status !== 'paid' && i.due_date && i.due_date < todayStr && i.status !== 'draft').filter(i => { const d = Math.floor((new Date(todayStr).getTime() - new Date(i.due_date).getTime()) / 86400000); return d > 60 && d <= 90 }).length
+            const esc90p = (clientInvRaw as any[]).filter(i => i.payment_status !== 'paid' && i.due_date && i.due_date < todayStr && i.status !== 'draft').filter(i => { const d = Math.floor((new Date(todayStr).getTime() - new Date(i.due_date).getTime()) / 86400000); return d > 90 }).length
+            if (esc30 + esc60 + esc90 + esc90p === 0) return null
+            const bands = [
+              { label: '1–30j',  count: esc30,  col: 'text-amber-400 bg-amber-950/30 border-amber-900/30' },
+              { label: '31–60j', count: esc60,  col: 'text-orange-400 bg-orange-950/30 border-orange-900/30' },
+              { label: '61–90j', count: esc90,  col: 'text-red-400 bg-red-950/30 border-red-900/30' },
+              { label: '>90j',   count: esc90p, col: 'text-red-300 bg-red-900/40 border-red-800/40' },
+            ].filter(b => b.count > 0)
+            return (
+              <div className="bg-[#0f1118] border border-red-900/30 rounded-2xl px-4 py-3">
+                <p className="text-[10px] font-bold text-red-400 uppercase tracking-wider mb-2">Escalade des retards</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {bands.map(b => (
+                    <span key={b.label} className={`text-[10px] font-bold px-2 py-0.5 rounded border ${b.col}`}>
+                      {b.count} × {b.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )
+          })()}
+
           {/* Invoice Status Donut */}
           <InvoiceStatusDonut
             draft={draftCount2}
