@@ -21,7 +21,7 @@ type ClientRow = {
   invoices: { id: string; ttc_amount: number | null; status: string; payment_status: string | null }[]
 }
 type FilterType = 'all' | 'B2B' | 'B2C'
-type SortField = 'name' | 'count' | 'ca' | 'balance' | 'credit'
+type SortField = 'name' | 'count' | 'ca' | 'balance' | 'credit' | 'lastInv'
 
 const PAGE_SIZE = 25
 
@@ -111,11 +111,14 @@ export default function ClientsPage() {
     list = [...list].sort((a, b) => {
       const sa = getStats(a), sb = getStats(b)
       let av: string | number = 0, bv: string | number = 0
+      const aLast = a.invoices?.reduce((m: string, i: any) => i.status !== 'draft' && i.issue_date > m ? i.issue_date : m, '') ?? ''
+      const bLast = b.invoices?.reduce((m: string, i: any) => i.status !== 'draft' && i.issue_date > m ? i.issue_date : m, '') ?? ''
       if (sort.field === 'name')    { av = a.name.toLowerCase(); bv = b.name.toLowerCase() }
       if (sort.field === 'count')   { av = sa.count;  bv = sb.count }
       if (sort.field === 'ca')      { av = sa.ca;     bv = sb.ca }
       if (sort.field === 'balance') { av = sa.balance; bv = sb.balance }
       if (sort.field === 'credit')  { av = a.credit_limit ? (sa.balance / Number(a.credit_limit)) : -1; bv = b.credit_limit ? (sb.balance / Number(b.credit_limit)) : -1 }
+      if (sort.field === 'lastInv') { av = aLast; bv = bLast }
       if (typeof av === 'string') return sort.dir === 'asc' ? av.localeCompare(bv as string) : (bv as string).localeCompare(av)
       return sort.dir === 'asc' ? av - (bv as number) : (bv as number) - av
     })
@@ -348,6 +351,7 @@ export default function ClientsPage() {
                       ['ca',      'CA Total',         'ca'],
                       ['balance', 'Solde dû',         'balance'],
                       ['credit',  'Plafond',           'credit'],
+                      ['lastInv', 'Dernière facture',  'lastInv'],
                       [null,      '',                 null],
                     ] as [SortField | null, string, string | null][]).map(([field, label]) => (
                       <th key={label}
@@ -370,6 +374,7 @@ export default function ClientsPage() {
                 <tbody className="divide-y divide-[#1a1b22]">
                   {paginated.map(c => {
                     const { count, ca, balance, unpaid } = getStats(c)
+                    const lastInvDate = c.invoices?.reduce((m: string, i: any) => i.status !== 'draft' && (i.issue_date ?? '') > m ? (i.issue_date ?? '') : m, '') ?? ''
                     return (
                       <tr key={c.id} className={`hover:bg-[#161b27]/50 transition-colors ${selected.has(c.id) ? 'bg-red-950/10' : ''}`}>
                         <td className="px-4 py-3 w-8">
@@ -425,6 +430,9 @@ export default function ClientsPage() {
                               {fmtTND(Number(c.credit_limit))} TND
                             </span>
                           ) : <span className="text-gray-700">—</span>}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap hidden xl:table-cell">
+                          {lastInvDate ? new Date(lastInvDate).toLocaleDateString('fr-FR') : <span className="text-gray-700">—</span>}
                         </td>
                         <td className="px-4 py-3">
                           <div className="relative">
