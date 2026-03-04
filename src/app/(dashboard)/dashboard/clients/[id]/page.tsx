@@ -6,6 +6,7 @@ import { fmtTND } from '@/lib/utils/tva-calculator'
 import { ClientDetailActions } from '@/components/clients/ClientDetailActions'
 import { computeRisk } from '@/components/invoice/LatePaymentRisk'
 import { ClientStatementButton } from '@/components/clients/ClientStatementButton'
+import { PaymentReminderButton } from '@/components/invoice/PaymentReminderButton'
 
 export default async function ClientDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -257,7 +258,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[#1a1b22]">
-                      {['N° Facture','Date','Montant TTC','Statut TTN','Paiement'].map(h => (
+                      {['N° Facture','Date','Montant TTC','Statut TTN','Paiement',''].map(h => (
                         <th key={h} className="px-4 py-3 text-left text-[10px] text-gray-600 uppercase tracking-wider font-semibold whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
@@ -292,6 +293,20 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
                               </span>
                             ) : (
                               <span className="text-[10px] text-gray-600">En attente</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {isOverdue && (
+                              <PaymentReminderButton
+                                invoiceId={inv.id}
+                                invoiceNumber={inv.number ?? 'Brouillon'}
+                                clientName={c.name}
+                                clientEmail={c.email}
+                                clientPhone={c.phone}
+                                amount={Number(inv.ttc_amount ?? 0)}
+                                dueDate={inv.due_date}
+                                daysOverdue={inv.due_date ? Math.floor((Date.now() - new Date(inv.due_date).getTime()) / 86400000) : 0}
+                              />
                             )}
                           </td>
                         </tr>
