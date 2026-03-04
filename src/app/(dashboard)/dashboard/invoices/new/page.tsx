@@ -955,6 +955,19 @@ export default function NewInvoicePage() {
                   </div>
                 </div>
 
+                {totals.total_ttc > 0 && (() => {
+                  const totalTva = Object.values(totals.tva_by_rate).reduce((s, v) => s + v.tva, 0)
+                  const tvaPct = totals.total_ht > 0 ? Math.round((totalTva / totals.total_ht) * 100) : 0
+                  return totalTva > 0 ? (
+                    <div className="flex items-center justify-between bg-[#0a0f1a] border border-[#1e2535] rounded-lg px-3 py-2 mt-1">
+                      <span className="text-[10px] text-gray-600">TVA totale</span>
+                      <span className="text-[10px] font-mono font-bold text-[#4a9eff]">
+                        {fmtTND(totalTva)} TND
+                        <span className="text-gray-600 font-normal ml-1">({tvaPct}%)</span>
+                      </span>
+                    </div>
+                  ) : null
+                })()}
                 {totals.total_ttc > 0 && (
                   <div className="bg-[#161b27] rounded-lg px-3 py-2.5 mt-1">
                     <div className="text-[10px] text-gray-600 uppercase tracking-wider mb-1">Montant en lettres</div>
