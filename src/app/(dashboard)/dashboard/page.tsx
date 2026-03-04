@@ -110,7 +110,10 @@ export default async function DashboardPage() {
   const caHT       = (thisMonthValid ?? []).filter((i: any) => { const d = invDate(i); return d >= monthStart && d <= todayStr }).reduce((s: number, i: any) => s + Number(i.ht_amount ?? 0), 0)
   const prevCaHT   = (prevMonthValid  ?? []).filter((i: any) => { const d = invDate(i); return d >= prevStart && d < prevEnd  }).reduce((s: number, i: any) => s + Number(i.ht_amount ?? 0), 0)
   const caTrend    = prevCaHT > 0 ? Math.round(((caHT - prevCaHT) / prevCaHT) * 100) : null
-  const validCount = (thisMonthValid ?? []).filter((i: any) => i.status === 'valid' && invDate(i) >= monthStart && invDate(i) <= todayStr).length
+  const ytdStart   = `${y}-01-01`
+  const ytdAll     = [...(r_thisMonthV.data ?? []), ...(r_thisMonthVld.data ?? [])]
+  const ytdHT      = ytdAll.filter((i: any) => { const d = invDate(i); return d >= ytdStart && d <= todayStr }).reduce((s: number, i: any) => s + Number(i.ht_amount ?? 0), 0)
+  const ytdInvCount= ytdAll.filter((i: any) => { const d = invDate(i); return d >= ytdStart && d <= todayStr }).length
   const tvaQtr     = (tvaQtrRows ?? []).filter((i: any) => invDate(i) >= qtrStart).reduce((s: number, i: any) => s + Number(i.tva_amount ?? 0), 0)
   const paidAmt    = (paidThisMonth ?? []).reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
 
@@ -326,7 +329,8 @@ export default async function DashboardPage() {
           <KpiCards
             caHT={caHT}
             caTrend={caTrend}
-            validThisMonth={validCount}
+            ytdHT={ytdHT}
+            ytdInvCount={ytdInvCount}
             tvaQtr={tvaQtr}
             qtr={qtr + 1}
             year={y}

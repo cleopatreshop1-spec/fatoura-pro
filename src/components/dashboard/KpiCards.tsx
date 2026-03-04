@@ -6,7 +6,8 @@ import { useAnimatedNumber } from '@/hooks/useAnimatedNumber'
 type Props = {
   caHT: number
   caTrend: number | null
-  validThisMonth: number
+  ytdHT: number
+  ytdInvCount: number
   tvaQtr: number
   qtr: number
   year: number
@@ -27,7 +28,7 @@ function AnimatedInt({ value, color }: { value: number; color: string }) {
   return <span className={`font-mono text-2xl font-black leading-none ${color}`}>{Math.round(anim)}</span>
 }
 
-export function KpiCards({ caHT, caTrend, validThisMonth, tvaQtr, qtr, year, unpaidTotal, avgOverdueDays }: Props) {
+export function KpiCards({ caHT, caTrend, ytdHT, ytdInvCount, tvaQtr, qtr, year, unpaidTotal, avgOverdueDays }: Props) {
   const isOverdue = avgOverdueDays > 0
 
   const cards = [
@@ -44,14 +45,14 @@ export function KpiCards({ caHT, caTrend, validThisMonth, tvaQtr, qtr, year, unp
       href: '/dashboard/invoices',
     },
     {
-      label:  'Factures validées TTN',
-      node:   <AnimatedInt value={validThisMonth} color="text-[#2dd4a0]" />,
-      suffix: 'ce mois',
+      label:  `CA ${year} (HT)`,
+      node:   <AnimatedTND value={ytdHT} color="text-[#2dd4a0]" />,
+      suffix: 'TND année en cours',
       gradient: 'from-[#2dd4a0]/8 to-transparent',
       bar:    'bg-gradient-to-r from-[#2dd4a0] to-[#34d8a8]',
       glow:   'shadow-[0_0_24px_rgba(45,212,160,0.08)]',
-      sub:    null,
-      href:   '/dashboard/invoices?status=valid',
+      sub:    { text: `${ytdInvCount} facture${ytdInvCount > 1 ? 's' : ''} validée${ytdInvCount > 1 ? 's' : ''}`, up: null },
+      href:   '/dashboard/invoices',
     },
     {
       label:  'TVA collectée',
