@@ -145,6 +145,43 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
         ))}
       </div>
 
+      {/* Paid vs unpaid pie summary */}
+      {totalTTC > 0 && validInvs.length >= 2 && (() => {
+        const paidPct  = Math.round((paidTTC  / totalTTC) * 100)
+        const unpaidPct = 100 - paidPct
+        const r = 18, circ = 2 * Math.PI * r
+        const paidDash  = (paidPct  / 100) * circ
+        const unpaidDash = (unpaidPct / 100) * circ
+        return (
+          <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl px-4 py-3 flex items-center gap-5">
+            <svg width="52" height="52" viewBox="0 0 52 52" className="shrink-0 -rotate-90">
+              <circle cx="26" cy="26" r={r} fill="none" stroke="#1a1b22" strokeWidth="7" />
+              <circle cx="26" cy="26" r={r} fill="none" stroke="#2dd4a0" strokeWidth="7"
+                strokeDasharray={`${paidDash} ${circ - paidDash}`} strokeLinecap="round" />
+              <circle cx="26" cy="26" r={r} fill="none" stroke="#f59e0b" strokeWidth="7"
+                strokeDasharray={`${unpaidDash} ${circ - unpaidDash}`}
+                strokeDashoffset={-paidDash} strokeLinecap="round" />
+            </svg>
+            <div className="flex-1 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[#2dd4a0] shrink-0" />
+                  <span className="text-[10px] text-gray-500">Encaissé</span>
+                </div>
+                <span className="text-[10px] font-mono font-bold text-[#2dd4a0]">{paidPct}% · {fmtTND(paidTTC)} TND</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[#f59e0b] shrink-0" />
+                  <span className="text-[10px] text-gray-500">En attente</span>
+                </div>
+                <span className="text-[10px] font-mono font-bold text-[#f59e0b]">{unpaidPct}% · {fmtTND(unpaidTTC)} TND</span>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Lifetime value badge */}
       {totalTTC > 0 && validInvs.length >= 2 && (() => {
         const firstDate = validInvs.map((i: any) => i.issue_date).filter(Boolean).sort()[0]
