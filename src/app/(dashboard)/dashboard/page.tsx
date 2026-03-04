@@ -781,6 +781,35 @@ export default async function DashboardPage() {
             scoreD={scoreD}
           />
 
+          {/* WIDGET: Invoice acceptance rate (90 days) */}
+          {submitted >= 3 && (() => {
+            const acceptRate = Math.round((validated / submitted) * 100)
+            const rejected   = allInvArr.filter((i: any) => i.status === 'rejected').length
+            return (
+              <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Taux acceptation TTN — 90j</p>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                    acceptRate >= 90 ? 'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20' :
+                    acceptRate >= 70 ? 'text-[#f59e0b] bg-[#f59e0b]/10 border-[#f59e0b]/20' :
+                    'text-red-400 bg-red-950/30 border-red-900/30'
+                  }`}>{acceptRate}%</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-2 bg-[#1a1b22] rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full ${
+                      acceptRate >= 90 ? 'bg-[#2dd4a0]' : acceptRate >= 70 ? 'bg-[#f59e0b]' : 'bg-red-500'
+                    }`} style={{ width: `${acceptRate}%` }} />
+                  </div>
+                  <span className="text-[10px] text-gray-600 shrink-0 font-mono">{validated}/{submitted}</span>
+                </div>
+                {rejected > 0 && (
+                  <p className="text-[9px] text-red-400 mt-2">{rejected} rejeté{rejected > 1 ? 'es' : 'e'} — vérifiez vos données TTN</p>
+                )}
+              </div>
+            )
+          })()}
+
           {/* WIDGET: Top services/products (90 days) */}
           {lineItems90.length >= 3 && (() => {
             const byDesc: Record<string, { ht: number; count: number }> = {}
