@@ -14,6 +14,7 @@ import { RecentInvoicesTable } from '@/components/dashboard/RecentInvoicesTable'
 import type { InvoiceTableRow } from '@/components/dashboard/RecentInvoicesTable'
 import { InvoiceAgingReport } from '@/components/dashboard/InvoiceAgingReport'
 import { ProfitLossWidget } from '@/components/dashboard/ProfitLossWidget'
+import { TopClientsWidget } from '@/components/dashboard/TopClientsWidget'
 import { format, subDays, addDays, parseISO, endOfWeek, eachWeekOfInterval } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
@@ -71,6 +72,7 @@ export default async function DashboardPage() {
     r_upcomingDue,
     r_recentPaid,
     r_expenses,
+    r_clients,
   ] = await Promise.all([
     db.from('invoices').select('id, ht_amount, status, issue_date, created_at').eq('company_id', companyId).eq('status', 'valid').is('deleted_at', null),
     db.from('invoices').select('id, ht_amount, status, issue_date, created_at').eq('company_id', companyId).eq('status', 'validated').is('deleted_at', null),
@@ -86,6 +88,7 @@ export default async function DashboardPage() {
     db.from('invoices').select('id, ttc_amount, due_date').eq('company_id', companyId).in('status', ['valid', 'validated']).neq('payment_status', 'paid').gte('due_date', todayStr).lte('due_date', in90).is('deleted_at', null),
     db.from('invoices').select('id, ttc_amount, payment_date').eq('company_id', companyId).eq('payment_status', 'paid').gte('payment_date', ago90).lte('payment_date', todayStr).is('deleted_at', null),
     db.from('expenses').select('amount, category, date').eq('company_id', companyId).gte('date', monthStart).lte('date', todayStr),
+    db.from('invoices').select('client_id, ttc_amount, payment_status, clients(id, name)').eq('company_id', companyId).in('status', ['valid','validated']).is('deleted_at', null),
   ])
 
   const thisMonthValid  = [...(r_thisMonthV.data ?? []),   ...(r_thisMonthVld.data ?? [])]
@@ -99,6 +102,7 @@ export default async function DashboardPage() {
   const upcomingDue     = r_upcomingDue.data     ?? []
   const recentPaid30    = r_recentPaid.data      ?? []
   const expensesMonth   = r_expenses.data        ?? []
+  const clientInvRaw    = r_clients.data          ?? []
 
   // ── KPIs ──────────────────────────────────────────────────────────────
   // Use issue_date when set, fall back to created_at (handles invoices saved without a date)
@@ -279,6 +283,20 @@ export default async function DashboardPage() {
 
   const monthLabel = new Date(monthStart).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
 
+  // ── Top 5 Clients ───────────────────────────────────────────────
+  const clientMap: Record<string, { id: string; name: string; totalTTC: number; unpaid: number; invoiceCount: number }> = {}
+  for (const inv of clientInvRaw as any[]) {
+    const cl = inv.clients as any
+    if (!cl?.id) continue
+    if (!clientMap[cl.id]) clientMap[cl.id] = { id: cl.id, name: cl.name, totalTTC: 0, unpaid: 0, invoiceCount: 0 }
+    clientMap[cl.id].totalTTC += Number(inv.ttc_amount ?? 0)
+    clientMap[cl.id].invoiceCount += 1
+    if (inv.payment_status !== 'paid') clientMap[cl.id].unpaid += Number(inv.ttc_amount ?? 0)
+  }
+  const topClients = Object.values(clientMap)
+    .sort((a, b) => b.totalTTC - a.totalTTC)
+    .slice(0, 5)
+
   const firstName = user.user_metadata?.first_name ?? user.email?.split('@')[0] ?? 'vous'
 
   return (
@@ -354,6 +372,7 @@ export default async function DashboardPage() {
 
         {/* ── RIGHT COLUMN — sticky on xl, normal on mobile ─────────── */}
         <div className="w-full xl:w-96 shrink-0 xl:sticky xl:top-6 space-y-5">
+          <TopClientsWidget clients={topClients} />
           <AIInsightsPanel />
           <RemindersPanel />
         </div>
