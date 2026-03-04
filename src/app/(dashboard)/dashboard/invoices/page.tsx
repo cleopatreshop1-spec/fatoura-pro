@@ -656,6 +656,37 @@ export default function InvoicesPage() {
         </div>
       )}
 
+      {/* Amount range filter */}
+      {invoices.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-[10px] text-gray-600 uppercase tracking-wider font-semibold shrink-0">Montant TTC :</span>
+          <div className="flex items-center gap-1.5">
+            <input
+              type="number" min="0" step="0.001" placeholder="Min"
+              value={amountMin}
+              onChange={e => { setAmountMin(e.target.value); setPage(1) }}
+              className="w-24 bg-[#0a0b0f] border border-[#1a1b22] rounded-lg px-2 py-1.5 text-[11px] text-gray-300 font-mono outline-none focus:border-[#d4a843]/40 transition-colors placeholder:text-gray-700"
+            />
+            <span className="text-gray-700 text-xs">—</span>
+            <input
+              type="number" min="0" step="0.001" placeholder="Max"
+              value={amountMax}
+              onChange={e => { setAmountMax(e.target.value); setPage(1) }}
+              className="w-24 bg-[#0a0b0f] border border-[#1a1b22] rounded-lg px-2 py-1.5 text-[11px] text-gray-300 font-mono outline-none focus:border-[#d4a843]/40 transition-colors placeholder:text-gray-700"
+            />
+            {(amountMin || amountMax) && (
+              <button onClick={() => { setAmountMin(''); setAmountMax(''); setPage(1) }}
+                className="text-[10px] text-gray-600 hover:text-red-400 transition-colors px-1.5">✕</button>
+            )}
+          </div>
+          {(amountMin || amountMax) && (
+            <span className="text-[10px] text-[#d4a843] font-mono">
+              {amountMin ? `≥ ${amountMin}` : ''}{amountMin && amountMax ? ' · ' : ''}{amountMax ? `≤ ${amountMax}` : ''} TND
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Saved filter presets */}
       {(savedPresets.length > 0) && (
         <div className="flex flex-wrap items-center gap-1.5">
