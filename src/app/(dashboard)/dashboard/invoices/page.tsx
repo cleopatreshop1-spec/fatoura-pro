@@ -336,6 +336,12 @@ export default function InvoicesPage() {
     a.click()
   }
 
+  async function quickUpdateStatus(id: string, newStatus: string) {
+    await supabase.from('invoices').update({ status: newStatus }).eq('id', id)
+    setInvoices(prev => prev.map(i => i.id === id ? { ...i, status: newStatus } : i))
+    showToast(`Statut mis à jour`)
+  }
+
   async function quickUpdateDueDate(id: string, newDate: string) {
     if (!newDate) return
     await supabase.from('invoices').update({ due_date: newDate }).eq('id', id)
@@ -1241,6 +1247,18 @@ export default function InvoicesPage() {
                         </td>
                       )}
                       <td className="px-4 py-3">
+                        <select
+                          value={inv.status}
+                          onChange={e => quickUpdateStatus(inv.id, e.target.value)}
+                          title="Changer le statut"
+                          className="bg-transparent border-0 outline-none cursor-pointer text-[10px] font-bold rounded px-0 py-0 appearance-none"
+                          style={{ colorScheme: 'dark' }}
+                          onClick={e => e.stopPropagation()}
+                        >
+                          {['draft','pending','validated','valid','queued','rejected'].map(s => (
+                            <option key={s} value={s} className="bg-[#0f1118] text-white">{s}</option>
+                          ))}
+                        </select>
                         <InvoiceStatusBadge status={inv.status} />
                         {inv.payment_status === 'paid' && inv.paid_at && (
                           <div className="text-[9px] text-[#2dd4a0]/60 font-mono mt-0.5">
