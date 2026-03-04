@@ -6,6 +6,7 @@ import { InvoiceDetailPanel } from '@/components/invoice/InvoiceDetailPanel'
 import { InvoiceStatusBadge } from '@/components/invoice/InvoiceStatusBadge'
 import { PrintButton } from '@/components/invoice/PrintButton'
 import { InvoiceTimeline } from '@/components/invoice/InvoiceTimeline'
+import { RecurringInvoiceSetup } from '@/components/invoice/RecurringInvoiceSetup'
 import { fmtTND, STAMP_DUTY } from '@/lib/utils/tva-calculator'
 import { amountToWords } from '@/lib/utils/amount-to-words'
 import Link from 'next/link'
@@ -62,7 +63,16 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
           <span className="font-mono text-[#d4a843]">{i.number ?? 'Brouillon'}</span>
           <InvoiceStatusBadge status={i.status ?? 'draft'} />
         </div>
-        <PrintButton />
+        <div className="flex items-center gap-2">
+          {(i.status === 'valid' || i.status === 'validated') && (
+            <RecurringInvoiceSetup
+              invoiceId={i.id}
+              invoiceNumber={i.number ?? 'Brouillon'}
+              clientId={cl?.id ?? null}
+            />
+          )}
+          <PrintButton />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-5 items-start">
