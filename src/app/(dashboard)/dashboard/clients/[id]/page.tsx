@@ -228,8 +228,8 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
           )}
         </div>
 
-        {/* Right: invoice history */}
-        <div className="xl:col-span-3">
+        {/* Right: invoice history + timeline */}
+        <div className="xl:col-span-3 space-y-5">
           <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-[#1a1b22]">
               <h2 className="text-sm font-bold text-gray-200">
@@ -302,6 +302,71 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
               </div>
             )}
           </div>
+
+          {/* Activity timeline */}
+          {invs.length > 0 && (() => {
+            type Event = { date: string; label: string; sub: string; dot: string }
+            const events: Event[] = []
+            for (const inv of invs) {
+              const num = inv.number ? `N°\u00a0${inv.number}` : 'Brouillon'
+              if (inv.issue_date) {
+                events.push({
+                  date: inv.issue_date,
+                  label: `Facture créée — ${num}`,
+                  sub: fmtTND(Number(inv.ttc_amount ?? 0)) + ' TND',
+                  dot: 'bg-[#d4a843]',
+                })
+              }
+              if (inv.status === 'validated' || inv.status === 'valid') {
+                events.push({
+                  date: inv.issue_date ?? inv.created_at,
+                  label: `Facture validée — ${num}`,
+                  sub: inv.status,
+                  dot: 'bg-blue-400',
+                })
+              }
+              if (inv.payment_status === 'paid' && inv.paid_at) {
+                events.push({
+                  date: inv.paid_at.slice(0, 10),
+                  label: `Paiement reçu — ${num}`,
+                  sub: fmtTND(Number(inv.ttc_amount ?? 0)) + ' TND',
+                  dot: 'bg-[#2dd4a0]',
+                })
+              }
+              if (inv.due_date && new Date(inv.due_date) < now && inv.payment_status !== 'paid') {
+                events.push({
+                  date: inv.due_date,
+                  label: `Échéance dépassée — ${num}`,
+                  sub: fmtTND(Number(inv.ttc_amount ?? 0)) + ' TND impayé',
+                  dot: 'bg-red-500',
+                })
+              }
+            }
+            events.sort((a, b) => b.date.localeCompare(a.date))
+            const shown = events.slice(0, 12)
+            return (
+              <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-5">
+                <h3 className="text-xs font-bold text-[#d4a843] uppercase tracking-wider mb-4">Activité récente</h3>
+                <div className="relative">
+                  <div className="absolute left-[7px] top-2 bottom-2 w-px bg-[#1a1b22]" />
+                  <ul className="space-y-4">
+                    {shown.map((ev, i) => (
+                      <li key={i} className="flex gap-3 items-start">
+                        <span className={`shrink-0 w-3.5 h-3.5 rounded-full mt-0.5 border-2 border-[#0f1118] ${ev.dot}`} />
+                        <div className="min-w-0">
+                          <p className="text-xs text-gray-200 font-medium leading-snug">{ev.label}</p>
+                          <p className="text-[10px] text-gray-600 mt-0.5">
+                            {new Date(ev.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            {ev.sub && <span className="ml-2 text-gray-700">{ev.sub}</span>}
+                          </p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )
+          })()}
         </div>
       </div>
     </div>
