@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Plus, Search, MoreVertical, FileText, ChevronUp, ChevronDown, CheckSquare, Trash2, Download, DollarSign, Columns2, Bookmark, X } from 'lucide-react'
+import { Plus, Search, MoreVertical, FileText, ChevronUp, ChevronDown, CheckSquare, Trash2, Download, DollarSign, Columns2, Bookmark, X, Users } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useCompany } from '@/contexts/CompanyContext'
 import { InvoiceStatusBadge } from '@/components/invoice/InvoiceStatusBadge'
@@ -56,6 +56,7 @@ export default function InvoicesPage() {
   const [amountMax, setAmountMax] = useState('')
   const [colMenuOpen, setColMenuOpen] = useState(false)
   const [hiddenCols, setHiddenCols] = useState<Set<string>>(new Set())
+  const [groupByClient, setGroupByClient] = useState(false)
   function toggleCol(col: string) { setHiddenCols(prev => { const s = new Set(prev); s.has(col) ? s.delete(col) : s.add(col); return s }) }
   const [paymentFilter, setPaymentFilter] = useState<'all'|'paid'|'unpaid'|'overdue'>('all')
   const [typeFilter, setTypeFilter] = useState<'all'|'B2B'|'B2C'>('all')
@@ -548,6 +549,12 @@ export default function InvoicesPage() {
             <Download size={12} />CSV
           </button>
         )}
+        {/* Group by client toggle */}
+        <button onClick={() => setGroupByClient(g => !g)}
+          title="Regrouper par client"
+          className={`flex items-center gap-1.5 px-3 py-2 text-xs border rounded-xl transition-colors ${groupByClient ? 'border-[#d4a843]/40 text-[#d4a843] bg-[#d4a843]/5' : 'border-[#1a1b22] text-gray-500 hover:text-white'}`}>
+          <Users size={12} />Grouper
+        </button>
         {/* Column visibility */}
         <div className="relative ml-auto">
           <button onClick={() => setColMenuOpen(o => !o)}
@@ -1010,7 +1017,63 @@ export default function InvoicesPage() {
           )
         ) : (
           <>
-            <div className="overflow-x-auto">
+            {groupByClient && filtered.length > 0 && (() => {
+              const groups: Record<string, { name: string; type: string | null; invs: typeof filtered }> = {}
+              for (const inv of filtered) {
+                const cid = inv.clients?.id ?? '__none__'
+                if (!groups[cid]) groups[cid] = { name: inv.clients?.name ?? '—', type: inv.clients?.type ?? null, invs: [] }
+                groups[cid].invs.push(inv)
+              }
+              const sorted = Object.entries(groups).sort((a, b) =>
+                b[1].invs.reduce((s, i) => s + Number(i.ttc_amount ?? 0), 0) - a[1].invs.reduce((s, i) => s + Number(i.ttc_amount ?? 0), 0)
+              )
+              return (
+                <div className="space-y-3">
+                  {sorted.map(([cid, g]) => {
+                    const total   = g.invs.reduce((s, i) => s + Number(i.ttc_amount ?? 0), 0)
+                    const unpaid  = g.invs.filter(i => i.payment_status !== 'paid').reduce((s, i) => s + Number(i.ttc_amount ?? 0), 0)
+                    const overdue = g.invs.filter(i => isOverdue(i)).reduce((s, i) => s + Number(i.ttc_amount ?? 0), 0)
+                    return (
+                      <div key={cid} className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl overflow-hidden">
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-[#1a1b22] bg-[#0a0b0f]">
+                          <div className="flex items-center gap-2">
+                            {cid !== '__none__' ? (
+                              <Link href={`/dashboard/clients/${cid}`} className="text-sm font-bold text-white hover:text-[#d4a843] transition-colors">{g.name}</Link>
+                            ) : <span className="text-sm font-bold text-gray-500">{g.name}</span>}
+                            {g.type && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border text-[#d4a843] bg-[#d4a843]/10 border-[#d4a843]/20">{g.type}</span>}
+                            <span className="text-[10px] text-gray-600">{g.invs.length} facture{g.invs.length !== 1 ? 's' : ''}</span>
+                          </div>
+                          <div className="flex items-center gap-3 text-right">
+                            <div>
+                              <span className="text-xs font-mono font-bold text-[#d4a843]">{fmtTND(total)} TND</span>
+                              {unpaid > 0 && <span className="ml-2 text-[10px] font-mono text-[#f59e0b]">-{fmtTND(unpaid)}</span>}
+                              {overdue > 0 && <span className="ml-1 text-[10px] font-mono text-red-400">⚠ {fmtTND(overdue)}</span>}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="divide-y divide-[#1a1b22]">
+                          {g.invs.map(inv => (
+                            <div key={inv.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#161b27]/50 transition-colors">
+                              <span className={`w-2 h-2 rounded-full shrink-0 ${inv.payment_status === 'paid' ? 'bg-[#2dd4a0]' : isOverdue(inv) ? 'bg-red-500' : 'bg-[#f59e0b]'}`} />
+                              <Link href={`/dashboard/invoices/${inv.id}`} className="text-xs font-mono text-gray-300 hover:text-[#d4a843] transition-colors w-28 shrink-0">{inv.number ?? '—'}</Link>
+                              <span className="text-[10px] text-gray-600 w-20 shrink-0">{inv.issue_date ? new Date(inv.issue_date).toLocaleDateString('fr-FR') : '—'}</span>
+                              {inv.due_date && <span className={`text-[10px] w-20 shrink-0 ${isOverdue(inv) ? 'text-red-400' : 'text-gray-600'}`}>{new Date(inv.due_date).toLocaleDateString('fr-FR')}</span>}
+                              <span className="text-xs font-mono text-gray-200 ml-auto">{fmtTND(Number(inv.ttc_amount ?? 0))} TND</span>
+                              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border shrink-0 ${
+                                inv.payment_status === 'paid' ? 'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20' :
+                                isOverdue(inv) ? 'text-red-400 bg-red-950/30 border-red-900/30' :
+                                'text-[#f59e0b] bg-[#f59e0b]/10 border-[#f59e0b]/20'
+                              }`}>{inv.payment_status === 'paid' ? 'Payée' : isOverdue(inv) ? 'Retard' : 'Impayée'}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })()}
+            {!groupByClient && <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-[#1a1b22]">
@@ -1287,7 +1350,7 @@ export default function InvoicesPage() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </div>}
 
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-4 py-3 border-t border-[#1a1b22]">
