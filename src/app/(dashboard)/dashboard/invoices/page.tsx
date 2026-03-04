@@ -501,6 +501,24 @@ export default function InvoicesPage() {
         </div>
       </div>
 
+      {/* Saved preset chips */}
+      {savedPresets.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {savedPresets.map(p => (
+            <div key={p.name} className="flex items-center gap-0.5">
+              <button onClick={() => applyPreset(p)}
+                className="flex items-center gap-1 text-[10px] font-medium px-2.5 py-1 rounded-l-lg border border-[#1a1b22] bg-[#0f1118] text-gray-400 hover:text-[#d4a843] hover:border-[#d4a843]/30 transition-colors">
+                <Bookmark size={9} />{p.name}
+              </button>
+              <button onClick={() => deletePreset(p.name)}
+                className="text-[9px] px-1.5 py-1 rounded-r-lg border border-l-0 border-[#1a1b22] bg-[#0f1118] text-gray-700 hover:text-red-400 transition-colors">
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Filters */}
       <div className="flex flex-wrap gap-2">
         <div className="relative flex-1 min-w-[200px]">
@@ -547,6 +565,12 @@ export default function InvoicesPage() {
             Réinitialiser
           </button>
         )}
+        {/* Save preset */}
+        <button onClick={savePreset}
+          title="Sauvegarder le filtre actuel comme preset"
+          className="flex items-center gap-1.5 px-3 py-2 text-xs border border-[#1a1b22] text-gray-500 hover:text-[#d4a843] hover:border-[#d4a843]/30 rounded-xl transition-colors">
+          <Bookmark size={12} />Sauv.
+        </button>
         {/* Export CSV */}
         {filtered.length > 0 && (
           <button onClick={exportFilteredCSV}
