@@ -82,6 +82,16 @@ export default function InvoicesPage() {
 
   useEffect(() => { load() }, [load])
 
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement)?.tagName
+      if (['INPUT','TEXTAREA','SELECT'].includes(tag)) return
+      if (e.key === 'n' || e.key === 'N') router.push('/dashboard/invoices/new')
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [router])
+
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(''), 3000) }
 
   // Debounced search
