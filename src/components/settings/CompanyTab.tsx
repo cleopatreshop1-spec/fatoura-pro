@@ -40,6 +40,8 @@ export function CompanyTab() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const [accentColor, setAccentColor] = useState('#1a1a2e')
+  const [logoPosition, setLogoPosition] = useState<'left' | 'right'>('left')
 
   // Show create company card if no active company
   if (!activeCompany) {
@@ -64,6 +66,8 @@ export function CompanyTab() {
     if (!activeCompany) return
     const c = activeCompany as any
     setLogoUrl(c.logo_url ?? null)
+    setAccentColor(c.invoice_accent_color ?? '#1a1a2e')
+    setLogoPosition(c.invoice_logo_position ?? 'left')
     reset({
       name: c.name ?? '', matricule_fiscal: c.matricule_fiscal ?? '',
       tva_regime: c.tva_regime ?? 'reel', address: c.address ?? '',
@@ -103,7 +107,9 @@ export function CompanyTab() {
       email:            data.email     ? sanitizeString(data.email, 200)    : null,
       bank_name:        data.bank_name ? sanitizeString(data.bank_name, 100) : null,
       bank_rib:         data.bank_rib  ? sanitizeString(data.bank_rib, 50)  : null,
-      invoice_prefix:   sanitizeString(data.invoice_prefix || 'FP', 10),
+      invoice_prefix:          sanitizeString(data.invoice_prefix || 'FP', 10),
+      invoice_accent_color:    accentColor,
+      invoice_logo_position:   logoPosition,
     }).eq('id', activeCompany.id)
     await refreshCompanies()
     setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 3000)
@@ -234,6 +240,66 @@ export function CompanyTab() {
           <div className="col-span-2">
             <label className={LC}>Conditions de paiement par defaut</label>
             <input {...register('default_payment_terms')} placeholder="Paiement a 30 jours." className={IC} />
+          </div>
+        </div>
+      </div>
+
+      {/* Template customization */}
+      <div>
+        <div className={SH}>Apparence des factures PDF</div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className={LC}>Couleur accent</label>
+            <div className="flex items-center gap-3">
+              <input
+                type="color"
+                value={accentColor}
+                onChange={e => setAccentColor(e.target.value)}
+                className="w-10 h-10 rounded-lg border border-[#1a1b22] cursor-pointer bg-transparent p-0.5"
+              />
+              <input
+                type="text"
+                value={accentColor}
+                onChange={e => setAccentColor(e.target.value)}
+                className={`${IC} font-mono flex-1`}
+                maxLength={7}
+                placeholder="#1a1a2e"
+              />
+            </div>
+            <div className="mt-2 flex gap-2">
+              {['#1a1a2e','#d4a843','#2dd4a0','#4a9eff','#e11d48','#7c3aed'].map(c => (
+                <button key={c} type="button"
+                  onClick={() => setAccentColor(c)}
+                  title={c}
+                  className={`w-6 h-6 rounded-full border-2 transition-all ${accentColor === c ? 'border-white scale-110' : 'border-transparent'}`}
+                  style={{ background: c }}
+                />
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className={LC}>Position du logo</label>
+            <div className="flex gap-2 mt-1">
+              {(['left','right'] as const).map(pos => (
+                <button key={pos} type="button"
+                  onClick={() => setLogoPosition(pos)}
+                  className={`flex-1 py-2 rounded-xl text-xs font-medium border transition-colors ${
+                    logoPosition === pos
+                      ? 'bg-[#d4a843]/10 border-[#d4a843]/50 text-[#d4a843]'
+                      : 'border-[#1a1b22] text-gray-500 hover:text-white'
+                  }`}>
+                  {pos === 'left' ? '◀ Gauche' : 'Droite ▶'}
+                </button>
+              ))}
+            </div>
+            <div className="mt-3 rounded-xl border border-[#1a1b22] bg-[#161b27] p-3 flex items-center gap-2 text-[10px] text-gray-500">
+              <div className="w-8 h-8 rounded-lg flex-shrink-0" style={{ background: accentColor, opacity: 0.8 }} />
+              <div className="flex-1">
+                <div className="h-2 rounded bg-gray-700 w-20 mb-1" />
+                <div className="h-1.5 rounded bg-gray-800 w-14" />
+              </div>
+              <span>Aperçu</span>
+            </div>
           </div>
         </div>
       </div>
