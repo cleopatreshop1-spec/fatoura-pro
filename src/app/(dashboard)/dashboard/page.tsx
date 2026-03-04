@@ -19,6 +19,7 @@ import { RevenueComparisonChart } from '@/components/dashboard/RevenueComparison
 import { ExpenseCategoryDonut } from '@/components/dashboard/ExpenseCategoryDonut'
 import { RevenueGoalWidget } from '@/components/dashboard/RevenueGoalWidget'
 import { PendingActionsWidget } from '@/components/dashboard/PendingActionsWidget'
+import { InvoiceStatusDonut } from '@/components/dashboard/InvoiceStatusDonut'
 import { format, subDays, addDays, parseISO, endOfWeek, eachWeekOfInterval } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
@@ -422,6 +423,12 @@ export default async function DashboardPage() {
   }
   const agingSummaryTotal = agingSummaryAmt.current + agingSummaryAmt.d30 + agingSummaryAmt.d60 + agingSummaryAmt.d90 + agingSummaryAmt.d90plus
 
+  // ── Invoice status counts for donut ───────────────────────────────
+  const draftCount2   = (allInvoices90 as any[]).filter(i => i.status === 'draft').length
+  const validatedCount = (allInvoices90 as any[]).filter(i => i.status === 'validated' || i.status === 'valid').filter((i: any) => i.payment_status !== 'paid').length
+  const paidCount      = (allInvoices90 as any[]).filter(i => i.payment_status === 'paid').length
+  const overdueCount90 = (allInvoices90 as any[]).filter(i => i.payment_status !== 'paid' && i.due_date && i.due_date < todayStr).length
+
   // ── Pending actions ─────────────────────────────────────────────────
   const overdueInvsAll = (clientInvRaw as any[]).filter(i => i.payment_status !== 'paid' && i.due_date && i.due_date < todayStr)
   const overdueAmtAll  = overdueInvsAll.reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
@@ -576,6 +583,14 @@ export default async function DashboardPage() {
               </div>
             </a>
           )}
+
+          {/* Invoice Status Donut */}
+          <InvoiceStatusDonut
+            draft={draftCount2}
+            validated={validatedCount}
+            paid={paidCount}
+            overdue={overdueCount90}
+          />
 
           {/* Aging summary card */}
           {agingSummaryTotal > 0 && (() => {
