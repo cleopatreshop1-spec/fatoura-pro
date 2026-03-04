@@ -786,6 +786,38 @@ export default function ExpensesPage() {
           </div>
         )}
       </div>
+
+      {/* Receipt lightbox */}
+      {lightboxUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm"
+          onClick={() => setLightboxUrl(null)}>
+          <div className="relative max-w-3xl w-full max-h-[90vh] flex flex-col items-center gap-3"
+            onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between w-full">
+              <span className="text-xs text-gray-500 flex items-center gap-1.5">
+                <Paperclip size={11} /> Justificatif
+              </span>
+              <div className="flex gap-2">
+                <a href={lightboxUrl} target="_blank" rel="noreferrer"
+                  className="text-xs text-[#d4a843] hover:text-[#f0c060] transition-colors px-3 py-1.5 bg-[#0f1118] border border-[#1a1b22] rounded-lg">
+                  Ouvrir ↗
+                </a>
+                <button onClick={() => setLightboxUrl(null)}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#0f1118] border border-[#1a1b22] text-gray-400 hover:text-white transition-colors">
+                  <XIcon size={14} />
+                </button>
+              </div>
+            </div>
+            {/\.(jpe?g|png|webp|gif)$/i.test(lightboxUrl) ? (
+              <img src={lightboxUrl} alt="Justificatif"
+                className="max-h-[80vh] max-w-full object-contain rounded-xl border border-[#1a1b22] shadow-2xl" />
+            ) : (
+              <iframe src={lightboxUrl} title="Justificatif PDF"
+                className="w-full h-[80vh] rounded-xl border border-[#1a1b22]" />
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
