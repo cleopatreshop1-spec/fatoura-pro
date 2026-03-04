@@ -78,6 +78,20 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
     ? computeRisk(latestUnpaid.id, id, latestUnpaid.due_date, invs.map(i => ({ ...i, clients: { id } })))
     : null
 
+  // Risk breakdown factors
+  const paidWithDue2   = paidInvs.filter(i => i.paid_at && i.due_date)
+  const lateDaysArr    = paidWithDue2.map(i => Math.round((new Date(i.paid_at).getTime() - new Date(i.due_date).getTime()) / 86400000))
+  const avgLateDays2   = lateDaysArr.length > 0 ? lateDaysArr.reduce((s, d) => s + d, 0) / lateDaysArr.length : 0
+  const lateCount2     = lateDaysArr.filter(d => d > 0).length
+  const unpaidOldCount = unpaidInvs.filter(i => i.due_date && new Date(i.due_date) < now).length
+  const unpaidRatio2   = validInvs.length > 0 ? unpaidOldCount / validInvs.length : 0
+  const riskBreakdown  = [
+    { label: 'Retard moyen',    value: avgLateDays2 > 0 ? `+${Math.round(avgLateDays2)}j` : 'Aucun',           ok: avgLateDays2 <= 0 },
+    { label: 'Paiements tardifs', value: `${lateCount2} / ${paidWithDue2.length}`,                             ok: lateCount2 === 0 },
+    { label: 'Impayés échus',   value: unpaidOldCount > 0 ? `${unpaidOldCount} facture${unpaidOldCount > 1 ? 's' : ''}` : 'Aucun', ok: unpaidOldCount === 0 },
+    { label: 'Taux impayé',     value: `${Math.round(unpaidRatio2 * 100)}%`,                                   ok: unpaidRatio2 < 0.25 },
+  ]
+
   const RISK_STYLE = {
     high:   'text-red-400 bg-red-950/30 border-red-900/40',
     medium: 'text-yellow-400 bg-yellow-950/30 border-yellow-900/40',
@@ -130,6 +144,31 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
           </div>
         ))}
       </div>
+
+      {/* Risk score breakdown */}
+      {riskResult?.level && validInvs.length >= 2 && (
+        <div className={`bg-[#0f1118] border rounded-2xl p-4 ${
+          riskResult.level === 'high' ? 'border-red-900/40' : riskResult.level === 'medium' ? 'border-yellow-900/40' : 'border-emerald-900/40'
+        }`}>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Analyse risque paiement</p>
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${RISK_STYLE[riskResult.level]}`}>
+              ⚡ {riskResult.label}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {riskBreakdown.map(f => (
+              <div key={f.label} className="bg-[#0a0b0f] border border-[#1a1b22] rounded-xl p-3">
+                <p className="text-[9px] text-gray-600 uppercase tracking-wider mb-1">{f.label}</p>
+                <p className={`text-sm font-mono font-bold ${f.ok ? 'text-[#2dd4a0]' : 'text-red-400'}`}>{f.value}</p>
+              </div>
+            ))}
+          </div>
+          {riskResult.tooltip && (
+            <p className="text-[10px] text-gray-500 mt-2.5 italic">{riskResult.tooltip}</p>
+          )}
+        </div>
+      )}
 
       {/* Invoice trend sparkline — last 6 months */}
       {validInvs.length > 0 && (() => {
