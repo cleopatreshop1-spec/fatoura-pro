@@ -59,6 +59,7 @@ export default function InvoicesPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [toast, setToast] = useState('')
+  const [editingDueDate, setEditingDueDate] = useState<string | null>(null)
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const load = useCallback(async () => {
@@ -197,6 +198,14 @@ export default function InvoicesPage() {
     const a = document.createElement('a')
     a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}))
     a.download = 'factures.csv'; a.click()
+  }
+
+  async function quickUpdateDueDate(id: string, newDate: string) {
+    if (!newDate) return
+    await supabase.from('invoices').update({ due_date: newDate }).eq('id', id)
+    setInvoices(prev => prev.map(i => i.id === id ? { ...i, due_date: newDate } : i))
+    setEditingDueDate(null)
+    showToast('Échéance mise à jour')
   }
 
   async function quickMarkPaid(id: string, currentStatus: string) {
@@ -514,17 +523,34 @@ export default function InvoicesPage() {
                         {inv.issue_date ? new Date(inv.issue_date).toLocaleDateString('fr-FR') : ''}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap hidden md:table-cell">
-                        <span className={`text-xs ${isOverdue(inv) ? 'text-red-400' : 'text-gray-400'}`}>
-                          {inv.due_date ? new Date(inv.due_date).toLocaleDateString('fr-FR') : ''}
-                        </span>
-                        {isOverdue(inv) ? (
-                          <span className="ml-1.5 text-[9px] font-bold px-1 py-0.5 rounded bg-red-950/40 text-red-400 border border-red-900/30">Retard</span>
-                        ) : inv.payment_status !== 'paid' && inv.due_date && (() => {
-                          const daysLeft = Math.ceil((new Date(inv.due_date).getTime() - Date.now()) / 86400000)
-                          return daysLeft >= 0 && daysLeft <= 7
-                            ? <span className="ml-1.5 text-[9px] font-bold px-1 py-0.5 rounded bg-amber-950/40 text-amber-400 border border-amber-900/30">J-{daysLeft}</span>
-                            : null
-                        })()}
+                        {editingDueDate === inv.id ? (
+                          <input
+                            type="date"
+                            defaultValue={inv.due_date ?? ''}
+                            autoFocus
+                            onBlur={e => quickUpdateDueDate(inv.id, e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') quickUpdateDueDate(inv.id, (e.target as HTMLInputElement).value)
+                              if (e.key === 'Escape') setEditingDueDate(null)
+                            }}
+                            className="bg-[#0f1118] border border-[#d4a843]/60 rounded-lg px-2 py-1 text-xs text-white outline-none w-32"
+                          />
+                        ) : (
+                          <span
+                            onClick={() => setEditingDueDate(inv.id)}
+                            title="Cliquer pour modifier l'échéance"
+                            className={`text-xs cursor-pointer hover:text-white transition-colors group ${isOverdue(inv) ? 'text-red-400' : 'text-gray-400'}`}>
+                            {inv.due_date ? new Date(inv.due_date).toLocaleDateString('fr-FR') : <span className="text-gray-700 hover:text-gray-500">+ Ajouter</span>}
+                            {isOverdue(inv) ? (
+                              <span className="ml-1.5 text-[9px] font-bold px-1 py-0.5 rounded bg-red-950/40 text-red-400 border border-red-900/30">Retard</span>
+                            ) : inv.payment_status !== 'paid' && inv.due_date && (() => {
+                              const daysLeft = Math.ceil((new Date(inv.due_date).getTime() - Date.now()) / 86400000)
+                              return daysLeft >= 0 && daysLeft <= 7
+                                ? <span className="ml-1.5 text-[9px] font-bold px-1 py-0.5 rounded bg-amber-950/40 text-amber-400 border border-amber-900/30">J-{daysLeft}</span>
+                                : null
+                            })()}
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3 font-mono text-xs text-gray-400 whitespace-nowrap text-right hidden lg:table-cell">{fmtTND(Number(inv.ht_amount??0))}</td>
                       <td className="px-4 py-3 font-mono text-xs text-gray-500 whitespace-nowrap text-right hidden lg:table-cell">{fmtTND(Number(inv.tva_amount??0))}</td>
