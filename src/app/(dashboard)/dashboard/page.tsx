@@ -877,6 +877,31 @@ export default async function DashboardPage() {
             </div>
           )}
 
+          {/* WIDGET: Draft conversion funnel (90 days) */}
+          {conversionRate !== null && totalInvs90 >= 5 && (
+            <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Conversion brouillons — 90j</p>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                  conversionRate >= 80 ? 'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20' :
+                  conversionRate >= 50 ? 'text-[#f59e0b] bg-[#f59e0b]/10 border-[#f59e0b]/20' :
+                  'text-red-400 bg-red-950/30 border-red-900/30'
+                }`}>{conversionRate}%</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-2 bg-[#1a1b22] rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full ${
+                    conversionRate >= 80 ? 'bg-[#2dd4a0]' : conversionRate >= 50 ? 'bg-[#f59e0b]' : 'bg-red-500'
+                  }`} style={{ width: `${conversionRate}%` }} />
+                </div>
+                <span className="text-[10px] text-gray-600 shrink-0 font-mono">{convertedInvs90}/{totalInvs90}</span>
+              </div>
+              {draftCount > 0 && (
+                <p className="text-[9px] text-amber-400 mt-2">{draftCount} brouillon{draftCount > 1 ? 's' : ''} en attente de validation</p>
+              )}
+            </div>
+          )}
+
           {/* WIDGET: Top services/products (90 days) */}
           {lineItems90.length >= 3 && (() => {
             const byDesc: Record<string, { ht: number; count: number }> = {}
