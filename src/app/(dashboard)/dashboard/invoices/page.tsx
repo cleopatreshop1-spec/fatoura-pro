@@ -836,6 +836,40 @@ export default function InvoicesPage() {
         )
       })()}
 
+      {/* Invoice count by month (last 6 months) */}
+      {invoices.length >= 3 && (() => {
+        const _now = new Date()
+        const months = Array.from({ length: 6 }, (_, i) => {
+          const d = new Date(_now.getFullYear(), _now.getMonth() - (5 - i), 1)
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+          const label = d.toLocaleDateString('fr-FR', { month: 'short' })
+          const count = invoices.filter(inv => (inv.issue_date ?? '').startsWith(key) && inv.status !== 'draft').length
+          const ttc   = invoices.filter(inv => (inv.issue_date ?? '').startsWith(key) && inv.status !== 'draft').reduce((s, inv) => s + Number(inv.ttc_amount ?? 0), 0)
+          return { label, count, ttc }
+        })
+        if (months.every(m => m.count === 0)) return null
+        const maxCount = Math.max(...months.map(m => m.count), 1)
+        return (
+          <div className="bg-[#0f1118] border border-[#1a1b22] rounded-xl px-4 py-3">
+            <p className="text-[10px] text-gray-600 uppercase tracking-wider font-semibold mb-2">Factures / mois (6 mois)</p>
+            <div className="flex items-end gap-1.5 h-10">
+              {months.map((m, idx) => {
+                const h = Math.max(2, Math.round((m.count / maxCount) * 36))
+                return (
+                  <div key={m.label} className="flex-1 flex flex-col items-center gap-1"
+                    title={`${m.label} : ${m.count} facture${m.count !== 1 ? 's' : ''} — ${fmtTND(m.ttc)} TND`}>
+                    <div className="w-full flex items-end justify-center" style={{ height: 36 }}>
+                      <div className={`w-full rounded-t-sm ${idx === 5 ? 'bg-[#d4a843]' : m.count > 0 ? 'bg-[#d4a843]/40' : 'bg-[#1a1b22]'}`} style={{ height: h }} />
+                    </div>
+                    <span className="text-[8px] text-gray-600">{m.label}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Bulk action bar */}
       {selected.size > 0 && (
         <div className="bg-[#0d1420] border border-[#d4a843]/30 rounded-xl px-4 py-2.5 flex items-center gap-3 flex-wrap">
