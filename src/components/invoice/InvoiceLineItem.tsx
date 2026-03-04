@@ -168,6 +168,15 @@ export function InvoiceLineItem({ line, index, isOnly, onChange, onRemove, onDup
           className={`${NI} pr-5`}
         />
         <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-600 pointer-events-none">%</span>
+        {(line.discount ?? 0) > 0 && (() => {
+          const gross = Number(line.quantity) * Number(line.unit_price)
+          const saved = gross * (line.discount! / 100)
+          return saved > 0 ? (
+            <span className="absolute -bottom-4 left-0 text-[9px] text-[#2dd4a0] whitespace-nowrap">
+              -{fmtTND(saved)}
+            </span>
+          ) : null
+        })()}
       </div>
 
       {/* TVA rate */}
