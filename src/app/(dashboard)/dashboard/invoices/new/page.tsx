@@ -64,6 +64,7 @@ export default function NewInvoicePage() {
   const [scannerOpen, setScannerOpen] = useState(false)
   const [duplicateWarning, setDuplicateWarning] = useState<{ number: string; id: string } | null>(null)
   const [duplicateDismissed, setDuplicateDismissed] = useState(false)
+  const [pastDescriptions, setPastDescriptions] = useState<string[]>([])
 
   const autoSaveRef    = useRef<ReturnType<typeof setTimeout> | null>(null)
   const buildAndSaveRef = useRef<((status: string) => Promise<string | null>) | null>(null)
@@ -130,16 +131,22 @@ export default function NewInvoicePage() {
       { data: lastInv },
       { data: co },
       { data: mdt },
+      { data: pastLines },
     ] = await Promise.all([
       supabase.from('clients').select('id,name,type,matricule_fiscal,address,gouvernorat,phone,email').eq('company_id', activeCompany.id).order('name'),
       supabase.from('invoices').select('number').eq('company_id', activeCompany.id).order('created_at', { ascending: false }).limit(1).maybeSingle(),
       supabase.from('companies').select('invoice_prefix,own_cert_pem').eq('id', activeCompany.id).single(),
       supabase.from('mandates').select('id').eq('company_id', activeCompany.id).eq('is_active', true).limit(1).maybeSingle(),
+      (supabase as any).from('invoice_line_items').select('description').eq('company_id', activeCompany.id).order('created_at', { ascending: false }).limit(200),
     ])
     setClients((cls ?? []) as ComboClient[])
     const prefix = (co as any)?.invoice_prefix ?? 'FP'
     setHasMandate(!!mdt)
     setHasCert(!!(co as any)?.own_cert_pem)
+    if (pastLines) {
+      const unique = [...new Set((pastLines as any[]).map((l: any) => (l.description ?? '').trim()).filter(Boolean))]
+      setPastDescriptions(unique.slice(0, 80))
+    }
 
     if (editId) {
       // Load existing draft for editing
@@ -711,6 +718,7 @@ export default function NewInvoicePage() {
                   isOnly={lines.length === 1}
                   onChange={updateLine}
                   onRemove={removeLine}
+                  suggestions={pastDescriptions}
                 />
               ))}
             </div>

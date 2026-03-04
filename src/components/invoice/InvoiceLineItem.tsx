@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Sparkles, Loader2 } from 'lucide-react'
 import { fmtTND } from '@/lib/utils/tva-calculator'
 
@@ -23,6 +23,7 @@ interface Props {
   isOnly: boolean
   onChange: (id: string, field: keyof InvLine, value: any) => void
   onRemove: (id: string) => void
+  suggestions?: string[]
 }
 
 const TVA_OPTIONS: { value: TvaRate; label: string }[] = [
@@ -35,9 +36,11 @@ const TVA_OPTIONS: { value: TvaRate; label: string }[] = [
 const NI = 'bg-[#0a0b0f] border border-[#1a1b22] rounded-lg px-2.5 py-2 text-sm text-white outline-none focus:border-[#d4a843] transition-colors font-mono w-full [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none'
 const TI = 'bg-[#0a0b0f] border border-[#1a1b22] rounded-lg px-2.5 py-2 text-sm text-white outline-none focus:border-[#d4a843] transition-colors w-full'
 
-export function InvoiceLineItem({ line, index, isOnly, onChange, onRemove }: Props) {
+export function InvoiceLineItem({ line, index, isOnly, onChange, onRemove, suggestions = [] }: Props) {
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError]     = useState<string | null>(null)
+  const [showSugg, setShowSugg]   = useState(false)
+  const descRef = useRef<HTMLDivElement>(null)
 
   const handleAISuggest = async () => {
     const keyword = line.description.trim()
@@ -65,16 +68,22 @@ export function InvoiceLineItem({ line, index, isOnly, onChange, onRemove }: Pro
 
   const showAiBtn = line.description.trim().length >= 3
 
+  const filtered = suggestions.filter(s =>
+    s.toLowerCase().includes(line.description.toLowerCase()) && s !== line.description
+  ).slice(0, 6)
+
   return (
     <div className="border-b border-[#1a1b22] last:border-0 py-3 space-y-1.5">
       <div className="grid gap-2 items-start"
         style={{ gridTemplateColumns: '1fr 80px 100px 130px 90px 90px 28px' }}>
 
-      {/* Description + AI button */}
-      <div className="relative">
+      {/* Description + AI button + autocomplete */}
+      <div className="relative" ref={descRef}>
         <input
           value={line.description}
-          onChange={e => onChange(line.id, 'description', e.target.value)}
+          onChange={e => { onChange(line.id, 'description', e.target.value); setShowSugg(true) }}
+          onFocus={() => setShowSugg(true)}
+          onBlur={() => setTimeout(() => setShowSugg(false), 150)}
           placeholder="Prestation de service, produit..."
           className={`${TI} ${showAiBtn ? 'pr-8' : ''}`}
         />
@@ -90,6 +99,21 @@ export function InvoiceLineItem({ line, index, isOnly, onChange, onRemove }: Pro
               ? <Loader2 size={13} className="animate-spin" />
               : <Sparkles size={13} />}
           </button>
+        )}
+        {showSugg && filtered.length > 0 && (
+          <ul className="absolute left-0 right-0 top-full mt-1 z-30 bg-[#161b27] border border-[#252830] rounded-xl shadow-2xl overflow-hidden">
+            {filtered.map((s, i) => (
+              <li key={i}>
+                <button
+                  type="button"
+                  onMouseDown={() => { onChange(line.id, 'description', s); setShowSugg(false) }}
+                  className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-[#252830] hover:text-white transition-colors truncate"
+                >
+                  {s}
+                </button>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
 
