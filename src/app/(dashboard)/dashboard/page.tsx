@@ -470,6 +470,16 @@ export default async function DashboardPage() {
   const convertedInvs90 = (allInvoices90 as any[]).filter(i => i.status !== 'draft').length
   const conversionRate  = totalInvs90 > 0 ? Math.round((convertedInvs90 / totalInvs90) * 100) : null
 
+  // ── Invoice velocity (avg invoices/week over 90d) ────────────────────
+  const validatedInvs90  = (allInvoices90 as any[]).filter(i => i.status !== 'draft')
+  const velocityPerWeek  = Math.round((validatedInvs90.length / 90) * 7 * 10) / 10
+  const validatedPrior90 = (allInvoices90 as any[]).filter(i => {
+    const d = i.issue_date ?? i.created_at ?? ''
+    return d >= ago180 && d < ago90 && i.status !== 'draft'
+  })
+  const velocityPrev     = Math.round((validatedPrior90.length / 90) * 7 * 10) / 10
+  const velocityDelta    = velocityPrev > 0 ? Math.round(((velocityPerWeek - velocityPrev) / velocityPrev) * 100) : null
+
   // ── Net Cash Position (this month) ───────────────────────────────────
   const cashCollectedMonth = (paidThisMonth as any[]).reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
   const netCash = cashCollectedMonth - expensesTotal
@@ -829,6 +839,27 @@ export default async function DashboardPage() {
               </div>
             )
           })()}
+
+          {/* WIDGET: Invoice velocity (avg/week 90d) */}
+          {validatedInvs90.length >= 4 && (
+            <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Vélocité facturation — 90j</p>
+                {velocityDelta !== null && (
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                    velocityDelta > 0  ? 'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20' :
+                    velocityDelta < 0  ? 'text-red-400 bg-red-950/30 border-red-900/30' :
+                    'text-gray-500 bg-[#1a1b22] border-[#252830]'
+                  }`}>{velocityDelta > 0 ? '+' : ''}{velocityDelta}% vs période préc.</span>
+                )}
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl font-mono font-black text-[#d4a843]">{velocityPerWeek}</span>
+                <span className="text-xs text-gray-500">factures / semaine</span>
+              </div>
+              <p className="text-[9px] text-gray-600 mt-1">{validatedInvs90.length} factures validées sur 90 jours</p>
+            </div>
+          )}
 
           {/* WIDGET: Top services/products (90 days) */}
           {lineItems90.length >= 3 && (() => {
