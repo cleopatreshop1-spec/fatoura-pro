@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Copy, Send, Trash2, AlertTriangle, CheckCircle, Clock, RefreshCw, FileDown } from 'lucide-react'
+import { Copy, Send, Trash2, AlertTriangle, CheckCircle, Clock, RefreshCw, FileDown, Share2, Link2, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { InvoiceStatusBadge } from '@/components/invoice/InvoiceStatusBadge'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
@@ -40,6 +40,9 @@ export function InvoiceDetailPanel({ invoice: initial, companyPrefix }: Props) {
   const [payStatus, setPayStatus] = useState<PayStatus>((initial.payment_status as PayStatus) ?? 'unpaid')
   const [savingPay, setSavingPay] = useState(false)
   const [downloadingPdf, setDownloadingPdf] = useState(false)
+  const [sharing, setSharing]     = useState(false)
+  const [shareUrl, setShareUrl]   = useState<string | null>(null)
+  const [shareCopied, setShareCopied] = useState(false)
 
   // Realtime subscription
   useEffect(() => {
@@ -123,6 +126,32 @@ export function InvoiceDetailPanel({ invoice: initial, companyPrefix }: Props) {
       a.click()
       URL.revokeObjectURL(url)
     } catch { showToast('Erreur PDF', 'err') } finally { setDownloadingPdf(false) }
+  }
+
+  async function handleShare() {
+    setSharing(true)
+    try {
+      const res  = await fetch(`/api/invoices/${inv.id}/share`, { method: 'POST' })
+      const data = await res.json()
+      if (data.token) {
+        const url = `${window.location.origin}/invoice/${data.token}`
+        setShareUrl(url)
+      }
+    } catch { showToast('Erreur génération lien', 'err') }
+    setSharing(false)
+  }
+
+  async function copyShareUrl() {
+    if (!shareUrl) return
+    await navigator.clipboard.writeText(shareUrl)
+    setShareCopied(true)
+    setTimeout(() => setShareCopied(false), 2000)
+  }
+
+  async function revokeShare() {
+    await fetch(`/api/invoices/${inv.id}/share`, { method: 'DELETE' })
+    setShareUrl(null)
+    showToast('Lien supprimé')
   }
 
   async function handlePayStatus(s: PayStatus) {
@@ -263,6 +292,30 @@ export function InvoiceDetailPanel({ invoice: initial, companyPrefix }: Props) {
           className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#1a1b22] text-sm text-gray-400 hover:text-white hover:bg-[#161b27] transition-colors">
           <RefreshCw size={14} />Dupliquer
         </button>
+
+        {/* Share link */}
+        {!shareUrl ? (
+          <button onClick={handleShare} disabled={sharing}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#1a1b22] text-sm text-gray-400 hover:text-[#4a9eff] hover:border-[#4a9eff]/30 transition-colors disabled:opacity-50">
+            {sharing ? <div className="w-3.5 h-3.5 border-2 border-gray-600 border-t-gray-300 rounded-full animate-spin" /> : <Share2 size={14} />}
+            Partager (lien client)
+          </button>
+        ) : (
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-1.5 bg-[#161b27] border border-[#252830] rounded-xl px-3 py-2">
+              <Link2 size={12} className="text-[#4a9eff] shrink-0" />
+              <span className="flex-1 text-xs text-gray-400 truncate font-mono">{shareUrl}</span>
+              <button onClick={copyShareUrl}
+                className="shrink-0 px-2 py-0.5 text-[10px] font-bold rounded-lg bg-[#4a9eff]/15 text-[#4a9eff] hover:bg-[#4a9eff]/25 transition-colors">
+                {shareCopied ? '✓ Copié' : 'Copier'}
+              </button>
+            </div>
+            <button onClick={revokeShare}
+              className="w-full flex items-center justify-center gap-1.5 py-1.5 text-[11px] text-red-500/70 hover:text-red-400 transition-colors">
+              <X size={11} />Révoquer le lien
+            </button>
+          </div>
+        )}
 
         {/* ── AI Tools ── */}
         <div className="pt-1 border-t border-[#1a1b22]">

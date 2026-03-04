@@ -17,6 +17,8 @@ import { ClientModal } from '@/components/clients/ClientModal'
 import type { ComboClient } from '@/components/invoice/ClientCombobox'
 import type { InvLine, TvaRate } from '@/components/invoice/InvoiceLineItem'
 import { InvoiceScannerModal } from '@/components/ai/InvoiceScannerModal'
+import { AIDraftInvoice } from '@/components/ai/AIDraftInvoice'
+import { ConfettiCelebration } from '@/components/shared/ConfettiCelebration'
 import type { ScannedInvoice } from '@/types/scanner'
 
 const SECTION = 'bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-5'
@@ -61,6 +63,33 @@ export default function NewInvoicePage() {
 
   const autoSaveRef    = useRef<ReturnType<typeof setTimeout> | null>(null)
   const buildAndSaveRef = useRef<((status: string) => Promise<string | null>) | null>(null)
+
+  function applyDraft(draft: {
+    client_id: string | null
+    client_name_hint: string | null
+    due_date: string | null
+    notes: string
+    lines: { description: string; quantity: number; unit_price: number; tva_rate: number }[]
+  }) {
+    if (draft.client_id) {
+      const match = clients.find(c => c.id === draft.client_id)
+      if (match) setSelectedClient(match)
+    }
+    if (draft.due_date) setDueDate(draft.due_date)
+    if (draft.notes) setNotes(draft.notes)
+    if (draft.lines.length > 0) {
+      setLines(draft.lines.map(l => ({
+        id:          crypto.randomUUID(),
+        description: l.description,
+        quantity:    l.quantity,
+        unit_price:  l.unit_price,
+        tva_rate:    ([0, 7, 13, 19].includes(l.tva_rate) ? l.tva_rate : 19) as TvaRate,
+        line_ht:     l.quantity * l.unit_price,
+        line_ttc:    l.quantity * l.unit_price * (1 + l.tva_rate / 100),
+      })))
+    }
+    showToast('Facture pré-remplie par l\'IA — vérifiez avant de sauvegarder', 'success')
+  }
 
   function handleScanConfirm(scanned: ScannedInvoice) {
     setScannerOpen(false)
@@ -484,7 +513,7 @@ export default function NewInvoicePage() {
       />
 
       {/* Page header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <Link href="/dashboard/invoices" className="text-gray-500 hover:text-gray-300 text-sm transition-colors">
             Factures
@@ -497,7 +526,7 @@ export default function NewInvoicePage() {
             </span>
           )}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           {lastSaved && (
             <span className="text-[10px] text-gray-600">
               Sauvegarde {lastSaved.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
@@ -512,6 +541,11 @@ export default function NewInvoicePage() {
           </button>
         </div>
       </div>
+
+      {submitSuccess && <ConfettiCelebration />}
+
+      {/* AI Draft Invoice */}
+      <AIDraftInvoice onApply={applyDraft} />
 
       {/* Validation errors */}
       {validationErrors.length > 0 && (

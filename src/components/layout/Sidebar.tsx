@@ -1,11 +1,12 @@
 ﻿'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, FileText, Users, Calculator,
   Zap, Settings, ExternalLink, LogOut, X, RefreshCw,
+  ChevronDown, Check, Building2,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useCompany } from '@/contexts/CompanyContext'
@@ -53,6 +54,9 @@ export function Sidebar({ userEmail, userName, userInitials, onClose }: Props) {
   const plan = usePlan()
   const [invoiceBadge, setInvoiceBadge] = useState(0)
   const [signingOut, setSigningOut] = useState(false)
+  const [companyOpen, setCompanyOpen] = useState(false)
+  const companyRef = useRef<HTMLDivElement>(null)
+  const { allCompanies, switchCompany } = useCompany()
 
   useEffect(() => {
     if (!activeCompany?.id) return
@@ -94,15 +98,61 @@ export function Sidebar({ userEmail, userName, userInitials, onClose }: Props) {
             </button>
           )}
         </div>
+
+        {/* Company switcher */}
         {activeCompany && (
-          <div className="bg-[#161b27] rounded-lg px-3 py-2">
-            <div className="text-xs text-gray-200 font-medium truncate">
-              {activeCompany.name.length > 22 ? activeCompany.name.slice(0, 22) + '\u2026' : activeCompany.name}
-            </div>
-            {mf ? (
-              <div className="text-[10px] text-gray-600 font-mono truncate mt-0.5">{mf}</div>
-            ) : (
-              <div className="text-[10px] text-gray-700 mt-0.5">Sans matricule fiscal</div>
+          <div ref={companyRef} className="relative">
+            <button
+              onClick={() => setCompanyOpen(o => !o)}
+              className={cn(
+                'w-full flex items-center gap-2 bg-[#161b27] hover:bg-[#1a2035] rounded-lg px-3 py-2 transition-colors group',
+                allCompanies.length > 1 ? 'cursor-pointer' : 'cursor-default'
+              )}
+            >
+              <div className="w-6 h-6 rounded-md bg-[#d4a843]/10 border border-[#d4a843]/20 flex items-center justify-center shrink-0">
+                <Building2 size={11} className="text-[#d4a843]" />
+              </div>
+              <div className="flex-1 min-w-0 text-left">
+                <div className="text-xs text-gray-200 font-medium truncate">
+                  {activeCompany.name.length > 18 ? activeCompany.name.slice(0, 18) + '\u2026' : activeCompany.name}
+                </div>
+                {mf ? (
+                  <div className="text-[10px] text-gray-600 font-mono truncate">{mf}</div>
+                ) : (
+                  <div className="text-[10px] text-gray-700">Sans MF</div>
+                )}
+              </div>
+              {allCompanies.length > 1 && (
+                <ChevronDown size={13} className={cn('text-gray-600 shrink-0 transition-transform', companyOpen && 'rotate-180')} />
+              )}
+            </button>
+
+            {companyOpen && allCompanies.length > 1 && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setCompanyOpen(false)} />
+                <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-[#0f1118] border border-[#252830] rounded-xl shadow-2xl overflow-hidden">
+                  <div className="px-3 py-2 border-b border-[#1a1b22]">
+                    <p className="text-[10px] text-gray-600 uppercase tracking-wider">Changer de compte</p>
+                  </div>
+                  {allCompanies.map(c => (
+                    <button key={c.id}
+                      onClick={() => { switchCompany(c.id); setCompanyOpen(false); onClose?.() }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-[#161b27] transition-colors text-left"
+                    >
+                      <div className="w-6 h-6 rounded-md bg-[#d4a843]/10 flex items-center justify-center shrink-0">
+                        <span className="text-[10px] font-bold text-[#d4a843]">{c.name[0]?.toUpperCase()}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-gray-200 truncate">{c.name}</p>
+                        {(c as any).matricule_fiscal && (
+                          <p className="text-[10px] text-gray-600 font-mono truncate">{(c as any).matricule_fiscal}</p>
+                        )}
+                      </div>
+                      {c.id === activeCompany?.id && <Check size={13} className="text-[#d4a843] shrink-0" />}
+                    </button>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         )}

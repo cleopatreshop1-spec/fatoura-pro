@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Menu, Plus, LogOut, Settings, ChevronRight } from 'lucide-react'
+import { Menu, Plus, LogOut, Settings, ChevronRight, Search } from 'lucide-react'
 import { FiduciaireSwitcher } from './FiduciaireSwitcher'
 import { NotificationsDropdown } from './NotificationsDropdown'
 import { createClient } from '@/lib/supabase/client'
@@ -98,6 +98,16 @@ export function Header({ userEmail, userName, userInitials, onMenuToggle }: Prop
 
       {/*  Right: actions  */}
       <div className="flex items-center gap-2 shrink-0">
+        {/* ⌘K trigger */}
+        <button
+          onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }))}
+          className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-[#161b27] border border-[#1a1b22] hover:border-[#252830] rounded-xl text-xs text-gray-500 hover:text-gray-300 transition-colors group"
+        >
+          <Search size={12} />
+          <span>Rechercher...</span>
+          <kbd className="ml-1 px-1.5 py-0.5 bg-[#0f1118] border border-[#252830] rounded text-[10px] font-mono text-gray-600 group-hover:text-gray-400">⌘K</kbd>
+        </button>
+
         <Link
           href="/dashboard/invoices/new"
           className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 bg-[#d4a843] hover:bg-[#f0c060] text-black text-xs font-bold rounded-xl transition-colors"

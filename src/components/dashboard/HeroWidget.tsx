@@ -1,7 +1,9 @@
 'use client'
 
 import Link from 'next/link'
+import { Plus } from 'lucide-react'
 import { OnboardingChecklist } from '@/components/dashboard/OnboardingChecklist'
+import { useAnimatedNumber } from '@/hooks/useAnimatedNumber'
 
 type Props = {
   firstName: string
@@ -17,12 +19,12 @@ type Props = {
 const DAYS_FR = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi']
 const MONTHS_FR = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre']
 
-function getGreetingIcon() {
+function getGreeting() {
   const h = new Date().getHours()
-  if (h < 6)  return '🌙'
-  if (h < 12) return '☀️'
-  if (h < 18) return '🌤️'
-  return '🌙'
+  if (h < 6)  return { text: 'Bonne nuit',  icon: '🌙' }
+  if (h < 12) return { text: 'Bonjour',     icon: '☀️' }
+  if (h < 18) return { text: 'Bon après-midi', icon: '🌤️' }
+  return       { text: 'Bonsoir',            icon: '🌙' }
 }
 
 function formatDate() {
@@ -33,16 +35,25 @@ function formatDate() {
 const fmtTND = (v: number) =>
   new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(v)
 
+function AnimatedTND({ value, className }: { value: number; className: string }) {
+  const anim = useAnimatedNumber(value)
+  return <span className={className}>{fmtTND(anim)}</span>
+}
+
 export function HeroWidget({
   firstName, unpaidTotal, unpaidCount, treasury30,
   isNewUser, hasAlert, alertMessage, alertInvoiceId,
 }: Props) {
+  const greeting = getGreeting()
+
   if (isNewUser) {
     return (
-      <div className="bg-gradient-to-br from-[#0f1118] to-[#13151f] border border-[#1a1b22] rounded-2xl p-8">
+      <div className="relative bg-gradient-to-br from-[#0f1118] via-[#10141e] to-[#0d1020] border border-[#1a1b22] rounded-2xl p-7 overflow-hidden">
+        {/* Decorative glow */}
+        <div className="absolute -top-16 -right-16 w-48 h-48 bg-[#d4a843]/5 rounded-full blur-3xl pointer-events-none" />
         <div className="flex items-baseline justify-between mb-6 flex-wrap gap-2">
-          <h1 className="text-lg font-bold text-white">
-            Bonjour, {firstName} {getGreetingIcon()}
+          <h1 className="text-xl font-black text-white tracking-tight">
+            {greeting.text}, {firstName} {greeting.icon}
           </h1>
           <span className="text-xs text-gray-600">{formatDate()}</span>
         </div>
@@ -51,23 +62,38 @@ export function HeroWidget({
     )
   }
 
-  const alertBg = hasAlert
-    ? 'bg-gradient-to-br from-[#1a0f0f] to-[#130f0f] border-red-900/40'
-    : 'bg-gradient-to-br from-[#0f1118] to-[#13151f] border-[#1a1b22]'
-
   return (
-    <div className={`border rounded-2xl p-8 ${alertBg}`}>
-      <div className="flex items-baseline justify-between mb-6 flex-wrap gap-2">
-        <h1 className="text-lg font-bold text-white">
-          Bonjour, {firstName} {getGreetingIcon()}
-        </h1>
-        <span className="text-xs text-gray-600">{formatDate()}</span>
+    <div className={`relative border rounded-2xl p-7 overflow-hidden ${
+      hasAlert
+        ? 'bg-gradient-to-br from-[#130f0f] via-[#0f1118] to-[#0f1118] border-red-900/40'
+        : 'bg-gradient-to-br from-[#0f1118] via-[#10141e] to-[#0d1020] border-[#1a1b22]'
+    }`}>
+      {/* Decorative ambient glows */}
+      <div className="absolute -top-20 -right-20 w-56 h-56 bg-[#d4a843]/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-16 -left-16 w-40 h-40 bg-[#2dd4a0]/3 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Header row */}
+      <div className="relative flex items-center justify-between mb-6 flex-wrap gap-3">
+        <div>
+          <p className="text-xs text-gray-600 mb-0.5">{formatDate()}</p>
+          <h1 className="text-xl font-black text-white tracking-tight">
+            {greeting.text}, {firstName} {greeting.icon}
+          </h1>
+        </div>
+        <Link
+          href="/dashboard/invoices/new"
+          className="flex items-center gap-2 px-4 py-2 bg-[#d4a843] hover:bg-[#f0c060] text-black text-sm font-bold rounded-xl transition-colors shadow-[0_0_16px_rgba(212,168,67,0.25)] hover:shadow-[0_0_24px_rgba(212,168,67,0.4)]"
+        >
+          <Plus size={14} strokeWidth={2.5} />
+          Nouvelle facture
+        </Link>
       </div>
 
+      {/* TTN alert */}
       {hasAlert && alertMessage && (
-        <div className="flex items-center gap-3 bg-red-950/30 border border-red-900/40 rounded-xl px-4 py-3 mb-6">
+        <div className="relative flex items-center gap-3 bg-red-950/40 border border-red-900/50 rounded-xl px-4 py-3 mb-5">
           <span className="text-lg shrink-0">⚠️</span>
-          <p className="text-sm text-red-300 flex-1">{alertMessage}</p>
+          <p className="text-sm text-red-300 flex-1 leading-snug">{alertMessage}</p>
           {alertInvoiceId && (
             <Link href={`/dashboard/invoices/${alertInvoiceId}`}
               className="shrink-0 px-3 py-1.5 bg-[#d4a843] hover:bg-[#f0c060] text-black text-xs font-bold rounded-lg transition-colors whitespace-nowrap">
@@ -77,34 +103,28 @@ export function HeroWidget({
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-[#161b27] border border-[#1a1b22] rounded-xl p-5">
-          <p className="text-[10px] text-gray-600 uppercase tracking-wider mb-2">À ENCAISSER CE MOIS</p>
-          <p className="text-2xl font-mono font-black text-white leading-none">
-            {fmtTND(unpaidTotal)}
-          </p>
-          <p className="text-xs text-gray-500 mt-1">TND en attente</p>
+      {/* Metric cards */}
+      <div className="relative grid grid-cols-3 gap-3">
+        {/* Unpaid amount */}
+        <div className="col-span-1 bg-[#161b27]/80 border border-[#1a1b22] rounded-xl p-4 group hover:border-[#252830] transition-colors">
+          <p className="text-[9px] text-gray-600 uppercase tracking-wider mb-2 font-semibold">À ENCAISSER</p>
+          <AnimatedTND value={unpaidTotal} className="text-xl font-mono font-black text-white leading-none" />
+          <p className="text-[10px] text-gray-600 mt-1.5">TND en attente</p>
         </div>
-        <div className="bg-[#161b27] border border-[#1a1b22] rounded-xl p-5">
-          <p className="text-[10px] text-gray-600 uppercase tracking-wider mb-2">FACTURES NON PAYÉES</p>
-          <p className="text-2xl font-mono font-black text-[#f59e0b] leading-none">
-            {unpaidCount}
-          </p>
-          <p className="text-xs text-gray-500 mt-1">facture{unpaidCount !== 1 ? 's' : ''} en attente</p>
-        </div>
-      </div>
 
-      <div className="mt-4 flex items-center justify-between bg-[#161b27]/60 border border-[#1a1b22] rounded-xl px-5 py-3">
-        <div>
-          <p className="text-[10px] text-gray-600 uppercase tracking-wider">Trésorerie estimée à 30 jours</p>
-          <p className="text-lg font-mono font-bold text-[#2dd4a0] mt-0.5">
-            {fmtTND(treasury30)} TND
-          </p>
+        {/* Unpaid count */}
+        <div className="col-span-1 bg-[#161b27]/80 border border-[#1a1b22] rounded-xl p-4 group hover:border-[#252830] transition-colors">
+          <p className="text-[9px] text-gray-600 uppercase tracking-wider mb-2 font-semibold">NON PAYÉES</p>
+          <span className="text-xl font-mono font-black text-[#f59e0b] leading-none">{unpaidCount}</span>
+          <p className="text-[10px] text-gray-600 mt-1.5">facture{unpaidCount !== 1 ? 's' : ''}</p>
         </div>
-        <Link href="/dashboard/invoices"
-          className="text-xs text-[#d4a843] hover:text-[#f0c060] transition-colors font-medium">
-          Voir les factures →
-        </Link>
+
+        {/* 30-day treasury */}
+        <div className="col-span-1 bg-gradient-to-br from-[#2dd4a0]/8 to-transparent border border-[#2dd4a0]/15 rounded-xl p-4 group hover:border-[#2dd4a0]/25 transition-colors">
+          <p className="text-[9px] text-gray-600 uppercase tracking-wider mb-2 font-semibold">TRÉSO. 30J</p>
+          <AnimatedTND value={treasury30} className="text-xl font-mono font-black text-[#2dd4a0] leading-none" />
+          <p className="text-[10px] text-gray-600 mt-1.5">TND estimé</p>
+        </div>
       </div>
     </div>
   )

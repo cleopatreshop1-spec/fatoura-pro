@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Plus, Search, MoreVertical, FileText, ChevronUp, ChevronDown } from 'lucide-react'
+import { Plus, Search, MoreVertical, FileText, ChevronUp, ChevronDown, CheckSquare, Trash2, Download } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useCompany } from '@/contexts/CompanyContext'
 import { InvoiceStatusBadge } from '@/components/invoice/InvoiceStatusBadge'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { fmtTND } from '@/lib/utils/tva-calculator'
 import { nextInvoiceNumber } from '@/lib/utils/invoice-number'
+import { LatePaymentRisk } from '@/components/invoice/LatePaymentRisk'
 
 type InvRow = {
   id: string; number: string | null; status: string
@@ -191,6 +192,26 @@ export default function InvoicesPage() {
     a.download = 'factures.csv'; a.click()
   }
 
+  async function bulkMarkPaid() {
+    const ids = invoices.filter(i => selected.has(i.id) && i.payment_status !== 'paid').map(i => i.id)
+    if (!ids.length) return
+    await Promise.all(ids.map(id =>
+      supabase.from('invoices').update({ payment_status: 'paid', paid_at: new Date().toISOString() }).eq('id', id)
+    ))
+    setSelected(new Set()); showToast(`${ids.length} facture${ids.length > 1 ? 's' : ''} marquée${ids.length > 1 ? 's' : ''} comme payée${ids.length > 1 ? 's' : ''}`)
+    load()
+  }
+
+  async function bulkDeleteDrafts() {
+    const ids = invoices.filter(i => selected.has(i.id) && ['draft', 'validated'].includes(i.status)).map(i => i.id)
+    if (!ids.length) return
+    await Promise.all(ids.map(id =>
+      (supabase as any).from('invoices').update({ deleted_at: new Date().toISOString() }).eq('id', id)
+    ))
+    setSelected(new Set()); showToast(`${ids.length} brouillon${ids.length > 1 ? 's' : ''} supprimé${ids.length > 1 ? 's' : ''}`)
+    load()
+  }
+
   async function copyTTN(id: string) {
     await navigator.clipboard.writeText(id); showToast('TTN_ID copie !')
   }
@@ -275,11 +296,29 @@ export default function InvoicesPage() {
 
       {/* Bulk action bar */}
       {selected.size > 0 && (
-        <div className="bg-[#161b27] border border-[#d4a843]/30 rounded-xl px-4 py-2.5 flex items-center gap-4">
-          <span className="text-sm text-[#d4a843] font-bold">{selected.size} selectionnee{selected.size>1?'s':''}</span>
-          <div className="flex gap-2">
-            <button onClick={exportCSV} className="text-xs text-gray-300 hover:text-white border border-[#252830] px-3 py-1.5 rounded-lg transition-colors">Exporter CSV</button>
-            <button onClick={() => setSelected(new Set())} className="text-xs text-gray-500 hover:text-white px-2 py-1.5 transition-colors">Annuler</button>
+        <div className="bg-[#0d1420] border border-[#d4a843]/30 rounded-xl px-4 py-2.5 flex items-center gap-3 flex-wrap">
+          <span className="text-sm text-[#d4a843] font-bold shrink-0">
+            {selected.size} sélectionnée{selected.size > 1 ? 's' : ''}
+          </span>
+          <div className="flex gap-2 flex-wrap">
+            <button onClick={bulkMarkPaid}
+              className="flex items-center gap-1.5 text-xs text-[#2dd4a0] border border-[#2dd4a0]/30 bg-[#2dd4a0]/5 hover:bg-[#2dd4a0]/10 px-3 py-1.5 rounded-lg transition-colors font-medium">
+              <CheckSquare size={12} />Marquer payées
+            </button>
+            <button onClick={exportCSV}
+              className="flex items-center gap-1.5 text-xs text-gray-300 hover:text-white border border-[#252830] px-3 py-1.5 rounded-lg transition-colors">
+              <Download size={12} />Exporter CSV
+            </button>
+            {invoices.some(i => selected.has(i.id) && ['draft','validated'].includes(i.status)) && (
+              <button onClick={bulkDeleteDrafts}
+                className="flex items-center gap-1.5 text-xs text-red-400 border border-red-900/30 hover:bg-red-950/20 px-3 py-1.5 rounded-lg transition-colors">
+                <Trash2 size={12} />Supprimer brouillons
+              </button>
+            )}
+            <button onClick={() => setSelected(new Set())}
+              className="text-xs text-gray-600 hover:text-white px-2 py-1.5 transition-colors">
+              Annuler
+            </button>
           </div>
         </div>
       )}
@@ -352,12 +391,22 @@ export default function InvoicesPage() {
                         </Link>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-gray-300 text-xs">{inv.clients?.name ?? <span className="text-gray-600"></span>}</span>
-                        {inv.clients?.type && (
-                          <span className={`ml-1.5 text-[9px] font-bold px-1 py-0.5 rounded border ${inv.clients.type==='B2B'?'text-[#d4a843] border-[#d4a843]/20':'text-[#4a9eff] border-[#4a9eff]/20'}`}>
-                            {inv.clients.type}
-                          </span>
-                        )}
+                        <div className="flex items-center flex-wrap gap-0.5">
+                          <span className="text-gray-300 text-xs">{inv.clients?.name ?? <span className="text-gray-600"></span>}</span>
+                          {inv.clients?.type && (
+                            <span className={`ml-1.5 text-[9px] font-bold px-1 py-0.5 rounded border ${inv.clients.type==='B2B'?'text-[#d4a843] border-[#d4a843]/20':'text-[#4a9eff] border-[#4a9eff]/20'}`}>
+                              {inv.clients.type}
+                            </span>
+                          )}
+                          {inv.payment_status !== 'paid' && (
+                            <LatePaymentRisk
+                              invoiceId={inv.id}
+                              clientId={inv.clients?.id}
+                              dueDate={inv.due_date}
+                              allInvoices={invoices as any}
+                            />
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">
                         {inv.issue_date ? new Date(inv.issue_date).toLocaleDateString('fr-FR') : ''}
