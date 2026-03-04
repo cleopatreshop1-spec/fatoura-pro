@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, FileText, Users, Calculator,
   Zap, Settings, ExternalLink, LogOut, X, RefreshCw,
-  ChevronDown, Check, Building2,
+  ChevronDown, Check, Building2, TrendingDown,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useCompany } from '@/contexts/CompanyContext'
@@ -32,6 +32,7 @@ const NAV: NavItem[] = [
   { href: '/dashboard/clients',   label: 'Clients',                Icon: Users },
   { href: '/dashboard/recurring', label: 'Factures récurrentes',   Icon: RefreshCw },
   { href: '/dashboard/tva',       label: 'TVA & Declarations',     Icon: Calculator },
+  { href: '/dashboard/expenses',  label: 'Dépenses',               Icon: TrendingDown },
   { href: '/dashboard/financing', label: 'Flash Financing',        Icon: Zap, soon: true },
 ]
 
