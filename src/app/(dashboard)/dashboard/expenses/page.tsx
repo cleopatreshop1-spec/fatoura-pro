@@ -88,6 +88,11 @@ export default function ExpensesPage() {
   const [addingRecurring, setAddingRecurring] = useState(false)
   const [savingRecurring, setSavingRecurring] = useState(false)
   const [editingRecurringId, setEditingRecurringId] = useState<string | null>(null)
+  const [monthlyBudget, setMonthlyBudget] = useState<number>(() => {
+    try { return Number(localStorage.getItem('exp_monthly_budget') ?? '0') || 0 } catch { return 0 }
+  })
+  const [editingMonthlyBudget, setEditingMonthlyBudget] = useState(false)
+  const [monthlyBudgetInput, setMonthlyBudgetInput] = useState('')
   const [budgets, setBudgets] = useState<Record<string, number>>({}) 
   const [budgetOpen, setBudgetOpen] = useState(false)
   const [editingBudget, setEditingBudget] = useState<string | null>(null)
@@ -446,6 +451,63 @@ export default function ExpensesPage() {
                 }`}>{deltaPct > 0 ? '+' : ''}{deltaPct}% vs ce mois</span>
               )}
             </div>
+          </div>
+        )
+      })()}
+
+      {/* Monthly budget progress bar */}
+      {(() => {
+        const spent = totals.monthly
+        const budget = monthlyBudget
+        if (budget <= 0 && !editingMonthlyBudget) return (
+          <button onClick={() => { setMonthlyBudgetInput(''); setEditingMonthlyBudget(true) }}
+            className="flex items-center gap-2 w-full bg-[#0f1118] border border-dashed border-[#1a1b22] rounded-2xl px-4 py-2.5 text-[10px] text-gray-700 hover:text-gray-500 hover:border-[#252830] transition-colors">
+            <Target size={11} /> Définir un budget mensuel global
+          </button>
+        )
+        const pct = budget > 0 ? Math.min(100, Math.round((spent / budget) * 100)) : 0
+        const over = budget > 0 && spent > budget
+        return (
+          <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl px-4 py-3">
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="flex items-center gap-1.5">
+                <Target size={11} className={over ? 'text-red-400' : 'text-gray-500'} />
+                <p className="text-[10px] text-gray-600 uppercase tracking-wider font-semibold">Budget mensuel</p>
+              </div>
+              {editingMonthlyBudget ? (
+                <div className="flex items-center gap-1">
+                  <input autoFocus type="number" min="0" step="1" value={monthlyBudgetInput}
+                    onChange={e => setMonthlyBudgetInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') { const v = Number(monthlyBudgetInput) || 0; setMonthlyBudget(v); localStorage.setItem('exp_monthly_budget', String(v)); setEditingMonthlyBudget(false) }
+                      if (e.key === 'Escape') setEditingMonthlyBudget(false)
+                    }}
+                    className="w-24 bg-[#0a0b0f] border border-[#d4a843]/40 rounded-lg px-2 py-0.5 text-xs text-white outline-none font-mono" />
+                  <button onClick={() => { const v = Number(monthlyBudgetInput) || 0; setMonthlyBudget(v); localStorage.setItem('exp_monthly_budget', String(v)); setEditingMonthlyBudget(false) }}
+                    className="text-[10px] text-[#2dd4a0] hover:text-white px-1.5 py-0.5 rounded transition-colors">✓</button>
+                  <button onClick={() => setEditingMonthlyBudget(false)} className="text-[10px] text-gray-600 hover:text-white px-1 py-0.5 rounded transition-colors">✕</button>
+                </div>
+              ) : (
+                <button onClick={() => { setMonthlyBudgetInput(String(monthlyBudget)); setEditingMonthlyBudget(true) }}
+                  className={`text-[10px] font-mono font-bold ${over ? 'text-red-400' : 'text-gray-400'} hover:text-white transition-colors`}>
+                  {fmtTND(spent)} / {fmtTND(budget)} TND
+                </button>
+              )}
+            </div>
+            {budget > 0 && (
+              <>
+                <div className="h-2 bg-[#1a1b22] rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full transition-all ${over ? 'bg-red-500' : pct > 75 ? 'bg-[#f59e0b]' : 'bg-[#2dd4a0]'}`}
+                    style={{ width: `${pct}%` }} />
+                </div>
+                <div className="flex justify-between mt-1">
+                  <span className={`text-[9px] font-bold ${over ? 'text-red-400' : pct > 75 ? 'text-amber-400' : 'text-gray-600'}`}>
+                    {pct}% utilisé{over ? ' — dépassé !' : ''}
+                  </span>
+                  {!over && <span className="text-[9px] text-gray-700">{fmtTND(budget - spent)} TND restant</span>}
+                </div>
+              </>
+            )}
           </div>
         )
       })()}
