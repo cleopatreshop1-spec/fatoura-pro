@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Plus, Search, MoreVertical, Users, ChevronUp, ChevronDown } from 'lucide-react'
+import { Plus, Search, MoreVertical, Users, ChevronUp, ChevronDown, Download } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useCompany } from '@/contexts/CompanyContext'
 import { ClientModal } from '@/components/clients/ClientModal'
@@ -132,6 +132,31 @@ export default function ClientsPage() {
     { value: 'B2C', label: 'B2C' },
   ]
 
+  function exportCSV() {
+    const header = 'Nom,Type,Matricule Fiscal,Telephone,Email,Gouvernorat,Factures,CA Total (TTC),Solde du,Plafond credit'
+    const rows = filtered.map(c => {
+      const { count, ca, balance } = getStats(c)
+      return [
+        `"${c.name.replace(/"/g,'""')}"`,
+        c.type ?? 'B2B',
+        c.matricule_fiscal ?? '',
+        c.phone ?? '',
+        c.email ?? '',
+        c.gouvernorat ?? '',
+        count,
+        ca.toFixed(3),
+        balance.toFixed(3),
+        c.credit_limit != null ? Number(c.credit_limit).toFixed(3) : '',
+      ].join(',')
+    })
+    const csv = [header, ...rows].join('\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = `clients_${new Date().toISOString().slice(0,10)}.csv`
+    a.click(); URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="space-y-5">
       {/* Toast */}
@@ -151,6 +176,13 @@ export default function ClientsPage() {
         </div>
         <div className="flex items-center gap-2">
           <ClientCSVImport onDone={load} />
+          {filtered.length > 0 && (
+            <button onClick={exportCSV}
+              className="flex items-center gap-1.5 px-3 py-2.5 border border-[#1a1b22] bg-[#0f1118] text-xs text-gray-400 hover:text-[#2dd4a0] hover:border-[#2dd4a0]/30 rounded-xl transition-colors">
+              <Download size={13} />
+              CSV
+            </button>
+          )}
           <button onClick={openAdd}
             className="flex items-center gap-2 px-4 py-2.5 bg-[#d4a843] hover:bg-[#f0c060] text-black text-sm font-bold rounded-xl transition-colors">
             <Plus size={15} strokeWidth={2.5} />
