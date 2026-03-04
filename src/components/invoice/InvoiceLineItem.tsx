@@ -12,6 +12,7 @@ export type InvLine = {
   quantity: number
   unit_price: number
   discount?: number
+  tva_exempt_reason?: string
   tva_rate: TvaRate
   line_ht: number
   line_ttc: number
@@ -170,15 +171,26 @@ export function InvoiceLineItem({ line, index, isOnly, onChange, onRemove, onDup
       </div>
 
       {/* TVA rate */}
-      <select
-        value={line.tva_rate}
-        onChange={e => onChange(line.id, 'tva_rate', Number(e.target.value) as TvaRate)}
-        className={`${TI} text-xs`}
-      >
-        {TVA_OPTIONS.map(o => (
-          <option key={o.value} value={o.value}>{o.label}</option>
-        ))}
-      </select>
+      <div className="space-y-1">
+        <select
+          value={line.tva_rate}
+          onChange={e => onChange(line.id, 'tva_rate', Number(e.target.value) as TvaRate)}
+          className={`${TI} text-xs`}
+        >
+          {TVA_OPTIONS.map(o => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+        {line.tva_rate === 0 && (
+          <input
+            type="text"
+            value={line.tva_exempt_reason ?? ''}
+            onChange={e => onChange(line.id, 'tva_exempt_reason', e.target.value || undefined)}
+            placeholder="Motif d'exonération..."
+            className="w-full bg-[#0a0b0f] border border-[#f59e0b]/25 rounded-lg px-2 py-1 text-[10px] text-gray-400 placeholder-gray-700 outline-none focus:border-[#f59e0b]/50 transition-colors"
+          />
+        )}
+      </div>
 
       {/* HT (read-only) */}
       <div className="bg-[#0a0b0f]/50 border border-[#1a1b22]/50 rounded-lg px-2.5 py-2 text-xs font-mono text-gray-500 text-right">
