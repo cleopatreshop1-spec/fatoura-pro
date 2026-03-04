@@ -714,6 +714,41 @@ export default function InvoicesPage() {
         </div>
       )}
 
+      {/* Per-client revenue summary (top 5) */}
+      {filtered.length > 1 && (() => {
+        const byClient: Record<string, { name: string; ttc: number; count: number; unpaid: number }> = {}
+        for (const inv of filtered) {
+          const cid = inv.clients?.id ?? '__none__'
+          const name = inv.clients?.name ?? '—'
+          if (!byClient[cid]) byClient[cid] = { name, ttc: 0, count: 0, unpaid: 0 }
+          byClient[cid].ttc   += Number(inv.ttc_amount ?? 0)
+          byClient[cid].count += 1
+          if (inv.payment_status !== 'paid') byClient[cid].unpaid += Number(inv.ttc_amount ?? 0)
+        }
+        const top5 = Object.values(byClient).sort((a, b) => b.ttc - a.ttc).slice(0, 5)
+        if (top5.length < 2) return null
+        const maxTTC = top5[0].ttc
+        return (
+          <div className="bg-[#0f1118] border border-[#1a1b22] rounded-xl px-4 py-3">
+            <p className="text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-2.5">CA par client (filtre actuel)</p>
+            <div className="space-y-1.5">
+              {top5.map(cl => (
+                <div key={cl.name} className="flex items-center gap-2">
+                  <span className="text-[10px] text-gray-400 w-32 truncate shrink-0">{cl.name}</span>
+                  <div className="flex-1 h-1.5 bg-[#1a1b22] rounded-full overflow-hidden">
+                    <div className="h-full bg-[#d4a843]/60 rounded-full"
+                      style={{ width: `${Math.round((cl.ttc / maxTTC) * 100)}%` }} />
+                  </div>
+                  <span className="text-[10px] font-mono text-[#d4a843] shrink-0 w-20 text-right">{fmtTND(cl.ttc)} TND</span>
+                  <span className="text-[10px] text-gray-600 shrink-0 w-10 text-right">{cl.count}f</span>
+                  {cl.unpaid > 0 && <span className="text-[10px] font-mono text-[#f59e0b] shrink-0">-{fmtTND(cl.unpaid)}</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Bulk action bar */}
       {selected.size > 0 && (
         <div className="bg-[#0d1420] border border-[#d4a843]/30 rounded-xl px-4 py-2.5 flex items-center gap-3 flex-wrap">
