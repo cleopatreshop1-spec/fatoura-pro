@@ -313,6 +313,7 @@ export default async function DashboardPage() {
     .sort((a, b) => b[1] - a[1])
     .map(([cat, amt]) => ({ label: EXPENSE_LABELS[cat] ?? cat, amount: amt as number, color: 'red' }))
 
+  const topExpCat  = expByCat[0] ?? null
   const monthLabel = new Date(monthStart).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
 
   // ── 6-month monthly expense sparkline ────────────────────────────────
@@ -678,6 +679,14 @@ export default async function DashboardPage() {
                       style={{ width: `${Math.min(100, Math.round((cashCollectedMonth / (cashCollectedMonth + expensesTotal)) * 100))}%` }} />
                     <div className="h-full bg-red-500/70 rounded-r-full transition-all duration-700 flex-1" />
                   </div>
+                </div>
+              )}
+              {topExpCat && (
+                <div className="flex items-center justify-between pt-2 mt-1 border-t border-[#1a1b22]">
+                  <span className="text-[10px] text-gray-600">Poste principal</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-red-950/20 text-red-400 border-red-900/25">
+                    {topExpCat.label} · {new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(topExpCat.amount)} TND
+                  </span>
                 </div>
               )}
             </div>
