@@ -123,6 +123,39 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
         ))}
       </div>
 
+      {/* Invoice trend sparkline — last 6 months */}
+      {validInvs.length > 0 && (() => {
+        const months = Array.from({ length: 6 }, (_, i) => {
+          const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1)
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+          const label = d.toLocaleDateString('fr-FR', { month: 'short' })
+          const amt = validInvs.filter(inv => (inv.issue_date ?? '').startsWith(key)).reduce((s: number, inv: any) => s + Number(inv.ttc_amount ?? 0), 0)
+          return { label, amt }
+        })
+        const maxAmt = Math.max(...months.map(m => m.amt), 1)
+        const hasData = months.some(m => m.amt > 0)
+        if (!hasData) return null
+        return (
+          <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4">
+            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Tendance CA (6 mois)</p>
+            <div className="flex items-end gap-1.5 h-14">
+              {months.map((m, idx) => {
+                const h = Math.max(3, Math.round((m.amt / maxAmt) * 52))
+                const isLast = idx === 5
+                return (
+                  <div key={m.label} className="flex-1 flex flex-col items-center gap-1" title={`${m.label}: ${fmtTND(m.amt)} TND`}>
+                    <div className="w-full flex items-end justify-center" style={{ height: 52 }}>
+                      <div className={`w-full rounded-t-sm ${isLast ? 'bg-[#d4a843]' : m.amt > 0 ? 'bg-[#d4a843]/40' : 'bg-[#1a1b22]'}`} style={{ height: h }} />
+                    </div>
+                    <span className="text-[9px] text-gray-600">{m.label}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })()}
+
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-5 items-start">
 
         {/* Left: contact card */}
