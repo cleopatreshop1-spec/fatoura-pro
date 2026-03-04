@@ -968,6 +968,24 @@ export default function NewInvoicePage() {
                     </div>
                   ) : null
                 })()}
+                {totals.total_ttc > 0 && currency !== 'TND' && (() => {
+                  const rate = parseFloat(exchangeRate) || 1
+                  const converted = totals.total_ttc * rate
+                  return (
+                    <div className="flex items-center justify-between bg-[#0a0f1a] border border-blue-900/30 rounded-lg px-3 py-2 mt-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-950/40 text-blue-400 border border-blue-900/30">{currency}</span>
+                        <span className="text-[10px] text-gray-600">équivalent TND</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] font-mono font-bold text-blue-400">
+                          {new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(converted)} TND
+                        </span>
+                        <span className="text-[9px] text-gray-700 ml-1">(×{rate})</span>
+                      </div>
+                    </div>
+                  )
+                })()}
                 {totals.total_ttc > 0 && (
                   <div className="bg-[#161b27] rounded-lg px-3 py-2.5 mt-1">
                     <div className="text-[10px] text-gray-600 uppercase tracking-wider mb-1">Montant en lettres</div>
