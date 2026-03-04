@@ -580,6 +580,35 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
             )
           })()}
 
+          {/* Invoice gap alert */}
+          {validInvs.length >= 3 && (() => {
+            const sorted = [...validInvs].filter(i => i.issue_date).sort((a: any, b: any) => a.issue_date.localeCompare(b.issue_date))
+            const gaps: number[] = []
+            for (let i = 1; i < sorted.length; i++) {
+              const d = Math.round((new Date(sorted[i].issue_date).getTime() - new Date(sorted[i-1].issue_date).getTime()) / 86400000)
+              if (d > 0) gaps.push(d)
+            }
+            if (!gaps.length) return null
+            const avgGapAlert = Math.round(gaps.reduce((s, d) => s + d, 0) / gaps.length)
+            const lastDate = new Date(sorted[sorted.length - 1].issue_date)
+            const daysSinceLast = Math.round((now.getTime() - lastDate.getTime()) / 86400000)
+            const isLate = daysSinceLast > avgGapAlert * 1.5
+            if (!isLate) return null
+            const overBy = daysSinceLast - avgGapAlert
+            return (
+              <div className="bg-[#0f1118] border border-amber-900/40 rounded-2xl px-4 py-3 flex items-center gap-3">
+                <span className="text-amber-400 text-lg shrink-0">⚠</span>
+                <div>
+                  <p className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Silence inhabituel</p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {daysSinceLast}j depuis la dernière facture
+                    <span className="text-amber-500 font-bold ml-1">(+{overBy}j vs moy. {avgGapAlert}j)</span>
+                  </p>
+                </div>
+              </div>
+            )
+          })()}
+
           {/* Next expected invoice prediction */}
           {validInvs.length >= 3 && (() => {
             const sorted = [...validInvs].filter(i => i.issue_date).sort((a: any, b: any) => a.issue_date.localeCompare(b.issue_date))
