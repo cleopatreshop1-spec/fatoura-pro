@@ -17,7 +17,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
 
   const { data: inv } = await supabase
     .from('invoices')
-    .select('*, clients(*), companies(*), invoice_line_items(id, sort_order, description, quantity, unit_price, tva_rate, line_ht, line_tva, line_ttc)')
+    .select('*, clients(*), companies(*), invoice_line_items(id, sort_order, description, quantity, unit_price, tva_rate, line_ht, line_tva, line_ttc, notes)')
     .eq('id', id).single()
 
   const lines = inv
@@ -141,7 +141,10 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                 <tbody>
                   {ls.map((l: any, idx: number) => (
                     <tr key={l.id ?? idx} className={idx%2===0?'bg-white':'bg-gray-50/50'}>
-                      <td className="py-2.5 pr-4 text-gray-800 font-medium">{l.description}</td>
+                      <td className="py-2.5 pr-4 text-gray-800 font-medium">
+                        {l.description}
+                        {l.notes && <div className="text-[10px] text-gray-400 italic mt-0.5">{l.notes}</div>}
+                      </td>
                       <td className="py-2.5 text-right text-gray-600 font-mono">{Number(l.quantity).toLocaleString('fr-FR',{minimumFractionDigits:0,maximumFractionDigits:3})}</td>
                       <td className="py-2.5 text-right text-gray-600 font-mono">{fmtTND(Number(l.unit_price??0))}</td>
                       <td className="py-2.5 text-right text-gray-500">{l.tva_rate}%</td>
