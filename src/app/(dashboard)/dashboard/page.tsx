@@ -286,6 +286,18 @@ export default async function DashboardPage() {
 
   const monthLabel = new Date(monthStart).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
 
+  // ── 7-day Revenue Sparkline ──────────────────────────────────────────
+  const sparkline7d = Array.from({ length: 7 }, (_, i) => {
+    const d = format(subDays(now, 6 - i), 'yyyy-MM-dd')
+    const amt = (allInvoices90 as any[])
+      .filter((inv: any) => {
+        const date = (inv.issue_date ?? inv.created_at ?? '').slice(0, 10)
+        return date === d && ['valid', 'validated'].includes(inv.status)
+      })
+      .reduce((s: number, inv: any) => s + Number(inv.ht_amount ?? 0), 0)
+    return { day: format(subDays(now, 6 - i), 'EEE', { locale: fr }), amount: amt }
+  })
+
   // ── Top 5 Clients ───────────────────────────────────────────────
   const clientMap: Record<string, { id: string; name: string; totalTTC: number; unpaid: number; invoiceCount: number }> = {}
   for (const inv of clientInvRaw as any[]) {
@@ -336,6 +348,7 @@ export default async function DashboardPage() {
             year={y}
             unpaidTotal={unpaidTotal}
             avgOverdueDays={avgOverdue}
+            sparkline7d={sparkline7d}
           />
 
           {/* WIDGET: Profit / Loss */}

@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { useAnimatedNumber } from '@/hooks/useAnimatedNumber'
 
+type SparkPoint = { day: string; amount: number }
+
 type Props = {
   caHT: number
   caTrend: number | null
@@ -13,6 +15,25 @@ type Props = {
   year: number
   unpaidTotal: number
   avgOverdueDays: number
+  sparkline7d?: SparkPoint[]
+}
+
+function Sparkline({ data, color }: { data: SparkPoint[]; color: string }) {
+  const max = Math.max(...data.map(d => d.amount), 1)
+  const W = 80, H = 28
+  const pts = data.map((d, i) => {
+    const x = (i / (data.length - 1)) * W
+    const y = H - (d.amount / max) * H
+    return `${x},${y}`
+  }).join(' ')
+  return (
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="overflow-visible">
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" opacity="0.8" />
+      {data.map((d, i) => d.amount > 0 && (
+        <circle key={i} cx={(i / (data.length - 1)) * W} cy={H - (d.amount / max) * H} r="2" fill={color} opacity="0.9" />
+      ))}
+    </svg>
+  )
 }
 
 const fmtTND = (n: number) =>
@@ -28,7 +49,7 @@ function AnimatedInt({ value, color }: { value: number; color: string }) {
   return <span className={`font-mono text-2xl font-black leading-none ${color}`}>{Math.round(anim)}</span>
 }
 
-export function KpiCards({ caHT, caTrend, ytdHT, ytdInvCount, tvaQtr, qtr, year, unpaidTotal, avgOverdueDays }: Props) {
+export function KpiCards({ caHT, caTrend, ytdHT, ytdInvCount, tvaQtr, qtr, year, unpaidTotal, avgOverdueDays, sparkline7d }: Props) {
   const isOverdue = avgOverdueDays > 0
 
   const cards = [
@@ -43,6 +64,7 @@ export function KpiCards({ caHT, caTrend, ytdHT, ytdInvCount, tvaQtr, qtr, year,
         ? { text: `vs mois précédent : ${caTrend >= 0 ? '+' : ''}${caTrend}%`, up: caTrend >= 0 }
         : null,
       href: '/dashboard/invoices',
+      sparkline: sparkline7d,
     },
     {
       label:  `CA ${year} (HT)`,
@@ -98,6 +120,12 @@ export function KpiCards({ caHT, caTrend, ytdHT, ytdInvCount, tvaQtr, qtr, year,
               }`}>
                 {card.sub.up === true ? '↑ ' : card.sub.up === false ? '↓ ' : ''}{card.sub.text}
               </p>
+            )}
+            {'sparkline' in card && card.sparkline && card.sparkline.some(p => p.amount > 0) && (
+              <div className="mt-3 flex items-end justify-between gap-1">
+                <Sparkline data={card.sparkline} color="#d4a843" />
+                <span className="text-[9px] text-gray-700 shrink-0">7j</span>
+              </div>
             )}
           </div>
         </Link>
