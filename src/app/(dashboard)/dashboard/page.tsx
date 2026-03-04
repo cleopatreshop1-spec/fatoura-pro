@@ -1026,6 +1026,42 @@ export default async function DashboardPage() {
             )
           })()}
 
+          {/* WIDGET: Unpaid invoice age distribution */}
+          {agingSummaryTotal > 0 && (() => {
+            const fmt3 = (v: number) => new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(v)
+            const bands = [
+              { label: 'Courant',  amt: agingSummaryAmt.current, col: 'bg-[#2dd4a0]' },
+              { label: '1–30j',    amt: agingSummaryAmt.d30,     col: 'bg-[#f59e0b]' },
+              { label: '31–60j',   amt: agingSummaryAmt.d60,     col: 'bg-[#f97316]' },
+              { label: '61–90j',   amt: agingSummaryAmt.d90,     col: 'bg-red-500' },
+              { label: '>90j',     amt: agingSummaryAmt.d90plus, col: 'bg-red-700' },
+            ].filter(b => b.amt > 0)
+            return (
+              <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Âge créances impayées</p>
+                  <span className="text-[10px] font-mono text-gray-500">{fmt3(agingSummaryTotal)} TND</span>
+                </div>
+                <div className="space-y-1.5">
+                  {bands.map(b => {
+                    const pct = Math.round((b.amt / agingSummaryTotal) * 100)
+                    return (
+                      <div key={b.label}>
+                        <div className="flex justify-between items-center mb-0.5">
+                          <span className="text-[9px] text-gray-500">{b.label}</span>
+                          <span className="text-[9px] font-mono text-gray-400">{fmt3(b.amt)} TND <span className="text-gray-600">({pct}%)</span></span>
+                        </div>
+                        <div className="h-1 bg-[#1a1b22] rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full ${b.col}`} style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })()}
+
           {/* WIDGET: Top services/products (90 days) */}
           {lineItems90.length >= 3 && (() => {
             const byDesc: Record<string, { ht: number; count: number }> = {}
