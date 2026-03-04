@@ -7,6 +7,7 @@ type NotificationPrefKey =
   | 'cert_expiring_email'
   | 'monthly_tva_email'
   | 'weekly_report_email'
+  | 'overdue_reminder_email'
 
 export async function shouldSendEmail(
   supabase: SupabaseClient,

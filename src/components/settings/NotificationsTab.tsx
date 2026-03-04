@@ -11,6 +11,7 @@ const TOGGLES = [
   { key: 'cert_expiring',     label: 'Certificat expirant (-60 jours)',channels: 'Email', urgent: false },
   { key: 'monthly_tva',       label: 'Resume TVA mensuel',             channels: 'Email (1er du mois)', urgent: false },
   { key: 'weekly_report',     label: 'Rapport hebdomadaire',           channels: 'Email (lundi matin)', urgent: false },
+  { key: 'overdue_reminder', label: 'Rappel factures en retard',      channels: 'Email (J+1, J+3, J+7, J+14, J+30)', urgent: false },
 ]
 
 type Prefs = Record<string, boolean>

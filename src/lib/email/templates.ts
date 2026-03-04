@@ -99,6 +99,34 @@ export function monthlyTvaSummaryEmail(p: {
     <p style="margin:0 0 24px;">${btn(p.tvaUrl, 'Voir le détail TVA')}</p>`)
 }
 
+export function overdueReminderEmail(p: {
+  companyName: string
+  clientName: string
+  invoiceNumber: string
+  totalTtc: string
+  dueDate: string
+  daysOverdue: number
+  invoiceUrl: string
+}): string {
+  return base(`
+    <h2 style="margin:0 0 8px;color:#ef4444;font-size:18px;">⚠ Facture en retard de paiement</h2>
+    <p style="margin:0 0 16px;color:#e5e7eb;font-size:14px;">Bonjour ${p.companyName},</p>
+    <p style="margin:0 0 16px;color:#e5e7eb;font-size:14px;">
+      La facture <strong style="color:#d4a843;">${p.invoiceNumber}</strong> adressée à
+      <strong>${p.clientName}</strong> est en retard de
+      <strong style="color:#ef4444;">${p.daysOverdue} jour${p.daysOverdue > 1 ? 's' : ''}</strong>.
+    </p>
+    <table cellpadding="0" cellspacing="0" style="background:#161b27;border:1px solid #1a1b22;border-radius:8px;padding:16px 20px;margin:0 0 24px;width:100%;">
+      <tr><td style="color:#9ca3af;font-size:13px;padding:4px 0;">Client</td><td style="color:#fff;text-align:right;">${p.clientName}</td></tr>
+      <tr><td style="color:#9ca3af;font-size:13px;padding:4px 0;">Échéance</td><td style="color:#ef4444;text-align:right;">${p.dueDate}</td></tr>
+      <tr><td style="color:#9ca3af;font-size:13px;padding:4px 0;">Total TTC</td><td style="color:#fff;font-weight:bold;text-align:right;">${p.totalTtc}</td></tr>
+    </table>
+    <p style="margin:0 0 24px;">${btn(p.invoiceUrl, 'Voir la facture')}</p>
+    <p style="margin:0;color:#6b7280;font-size:12px;">
+      Pensez à relancer votre client ou à enregistrer le paiement si vous l'avez déjà reçu.
+    </p>`)
+}
+
 export function fiduciaireInvitationEmail(p: {
   fiduciaireName: string; inviteeEmail: string; signupUrl: string; personalMessage?: string
 }): string {
