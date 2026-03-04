@@ -394,6 +394,22 @@ export default async function DashboardPage() {
             alertInvoiceId={alertInvoiceId}
           />
 
+          {/* Quick-action row */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {[
+              { href: '/dashboard/invoices/new', icon: '📄', label: 'Nouvelle facture',  color: 'border-[#d4a843]/30 hover:border-[#d4a843]/60 hover:bg-[#d4a843]/5' },
+              { href: '/dashboard/clients',      icon: '👤', label: 'Ajouter un client', color: 'border-[#2dd4a0]/20 hover:border-[#2dd4a0]/50 hover:bg-[#2dd4a0]/5' },
+              { href: '/dashboard/expenses',     icon: '💸', label: 'Saisir une dépense',color: 'border-[#f59e0b]/20 hover:border-[#f59e0b]/50 hover:bg-[#f59e0b]/5' },
+              { href: '/dashboard/invoices',     icon: '📋', label: 'Voir les factures', color: 'border-[#4a9eff]/20 hover:border-[#4a9eff]/50 hover:bg-[#4a9eff]/5' },
+            ].map(a => (
+              <a key={a.href} href={a.href}
+                className={`flex items-center gap-2.5 px-3 py-2.5 bg-[#0f1118] border rounded-xl transition-all group ${a.color}`}>
+                <span className="text-base leading-none">{a.icon}</span>
+                <span className="text-xs font-medium text-gray-400 group-hover:text-gray-200 transition-colors leading-tight">{a.label}</span>
+              </a>
+            ))}
+          </div>
+
           {/* WIDGET 4 — KPI Cards */}
           <KpiCards
             caHT={caHT}
