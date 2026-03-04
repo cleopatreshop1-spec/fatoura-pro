@@ -16,6 +16,7 @@ import { InvoiceAgingReport } from '@/components/dashboard/InvoiceAgingReport'
 import { ProfitLossWidget } from '@/components/dashboard/ProfitLossWidget'
 import { TopClientsWidget } from '@/components/dashboard/TopClientsWidget'
 import { RevenueComparisonChart } from '@/components/dashboard/RevenueComparisonChart'
+import { ExpenseCategoryDonut } from '@/components/dashboard/ExpenseCategoryDonut'
 import { format, subDays, addDays, parseISO, endOfWeek, eachWeekOfInterval } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
@@ -401,6 +402,11 @@ export default async function DashboardPage() {
             expensesByCategory={expByCat}
             month={monthLabel}
           />
+
+          {/* WIDGET: Expense Category Donut */}
+          {expByCat.length > 0 && (
+            <ExpenseCategoryDonut data={expByCat} />
+          )}
 
           {/* WIDGET: Monthly Revenue Comparison */}
           <RevenueComparisonChart
