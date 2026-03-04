@@ -496,6 +496,34 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
               </div>
             )
           })()}
+          {/* Day-of-week invoice heatmap */}
+          {validInvs.length >= 3 && (() => {
+            const DOW_LABELS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
+            const counts = [0, 0, 0, 0, 0, 0, 0]
+            for (const inv of validInvs) {
+              const d = inv.issue_date ? new Date(inv.issue_date).getDay() : null
+              if (d !== null) counts[d] += 1
+            }
+            const max = Math.max(...counts, 1)
+            return (
+              <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Répartition factures par jour</p>
+                <div className="flex items-end gap-1.5 h-12">
+                  {counts.map((cnt, i) => {
+                    const h = Math.max(4, Math.round((cnt / max) * 40))
+                    return (
+                      <div key={i} className="flex-1 flex flex-col items-center gap-1" title={`${DOW_LABELS[i]} : ${cnt} facture${cnt !== 1 ? 's' : ''}`}>
+                        <div className="w-full flex items-end justify-center" style={{ height: 40 }}>
+                          <div className="w-full rounded-sm bg-[#d4a843]/70 transition-all" style={{ height: h }} />
+                        </div>
+                        <span className="text-[8px] text-gray-600">{DOW_LABELS[i]}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })()}
         </div>
       </div>
     </div>
