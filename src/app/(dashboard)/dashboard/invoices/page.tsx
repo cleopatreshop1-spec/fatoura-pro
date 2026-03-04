@@ -427,11 +427,11 @@ export default function InvoicesPage() {
                       <input type="checkbox" checked={allPageSelected} onChange={toggleAll}
                         className="w-3.5 h-3.5 rounded accent-[#d4a843] cursor-pointer" />
                     </th>
-                    {([['number','N Facture'],['','Client'],['issue_date','Date'],['due_date','Echeance'],
-                       ['ht_amount','HT'],['tva_amount','TVA'],['ttc_amount','TTC'],['status','Statut'],['','TTN_ID'],['','']
-                    ] as [SortField|'',string][]).map(([field, label]) => (
+                    {([['number','N° Facture',''],['','Client',''],['issue_date','Date',''],['due_date','Échéance','hidden md:table-cell'],
+                       ['ht_amount','HT','hidden lg:table-cell'],['tva_amount','TVA','hidden lg:table-cell'],['ttc_amount','TTC',''],['status','Statut',''],['','TTN_ID','hidden xl:table-cell'],['','']
+                    ] as [SortField|'',string,string][]).map(([field, label, hide]) => (
                       <th key={label} onClick={() => field && toggleSort(field as SortField)}
-                        className={`px-4 py-3 text-left text-[10px] text-gray-600 uppercase tracking-wider font-semibold whitespace-nowrap ${field?'cursor-pointer hover:text-gray-400 select-none':''}`}>
+                        className={`px-4 py-3 text-left text-[10px] text-gray-600 uppercase tracking-wider font-semibold whitespace-nowrap ${hide} ${field?'cursor-pointer hover:text-gray-400 select-none':''}`}>
                         <span className="flex items-center">
                           {label}
                           {field && <SortIcon field={field as SortField} />}
@@ -474,7 +474,7 @@ export default function InvoicesPage() {
                       <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">
                         {inv.issue_date ? new Date(inv.issue_date).toLocaleDateString('fr-FR') : ''}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
+                      <td className="px-4 py-3 whitespace-nowrap hidden md:table-cell">
                         <span className="text-xs text-gray-400">
                           {inv.due_date ? new Date(inv.due_date).toLocaleDateString('fr-FR') : ''}
                         </span>
@@ -482,11 +482,11 @@ export default function InvoicesPage() {
                           <span className="ml-1.5 text-[9px] font-bold px-1 py-0.5 rounded bg-red-950/40 text-red-400 border border-red-900/30">Retard</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 font-mono text-xs text-gray-400 whitespace-nowrap text-right">{fmtTND(Number(inv.ht_amount??0))}</td>
-                      <td className="px-4 py-3 font-mono text-xs text-gray-500 whitespace-nowrap text-right">{fmtTND(Number(inv.tva_amount??0))}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-gray-400 whitespace-nowrap text-right hidden lg:table-cell">{fmtTND(Number(inv.ht_amount??0))}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-gray-500 whitespace-nowrap text-right hidden lg:table-cell">{fmtTND(Number(inv.tva_amount??0))}</td>
                       <td className="px-4 py-3 font-mono text-xs text-gray-200 font-bold whitespace-nowrap text-right">{fmtTND(Number(inv.ttc_amount??0))}</td>
                       <td className="px-4 py-3"><InvoiceStatusBadge status={inv.status} /></td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 hidden xl:table-cell">
                         {inv.ttn_id ? (
                           <button onClick={() => copyTTN(inv.ttn_id!)}
                             className="font-mono text-[10px] text-[#d4a843] hover:text-[#f0c060] truncate max-w-[80px] block transition-colors" title="Copier TTN_ID">
