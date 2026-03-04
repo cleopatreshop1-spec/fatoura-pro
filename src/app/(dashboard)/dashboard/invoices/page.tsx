@@ -187,6 +187,30 @@ export default function InvoicesPage() {
   }
   const selectedInvs = invoices.filter(i => selected.has(i.id))
 
+  function exportFilteredCSV() {
+    const rows = [
+      ['N° Facture','Client','Date','Échéance','HT','TVA','TTC','Statut','Paiement','Payé le'],
+      ...filtered.map(i => [
+        i.number ?? '',
+        i.clients?.name ?? '',
+        i.issue_date ?? '',
+        i.due_date ?? '',
+        String(Number(i.ht_amount ?? 0).toFixed(3)),
+        String(Number(i.tva_amount ?? 0).toFixed(3)),
+        String(Number(i.ttc_amount ?? 0).toFixed(3)),
+        i.status ?? '',
+        i.payment_status ?? '',
+        i.paid_at ? new Date(i.paid_at).toLocaleDateString('fr-FR') : '',
+      ])
+    ]
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url
+    a.download = `factures-${new Date().toISOString().slice(0,10)}.csv`
+    a.click(); URL.revokeObjectURL(url)
+  }
+
   // Actions
   async function handleDuplicate(inv: InvRow) {
     setDropdown(null)
@@ -438,6 +462,14 @@ export default function InvoicesPage() {
           <button onClick={() => { setSearchInput(''); setSearch(''); setStatusFilter('all'); setPeriod('all'); setClientFilter(''); setCustomFrom(''); setCustomTo(''); setAmountMin(''); setAmountMax(''); setPaymentFilter('all'); setPage(1) }}
             className="px-3 py-2 text-xs text-gray-400 hover:text-white border border-[#1a1b22] rounded-xl transition-colors">
             Réinitialiser
+          </button>
+        )}
+        {/* Export CSV */}
+        {filtered.length > 0 && (
+          <button onClick={exportFilteredCSV}
+            className="flex items-center gap-1.5 px-3 py-2 text-xs border border-[#1a1b22] text-gray-500 hover:text-[#2dd4a0] hover:border-[#2dd4a0]/30 rounded-xl transition-colors"
+            title={`Exporter ${filtered.length} facture${filtered.length > 1 ? 's' : ''} en CSV`}>
+            <Download size={12} />CSV
           </button>
         )}
         {/* Column visibility */}
