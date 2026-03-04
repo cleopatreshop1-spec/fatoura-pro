@@ -206,6 +206,15 @@ export default function InvoicesPage() {
   }, [filtered, invoices])
   const hasFilters = search || statusFilter !== 'all' || period !== 'all' || clientFilter || amountMin || amountMax || paymentFilter !== 'all' || typeFilter !== 'all'
 
+  const clientTotals = useMemo(() => {
+    const map: Record<string, number> = {}
+    for (const inv of filtered) {
+      const cid = inv.clients?.id
+      if (cid) map[cid] = (map[cid] ?? 0) + Number(inv.ttc_amount ?? 0)
+    }
+    return map
+  }, [filtered])
+
   const agingHeatmap = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10)
     const buckets = [
@@ -958,7 +967,7 @@ export default function InvoicesPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center flex-wrap gap-0.5">
-                          <span className="text-gray-300 text-xs">{inv.clients?.name ?? <span className="text-gray-600"></span>}</span>
+                          <span className="text-gray-300 text-xs">{inv.clients?.name ?? <span className="text-gray-600">—</span>}</span>
                           {inv.clients?.type && (
                             <span className={`ml-1.5 text-[9px] font-bold px-1 py-0.5 rounded border ${inv.clients.type==='B2B'?'text-[#d4a843] border-[#d4a843]/20':'text-[#4a9eff] border-[#4a9eff]/20'}`}>
                               {inv.clients.type}
@@ -973,6 +982,17 @@ export default function InvoicesPage() {
                             />
                           )}
                         </div>
+                        {inv.clients?.id && summary.ttc > 0 && (() => {
+                          const share = Math.round((clientTotals[inv.clients.id] ?? 0) / summary.ttc * 100)
+                          return share >= 5 ? (
+                            <div className="mt-1 flex items-center gap-1">
+                              <div className="h-0.5 bg-[#1a1b22] rounded-full overflow-hidden w-16">
+                                <div className="h-full bg-[#d4a843]/50 rounded-full" style={{ width: `${share}%` }} />
+                              </div>
+                              <span className="text-[8px] text-gray-700 font-mono">{share}%</span>
+                            </div>
+                          ) : null
+                        })()}
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">
                         {inv.issue_date ? (
