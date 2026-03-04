@@ -411,8 +411,13 @@ export default function InvoicesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white flex items-center gap-2">
+          <h1 className="text-xl font-bold text-white flex items-center gap-2 flex-wrap">
             Factures <span className="text-sm text-gray-500 font-normal">({filtered.length})</span>
+            {(() => { const n = invoices.filter(i => isOverdue(i)).length; return n > 0 ? (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-red-950/30 text-red-400 border-red-900/30">
+                ⚠ {n} en retard
+              </span>
+            ) : null })()}
           </h1>
           <p className="text-gray-500 text-sm">Gestion et suivi de vos factures</p>
         </div>
