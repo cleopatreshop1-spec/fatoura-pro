@@ -18,7 +18,7 @@ type ClientRow = {
   postal_code: string | null; bank_name: string | null; bank_rib: string | null
   credit_limit: number | null
   created_at: string
-  invoices: { id: string; ttc_amount: number | null; status: string; payment_status: string | null }[]
+  invoices: { id: string; ttc_amount: number | null; status: string; payment_status: string | null; due_date: string | null; issue_date: string | null }[]
 }
 type FilterType = 'all' | 'B2B' | 'B2C'
 type SortField = 'name' | 'count' | 'ca' | 'balance' | 'credit' | 'lastInv'
@@ -87,7 +87,7 @@ export default function ClientsPage() {
     setLoading(true)
     const { data } = await supabase
       .from('clients')
-      .select('*, invoices(id, ttc_amount, status, payment_status)')
+      .select('*, invoices(id, ttc_amount, status, payment_status, due_date, issue_date)')
       .eq('company_id', activeCompany.id)
       .order('name')
     setClients((data ?? []) as ClientRow[])
@@ -101,6 +101,8 @@ export default function ClientsPage() {
     setTimeout(() => setToast(''), 3000)
   }
 
+  const todayStr = new Date().toISOString().slice(0, 10)
+
   function getStats(c: ClientRow) {
     const validInvs = c.invoices?.filter(i => i.status !== 'draft') ?? []
     const count = validInvs.length
@@ -108,7 +110,13 @@ export default function ClientsPage() {
     const unpaidInvs = validInvs.filter(i => i.payment_status !== 'paid')
     const balance = unpaidInvs.reduce((s, i) => s + Number(i.ttc_amount ?? 0), 0)
     const unpaid = unpaidInvs.length
-    return { count, ca, balance, unpaid }
+    const maxOverdueDays = unpaidInvs
+      .filter(i => i.due_date && i.due_date < todayStr)
+      .reduce((max, i) => {
+        const days = Math.floor((new Date(todayStr).getTime() - new Date(i.due_date!).getTime()) / 86400000)
+        return days > max ? days : max
+      }, 0)
+    return { count, ca, balance, unpaid, maxOverdueDays }
   }
 
   function getRisk(c: ClientRow): { label: string; color: string; bg: string } | null {
@@ -428,7 +436,7 @@ export default function ClientsPage() {
                 </thead>
                 <tbody className="divide-y divide-[#1a1b22]">
                   {paginated.map(c => {
-                    const { count, ca, balance, unpaid } = getStats(c)
+                    const { count, ca, balance, unpaid, maxOverdueDays } = getStats(c)
                     const lastInvDate = c.invoices?.reduce((m: string, i: any) => i.status !== 'draft' && (i.issue_date ?? '') > m ? (i.issue_date ?? '') : m, '') ?? ''
                     const risk = getRisk(c)
                     return (
@@ -452,6 +460,16 @@ export default function ClientsPage() {
                               <span title={`${unpaid} facture${unpaid > 1 ? 's' : ''} impayée${unpaid > 1 ? 's' : ''}`}
                                 className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-950/40 text-amber-400 border border-amber-900/30">
                                 {unpaid}
+                              </span>
+                            )}
+                            {maxOverdueDays > 0 && (
+                              <span title={`La plus ancienne facture impayée a ${maxOverdueDays}j de retard`}
+                                className={`shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded border ${
+                                  maxOverdueDays > 90 ? 'bg-red-950/40 text-red-400 border-red-900/30' :
+                                  maxOverdueDays > 30 ? 'bg-orange-950/40 text-orange-400 border-orange-900/30' :
+                                  'bg-amber-950/40 text-amber-400 border-amber-900/30'
+                                }`}>
+                                +{maxOverdueDays}j
                               </span>
                             )}
                             {count > 0 && lastInvDate && (() => {
