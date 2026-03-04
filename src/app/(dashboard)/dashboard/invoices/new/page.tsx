@@ -19,6 +19,7 @@ import type { InvLine, TvaRate } from '@/components/invoice/InvoiceLineItem'
 import { InvoiceScannerModal } from '@/components/ai/InvoiceScannerModal'
 import { AIDraftInvoice } from '@/components/ai/AIDraftInvoice'
 import { SaveAsTemplateButton } from '@/components/invoice/SaveAsTemplateButton'
+import { LoadFromTemplateButton } from '@/components/invoice/LoadFromTemplateButton'
 import { ConfettiCelebration } from '@/components/shared/ConfettiCelebration'
 import type { ScannedInvoice } from '@/types/scanner'
 
@@ -858,7 +859,21 @@ export default function NewInvoicePage() {
 
             {/* Action buttons */}
             <div className="space-y-2">
-              <SaveAsTemplateButton lines={lines} notes={notes} />
+              <div className="flex gap-2">
+                <LoadFromTemplateButton onLoad={(tplLines, tplNotes) => {
+                  setLines(tplLines.map(l => ({
+                    id: crypto.randomUUID(),
+                    description: l.description,
+                    quantity: Number(l.quantity),
+                    unit_price: Number(l.unit_price),
+                    tva_rate: l.tva_rate as 0|7|13|19,
+                    line_ht: 0,
+                    line_ttc: 0,
+                  })))
+                  if (tplNotes) setNotes(tplNotes)
+                }} />
+                <SaveAsTemplateButton lines={lines} notes={notes} />
+              </div>
 
               <button type="button" onClick={handleSaveDraft} disabled={saving || submitting}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-[#252830] bg-[#161b27] text-sm text-gray-300 hover:text-white hover:bg-[#252830] transition-colors disabled:opacity-50">
