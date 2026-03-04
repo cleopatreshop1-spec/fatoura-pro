@@ -92,6 +92,9 @@ export default function ExpensesPage() {
   const [editingBudget, setEditingBudget] = useState<string | null>(null)
   const [budgetInput, setBudgetInput] = useState('')
   const [savingBudget, setSavingBudget] = useState(false)
+  const [inlineEditId, setInlineEditId] = useState<string | null>(null)
+  const [inlineEdit, setInlineEdit] = useState<{ amount: string; category: string; description: string }>({ amount: '', category: 'autre', description: '' })
+  const [savingInline, setSavingInline] = useState(false)
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(''), 3000) }
 
@@ -251,6 +254,20 @@ export default function ExpensesPage() {
     setFormOpen(false)
     showToast('Dépense ajoutée')
     load()
+  }
+
+  async function saveInlineEdit(id: string) {
+    if (!inlineEdit.description.trim() || !inlineEdit.amount) return
+    setSavingInline(true)
+    await supabase.from('expenses').update({
+      description: inlineEdit.description,
+      amount: parseFloat(inlineEdit.amount),
+      category: inlineEdit.category,
+    }).eq('id', id)
+    setSavingInline(false)
+    setInlineEditId(null)
+    load()
+    showToast('Dépense mise à jour')
   }
 
   async function handleDelete(id: string) {
@@ -728,45 +745,88 @@ export default function ExpensesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#1a1b22]">
-                {filtered.map(e => (
-                  <tr key={e.id} className="hover:bg-[#161b27]/50 transition-colors">
+                  {filtered.map(e => (
+                  <tr key={e.id} className="hover:bg-[#161b27]/50 transition-colors group">
                     <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap font-mono">
                       {new Date(e.date).toLocaleDateString('fr-FR')}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <p className="text-sm text-gray-200 font-medium">{e.description}</p>
-                        {e.receipt_url && (
+                      {inlineEditId === e.id ? (
+                        <input
+                          value={inlineEdit.description}
+                          onChange={ev => setInlineEdit(p => ({ ...p, description: ev.target.value }))}
+                          onKeyDown={ev => { if (ev.key === 'Enter') saveInlineEdit(e.id); if (ev.key === 'Escape') setInlineEditId(null) }}
+                          autoFocus
+                          className="w-full bg-[#0a0b0f] border border-[#d4a843]/50 rounded-lg px-2 py-1 text-sm text-white outline-none"
+                        />
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-sm text-gray-200 font-medium">{e.description}</p>
+                          {e.receipt_url && (
+                            <button type="button" onClick={() => setLightboxUrl(e.receipt_url)}
+                              title="Voir le justificatif"
+                              className="group/rc relative text-[#2dd4a0] hover:text-[#2dd4a0]/80 transition-colors shrink-0">
+                              <Paperclip size={11} />
+                              {/\.(jpe?g|png|webp|gif)$/i.test(e.receipt_url) && (
+                                <span className="pointer-events-none absolute bottom-5 left-0 z-20 hidden group-hover/rc:block">
+                                  <img src={e.receipt_url} alt="reçu" className="w-28 h-28 object-cover rounded-lg border border-[#252830] shadow-2xl" />
+                                </span>
+                              )}
+                            </button>
+                          )}
                           <button
-                            type="button"
-                            onClick={() => setLightboxUrl(e.receipt_url)}
-                            title="Voir le justificatif"
-                            className="group relative text-[#2dd4a0] hover:text-[#2dd4a0]/80 transition-colors shrink-0">
-                            <Paperclip size={11} />
-                            {/\.(jpe?g|png|webp|gif)$/i.test(e.receipt_url) && (
-                              <span className="pointer-events-none absolute bottom-5 left-0 z-20 hidden group-hover:block">
-                                <img src={e.receipt_url} alt="reçu" className="w-28 h-28 object-cover rounded-lg border border-[#252830] shadow-2xl" />
-                              </span>
-                            )}
+                            onClick={() => { setInlineEditId(e.id); setInlineEdit({ amount: String(e.amount), category: e.category, description: e.description }) }}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-600 hover:text-[#d4a843] shrink-0">
+                            <Pencil size={11} />
                           </button>
-                        )}
-                      </div>
+                        </div>
+                      )}
                       {e.notes && <p className="text-[10px] text-gray-600 mt-0.5">{e.notes}</p>}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${CAT_COLORS[e.category] ?? CAT_COLORS.autre}`}>
-                        {CATEGORIES.find(c => c.value === e.category)?.label ?? e.category}
-                      </span>
+                      {inlineEditId === e.id ? (
+                        <select value={inlineEdit.category} onChange={ev => setInlineEdit(p => ({ ...p, category: ev.target.value }))}
+                          className="bg-[#0a0b0f] border border-[#1a1b22] rounded-lg px-2 py-1 text-xs text-white outline-none">
+                          {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                        </select>
+                      ) : (
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${CAT_COLORS[e.category] ?? CAT_COLORS.autre}`}>
+                          {CATEGORIES.find(c => c.value === e.category)?.label ?? e.category}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 font-mono text-sm font-bold text-red-400 whitespace-nowrap text-right">
-                      -{fmtTND(Number(e.amount))} TND
+                      {inlineEditId === e.id ? (
+                        <input
+                          type="number" min="0" step="0.001"
+                          value={inlineEdit.amount}
+                          onChange={ev => setInlineEdit(p => ({ ...p, amount: ev.target.value }))}
+                          onKeyDown={ev => { if (ev.key === 'Enter') saveInlineEdit(e.id); if (ev.key === 'Escape') setInlineEditId(null) }}
+                          className="w-24 bg-[#0a0b0f] border border-[#1a1b22] rounded-lg px-2 py-1 text-xs text-red-400 outline-none font-mono text-right"
+                        />
+                      ) : (
+                        <span>-{fmtTND(Number(e.amount))} TND</span>
+                      )}
                     </td>
                     <td className="px-4 py-3">
-                      <button onClick={() => handleDelete(e.id)}
-                        className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-950/20 transition-colors"
-                        title="Supprimer">
-                        <Trash2 size={13} />
-                      </button>
+                      {inlineEditId === e.id ? (
+                        <div className="flex gap-1">
+                          <button onClick={() => saveInlineEdit(e.id)} disabled={savingInline}
+                            className="text-[10px] px-2 py-1 bg-[#d4a843] text-black font-bold rounded-lg hover:bg-[#f0c060] transition-colors disabled:opacity-50">
+                            OK
+                          </button>
+                          <button onClick={() => setInlineEditId(null)}
+                            className="text-[10px] px-2 py-1 border border-[#252830] text-gray-500 rounded-lg hover:text-white transition-colors">
+                            ✕
+                          </button>
+                        </div>
+                      ) : (
+                        <button onClick={() => handleDelete(e.id)}
+                          className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-950/20 transition-colors"
+                          title="Supprimer">
+                          <Trash2 size={13} />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
