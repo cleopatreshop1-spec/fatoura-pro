@@ -6,6 +6,7 @@ import { Header } from './Header'
 import { CompanyContextBanner } from './CompanyContextBanner'
 import { TrialBanner } from '@/components/billing/TrialBanner'
 import { CommandPalette } from '@/components/shared/CommandPalette'
+import { KeyboardShortcutsBar } from '@/components/shared/KeyboardShortcutsBar'
 
 interface Props {
   children: React.ReactNode
@@ -64,6 +65,7 @@ export function DashboardShell({ children, userEmail, userName, userInitials }: 
         </main>
       </div>
       <CommandPalette />
+      <KeyboardShortcutsBar />
     </div>
   )
 }
