@@ -44,12 +44,29 @@ export default function ClientsPage() {
   const [sort, setSort] = useState<{ field: SortField; dir: 'asc' | 'desc' }>({ field: 'name', dir: 'asc' })
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkDeleting, setBulkDeleting] = useState(false)
+  const [merging, setMerging] = useState(false)
 
   function toggleRow(id: string) { setSelected(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n }) }
   function toggleAll(ids: string[]) {
     if (ids.every(id => selected.has(id))) setSelected(s => { const n = new Set(s); ids.forEach(id => n.delete(id)); return n })
     else setSelected(s => { const n = new Set(s); ids.forEach(id => n.add(id)); return n })
   }
+  async function mergeClients() {
+    if (selected.size !== 2) return
+    const [keepId, removeId] = [...selected]
+    const keepClient  = clients.find(c => c.id === keepId)
+    const removeClient = clients.find(c => c.id === removeId)
+    if (!keepClient || !removeClient) return
+    if (!window.confirm(`Fusionner "${removeClient.name}" dans "${keepClient.name}" ?\n\nToutes les factures de "${removeClient.name}" seront réassignées à "${keepClient.name}", puis ce client sera supprimé.`)) return
+    setMerging(true)
+    await supabase.from('invoices').update({ client_id: keepId }).eq('client_id', removeId)
+    await supabase.from('clients').delete().eq('id', removeId)
+    setMerging(false)
+    setSelected(new Set())
+    showToast(`Fusion réussie — factures de "${removeClient.name}" transférées`)
+    load()
+  }
+
   async function bulkDelete() {
     if (!selected.size) return
     setBulkDeleting(true)
@@ -353,8 +370,15 @@ export default function ClientsPage() {
           <>
             {/* Bulk action bar */}
             {selected.size > 0 && (
-              <div className="bg-[#0d1420] border border-red-900/30 rounded-xl px-4 py-2.5 flex items-center gap-3">
+              <div className="bg-[#0d1420] border border-red-900/30 rounded-xl px-4 py-2.5 flex items-center gap-3 flex-wrap">
                 <span className="text-sm text-red-400 font-bold shrink-0">{selected.size} sélectionné{selected.size > 1 ? 's' : ''}</span>
+                {selected.size === 2 && (
+                  <button onClick={mergeClients} disabled={merging}
+                    className="flex items-center gap-1.5 text-xs text-[#2dd4a0] border border-[#2dd4a0]/30 bg-[#2dd4a0]/10 hover:bg-[#2dd4a0]/20 px-3 py-1.5 rounded-lg transition-colors font-medium disabled:opacity-50"
+                    title="Fusionner les 2 clients — toutes les factures du 2e seront transférées vers le 1er">
+                    ⇒ {merging ? 'Fusion...' : 'Fusionner'}
+                  </button>
+                )}
                 <button onClick={bulkDelete} disabled={bulkDeleting}
                   className="flex items-center gap-1.5 text-xs text-red-400 border border-red-900/30 bg-red-950/20 hover:bg-red-950/40 px-3 py-1.5 rounded-lg transition-colors font-medium disabled:opacity-50">
                   <Trash2 size={12} />{bulkDeleting ? 'Suppression...' : 'Supprimer la sélection'}
