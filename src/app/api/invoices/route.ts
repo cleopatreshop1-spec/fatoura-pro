@@ -5,6 +5,7 @@ import { calcInvoiceTotals } from '@/lib/utils/tva-calculator'
 import { amountToWords } from '@/lib/utils/amount-to-words'
 import { nextInvoiceNumber } from '@/lib/utils/invoice-number'
 import { invalidateUserContext } from '@/lib/ai/context-builder'
+import { sanitizeString } from '@/lib/utils/sanitize'
 
 const lineSchema = z.object({
   description: z.string().min(1),
@@ -59,13 +60,10 @@ export async function POST(request: NextRequest) {
   try {
     const { user, company, supabase } = await getAuthenticatedCompany(request)
     const body = await request.json()
-    console.log('[POST /api/invoices] body received:', JSON.stringify(body))
     const parsed = createSchema.safeParse(body)
     if (!parsed.success) {
-      console.error('[POST /api/invoices] Zod validation failed:', parsed.error.issues)
       return err(parsed.error.issues[0]?.message ?? 'Validation', 422)
     }
-    console.log('[POST /api/invoices] parsed ok — client_name:', parsed.data.client_name, 'invoice_date:', parsed.data.invoice_date, 'lines:', parsed.data.lines.length)
 
     const { client_id, client_name, client_matricule, source, invoice_date, due_date, notes, status, lines } = parsed.data
 
@@ -155,7 +153,7 @@ export async function POST(request: NextRequest) {
         number,
         issue_date: invoice_date,
         due_date:   due_date ?? null,
-        notes:      notes ?? null,
+        notes:      notes ? sanitizeString(notes, 1000) : null,
         status,
         ht_amount:    totals.total_ht,
         tva_amount:   totals.total_tva,
@@ -171,7 +169,7 @@ export async function POST(request: NextRequest) {
     const lineItems = lines.map((l, idx) => ({
       invoice_id:  (invoice as any).id,
       sort_order:  idx,
-      description: l.description,
+      description: sanitizeString(l.description, 500),
       quantity:    l.quantity,
       unit_price:  l.unit_price,
       tva_rate:    l.tva_rate,

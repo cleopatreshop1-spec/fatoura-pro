@@ -47,19 +47,14 @@ export function InvoiceActionCard({ action, onSuccess, onEdit }: InvoiceActionCa
       })),
     }
 
-    console.log('[AI Invoice] Step 1 — Payload built:', payload)
-
     try {
-      console.log('[AI Invoice] Step 2 — Calling POST /api/invoices...')
       const response = await fetch('/api/invoices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
 
-      console.log('[AI Invoice] Step 3 — HTTP status:', response.status)
       const result = await response.json()
-      console.log('[AI Invoice] Step 4 — Response body:', result)
 
       if (!response.ok) {
         throw new Error(result.error || `Erreur HTTP ${response.status}`)
@@ -68,13 +63,11 @@ export function InvoiceActionCard({ action, onSuccess, onEdit }: InvoiceActionCa
       const inv = result.invoice
       if (!inv?.id) throw new Error('Réponse invalide: invoice manquante dans la réponse')
 
-      console.log('[AI Invoice] Step 5 — Invoice saved ✓ id:', inv.id, 'number:', inv.number)
       setCreatedInvoice({ id: inv.id, number: inv.number })
       setCardState('success')
       onSuccess(inv.id, inv.number)
 
     } catch (err) {
-      console.error('[AI Invoice] FAILED:', err)
       setError((err as Error).message)
       setCardState('error')
     }

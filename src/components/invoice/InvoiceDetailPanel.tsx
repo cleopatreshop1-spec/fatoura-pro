@@ -87,9 +87,17 @@ export function InvoiceDetailPanel({ invoice: initial, companyPrefix }: Props) {
     const { data: lastInv } = await supabase.from('invoices').select('number')
       .eq('company_id', inv.company_id).order('created_at', { ascending: false }).limit(1).maybeSingle()
     const num = nextInvoiceNumber((lastInv as any)?.number, companyPrefix)
-    const { data: newInv } = await supabase.from('invoices').insert({
+    const { data: srcInv } = await (supabase as any).from('invoices').select('ht_amount,tva_amount,stamp_amount,ttc_amount,total_in_words,client_id,notes').eq('id', inv.id).single()
+    const { data: newInv } = await (supabase as any).from('invoices').insert({
       company_id: inv.company_id, number: num, status: 'draft',
       issue_date: new Date().toISOString().slice(0, 10),
+      client_id:      srcInv?.client_id ?? null,
+      ht_amount:      srcInv?.ht_amount ?? 0,
+      tva_amount:     srcInv?.tva_amount ?? 0,
+      stamp_amount:   srcInv?.stamp_amount ?? 0.600,
+      ttc_amount:     srcInv?.ttc_amount ?? 0,
+      total_in_words: srcInv?.total_in_words ?? null,
+      notes:          srcInv?.notes ?? null,
     }).select('id').single()
     if (newInv) {
       const { data: lines } = await supabase.from('invoice_line_items').select('*').eq('invoice_id', inv.id).order('sort_order')

@@ -4,6 +4,7 @@ import { applyRateLimit, rateLimiters, getClientIp } from '@/lib/rate-limiter'
 import { captureError } from '@/lib/monitoring/sentry'
 import { buildUserContext, buildSystemPrompt } from '@/lib/ai/context-builder'
 import { parseAction, stripAction } from '@/lib/ai/action-parser'
+import { sanitizeString } from '@/lib/utils/sanitize'
 import { type NextRequest } from 'next/server'
 
 export const maxDuration = 30
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
 
     // 3. Parse body
     const body = await request.json()
-    const message: string          = (body.message ?? '').trim()
+    const message: string          = sanitizeString(body.message ?? '', 2000)
     const history: GeminiMessage[] = Array.isArray(body.history) ? body.history : []
 
     if (!message) return err('Message vide', 400)
@@ -74,12 +75,8 @@ export async function POST(request: NextRequest) {
     const rawText: string = result.response.text()
 
     // 6. Parse optional CREATE_INVOICE action
-    console.log('[AI Chat] raw response length:', rawText.length)
-    console.log('[AI Chat] contains %%ACTION%%:', rawText.includes('%%ACTION%%'))
-    console.log('[AI Chat] raw tail (500 chars):', rawText.slice(-500))
     const action      = parseAction(rawText)
     const displayText = action ? stripAction(rawText) : rawText
-    console.log('[AI Chat] action parsed:', action ? action.type : 'null')
 
     // 7. Mark proactive suggestions as read
     await (supabase as any).from('ai_suggestions')

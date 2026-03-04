@@ -566,12 +566,12 @@ export function InvoiceScannerModal({ isOpen, onClose, onConfirm }: InvoiceScann
                 <div className="text-center">
                   <p className="text-sm font-medium text-white mb-1">Glissez une image ici</p>
                   <p className="text-xs text-gray-500">ou cliquez pour sélectionner</p>
-                  <p className="text-[10px] text-gray-600 mt-2">JPG, PNG • Max 10 MB</p>
+                  <p className="text-[10px] text-gray-600 mt-2">JPG, PNG, PDF • Max 10 MB</p>
                 </div>
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
                   className="hidden"
                   onChange={handleInputChange}
                 />

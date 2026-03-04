@@ -174,7 +174,7 @@ export default function InvoicesPage() {
   async function handleDelete() {
     if (!deleteId) return
     setDeleting(true)
-    await supabase.from('invoices').delete().eq('id', deleteId)
+    await (supabase as any).from('invoices').update({ deleted_at: new Date().toISOString() }).eq('id', deleteId)
     setDeleteId(null); setDeleting(false); showToast('Facture supprimee.')
     load()
   }
@@ -196,7 +196,7 @@ export default function InvoicesPage() {
   }
 
   function isOverdue(inv: InvRow) {
-    return inv.due_date && new Date(inv.due_date) < new Date() && !['valid','paid'].includes(inv.status)
+    return inv.due_date && new Date(inv.due_date) < new Date() && inv.payment_status !== 'paid'
   }
 
   const STATUS_OPTS = [

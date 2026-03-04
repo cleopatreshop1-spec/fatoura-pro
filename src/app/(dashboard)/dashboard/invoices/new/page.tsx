@@ -59,7 +59,8 @@ export default function NewInvoicePage() {
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
   const [scannerOpen, setScannerOpen] = useState(false)
 
-  const autoSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const autoSaveRef    = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const buildAndSaveRef = useRef<((status: string) => Promise<string | null>) | null>(null)
 
   function handleScanConfirm(scanned: ScannedInvoice) {
     setScannerOpen(false)
@@ -139,10 +140,41 @@ export default function NewInvoicePage() {
       }
     } else {
       setInvoiceNumber(nextInvoiceNumber((lastInv as any)?.number, prefix))
-      const preId = searchParams.get('client_id')
+      const preId     = searchParams.get('client_id')
+      const prefillRaw = searchParams.get('prefill')
+
       if (preId && cls) {
         const pre = (cls as ComboClient[]).find(c => c.id === preId)
         if (pre) setSelectedClient(pre)
+      }
+
+      // Pre-fill from AI action edit (AIChatPanel passes ?prefill=<JSON>)
+      if (prefillRaw) {
+        try {
+          const pf = JSON.parse(prefillRaw)
+          if (pf.invoice_date) setInvoiceDate(pf.invoice_date)
+          if (pf.notes)        setNotes(pf.notes)
+          if (Array.isArray(pf.lines) && pf.lines.length > 0) {
+            setLines(pf.lines.map((l: any) => ({
+              id:          crypto.randomUUID(),
+              description: l.description ?? '',
+              quantity:    Number(l.quantity)   || 1,
+              unit_price:  Number(l.unit_price) || 0,
+              tva_rate:    ([0, 7, 13, 19].includes(Number(l.tva_rate)) ? Number(l.tva_rate) : 19) as TvaRate,
+              line_ht:     Number(l.quantity) * Number(l.unit_price),
+              line_ttc:    Number(l.quantity) * Number(l.unit_price) * (1 + Number(l.tva_rate) / 100),
+            })))
+          }
+          // Try to match client by name
+          if (pf.client_name && cls) {
+            const match = (cls as ComboClient[]).find(
+              c => c.name.toLowerCase() === String(pf.client_name).toLowerCase()
+            )
+            if (match) setSelectedClient(match)
+          }
+        } catch {
+          // ignore malformed prefill
+        }
       }
     }
     setLoading(false)
@@ -194,50 +226,70 @@ export default function NewInvoicePage() {
     setTimeout(() => setToast(null), 4000)
   }
 
-  async function buildAndSave(status: string): Promise<string | null> {
+  const buildAndSave = useCallback(async function buildAndSaveInner(status: string): Promise<string | null> {
     if (!activeCompany?.id) return null
-    const payload = {
-      company_id: activeCompany.id,
-      client_id: selectedClient?.id ?? null,
-      number: invoiceNumber,
-      issue_date: invoiceDate,
-      due_date: dueDate || null,
-      notes: notes || null,
-      reference: reference || null,
-      status,
-      ht_amount: totals.total_ht,
-      tva_amount: totals.total_tva,
-      stamp_amount: totals.stamp_duty,
-      ttc_amount: totals.total_ttc,
-      total_in_words: amountToWords(totals.total_ttc),
-    }
-    let id = savedId
-    if (id) {
-      await supabase.from('invoices').update(payload).eq('id', id)
-    } else {
-      const { data } = await supabase.from('invoices').insert(payload).select('id').single()
-      id = (data as any)?.id ?? null
-      if (id) setSavedId(id)
-    }
-    if (id) {
-      await supabase.from('invoice_line_items').delete().eq('invoice_id', id)
+
+    // ── EDIT path: invoice already exists, update in-place ──
+    if (savedId) {
+      const updatePayload = {
+        client_id:      selectedClient?.id ?? null,
+        issue_date:     invoiceDate,
+        due_date:       dueDate || null,
+        notes:          notes || null,
+        status,
+        ht_amount:      totals.total_ht,
+        tva_amount:     totals.total_tva,
+        stamp_amount:   totals.stamp_duty,
+        ttc_amount:     totals.total_ttc,
+        total_in_words: amountToWords(totals.total_ttc),
+      }
+      await supabase.from('invoices').update(updatePayload).eq('id', savedId)
+      await supabase.from('invoice_line_items').delete().eq('invoice_id', savedId)
       const { error: lineErr } = await supabase.from('invoice_line_items').insert(
         lines.map((l, idx) => ({
-          invoice_id: id, sort_order: idx,
+          invoice_id: savedId, sort_order: idx,
           description: l.description,
-          quantity: Number(l.quantity),
-          unit_price: Number(l.unit_price),
-          tva_rate: Number(l.tva_rate),
+          quantity:    Number(l.quantity),
+          unit_price:  Number(l.unit_price),
+          tva_rate:    Number(l.tva_rate),
         }))
       )
-      if (lineErr) {
-        console.error('[invoice_line_items insert]', lineErr)
-        showToast(`Erreur lignes: ${lineErr.message}`, 'error')
-        return null
-      }
+      if (lineErr) { showToast(`Erreur lignes: ${lineErr.message}`, 'error'); return null }
+      return savedId
     }
-    return id
-  }
+
+    // ── CREATE path: go through /api/invoices (enforces quota + atomic counter) ──
+    const res = await fetch('/api/invoices', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_id:    selectedClient?.id ?? null,
+        invoice_date: invoiceDate,
+        due_date:     dueDate || null,
+        notes:        notes || null,
+        status,
+        source:       'manual',
+        lines: lines.map((l, idx) => ({
+          sort_order:  idx,
+          description: l.description,
+          quantity:    Number(l.quantity),
+          unit_price:  Number(l.unit_price),
+          tva_rate:    Number(l.tva_rate),
+        })),
+      }),
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      showToast(data.error ?? 'Erreur lors de la sauvegarde', 'error')
+      return null
+    }
+    const newId = data.invoice?.id ?? null
+    if (newId) setSavedId(newId)
+    return newId
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCompany?.id, savedId, invoiceDate, dueDate, notes, lines, selectedClient, totals])
+
+  useEffect(() => { buildAndSaveRef.current = buildAndSave }, [buildAndSave])
 
   async function handleSaveDraft() {
     const e = validate(false)
@@ -285,14 +337,14 @@ export default function NewInvoicePage() {
     }
   }
 
-  // Auto-save
+  // Auto-save — uses ref so it always calls the latest buildAndSave
   useEffect(() => {
     const hasContent = lines.some(l => l.description.trim())
     if (!hasContent) return
     if (autoSaveRef.current) clearTimeout(autoSaveRef.current)
     autoSaveRef.current = setTimeout(async () => {
       if (!activeCompany?.id) return
-      await buildAndSave('draft')
+      await buildAndSaveRef.current?.('draft')
       setLastSaved(new Date())
     }, 30000)
     return () => { if (autoSaveRef.current) clearTimeout(autoSaveRef.current) }

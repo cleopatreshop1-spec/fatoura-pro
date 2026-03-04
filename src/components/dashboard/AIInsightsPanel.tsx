@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Sparkles, Loader2, RefreshCw } from 'lucide-react'
 
 type Insight = {
@@ -21,7 +21,7 @@ export function AIInsightsPanel() {
   const [loading, setLoading]   = useState(true)
   const [error, setError]       = useState<string | null>(null)
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
@@ -34,9 +34,9 @@ export function AIInsightsPanel() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, [load])
 
   return (
     <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-5">

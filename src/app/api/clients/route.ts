@@ -1,6 +1,7 @@
 ﻿import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { getAuthenticatedCompany, success, err, logActivity } from '@/lib/api-helpers'
+import { sanitizeString } from '@/lib/utils/sanitize'
 
 const MF_REGEX = /^\d{7}[A-Z]\/[A-Z]\/[A-Z]{1,3}\/\d{3}$/
 const clientSchema = z.object({
@@ -48,9 +49,22 @@ export async function POST(request: NextRequest) {
     const parsed = clientSchema.safeParse(body)
     if (!parsed.success) return err(parsed.error.issues[0]?.message ?? 'Validation', 422)
 
+    const d = parsed.data
     const { data, error } = await (supabase as any)
       .from('clients')
-      .insert({ ...parsed.data, company_id: company.id, email: parsed.data.email || null })
+      .insert({
+        company_id:       company.id,
+        name:             sanitizeString(d.name, 200),
+        type:             d.type,
+        matricule_fiscal: d.matricule_fiscal ? sanitizeString(d.matricule_fiscal, 50) : null,
+        address:          d.address          ? sanitizeString(d.address, 300)          : null,
+        gouvernorat:      d.gouvernorat      ? sanitizeString(d.gouvernorat, 100)      : null,
+        postal_code:      d.postal_code      ? sanitizeString(d.postal_code, 20)       : null,
+        phone:            d.phone            ? sanitizeString(d.phone, 30)             : null,
+        email:            d.email            ? sanitizeString(d.email, 200)            : null,
+        bank_name:        d.bank_name        ? sanitizeString(d.bank_name, 100)        : null,
+        bank_rib:         d.bank_rib         ? sanitizeString(d.bank_rib, 50)          : null,
+      })
       .select('id, name').single()
 
     if (error) return err(error.message, 500)

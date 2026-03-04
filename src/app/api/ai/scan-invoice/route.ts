@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import { getAuthenticatedCompany } from '@/lib/api-helpers'
 
 export const maxDuration = 60
 
@@ -84,6 +85,7 @@ async function callGeminiWithRetry(
 
 export async function POST(req: NextRequest) {
   try {
+    await getAuthenticatedCompany(req)
     const { imageBase64, mimeType = 'image/jpeg' } = await req.json()
 
     if (!imageBase64) {

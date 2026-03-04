@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { getAuthenticatedCompany, err } from '@/lib/api-helpers'
+import { sanitizeString } from '@/lib/utils/sanitize'
 import { type NextRequest } from 'next/server'
 
 export const maxDuration = 30
@@ -14,8 +15,9 @@ export async function POST(request: NextRequest) {
   try {
     await getAuthenticatedCompany(request)
 
-    const { keyword } = await request.json()
-    if (!keyword || typeof keyword !== 'string' || keyword.trim().length < 2) {
+    const { keyword: rawKeyword } = await request.json()
+    const keyword = sanitizeString(rawKeyword ?? '', 200)
+    if (keyword.length < 2) {
       return err('Mot-clé trop court', 400)
     }
 

@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { Plus, Search, MoreVertical, Users } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useCompany } from '@/contexts/CompanyContext'
@@ -25,7 +24,6 @@ const PAGE_SIZE = 25
 
 export default function ClientsPage() {
   const { activeCompany } = useCompany()
-  const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
 
   const [clients, setClients] = useState<ClientRow[]>([])

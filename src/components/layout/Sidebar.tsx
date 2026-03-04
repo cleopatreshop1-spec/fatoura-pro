@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, FileText, Users, Calculator,
-  Zap, Settings, ExternalLink, LogOut, X,
+  Zap, Settings, ExternalLink, LogOut, X, RefreshCw,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useCompany } from '@/contexts/CompanyContext'
@@ -26,11 +26,12 @@ const PLAN_DOT: Record<string, string> = {
 type NavItem = { href: string; label: string; Icon: LucideIcon; exact?: boolean; badge?: boolean; soon?: boolean }
 
 const NAV: NavItem[] = [
-  { href: '/dashboard',          label: 'Tableau de bord',   Icon: LayoutDashboard, exact: true },
-  { href: '/dashboard/invoices', label: 'Factures',           Icon: FileText,         badge: true },
-  { href: '/dashboard/clients',  label: 'Clients',            Icon: Users },
-  { href: '/dashboard/tva',      label: 'TVA & Declarations', Icon: Calculator },
-  { href: '/dashboard/financing',label: 'Flash Financing',    Icon: Zap, soon: true },
+  { href: '/dashboard',           label: 'Tableau de bord',       Icon: LayoutDashboard, exact: true },
+  { href: '/dashboard/invoices',  label: 'Factures',               Icon: FileText,         badge: true },
+  { href: '/dashboard/clients',   label: 'Clients',                Icon: Users },
+  { href: '/dashboard/recurring', label: 'Factures récurrentes',   Icon: RefreshCw },
+  { href: '/dashboard/tva',       label: 'TVA & Declarations',     Icon: Calculator },
+  { href: '/dashboard/financing', label: 'Flash Financing',        Icon: Zap, soon: true },
 ]
 
 const SECONDARY: NavItem[] = [
