@@ -17,7 +17,7 @@ type ClientRow = {
   gouvernorat: string | null; address: string | null
   postal_code: string | null; bank_name: string | null; bank_rib: string | null
   created_at: string
-  invoices: { id: string; ttc_amount: number | null; status: string }[]
+  invoices: { id: string; ttc_amount: number | null; status: string; payment_status: string | null }[]
 }
 type FilterType = 'all' | 'B2B' | 'B2C'
 
@@ -44,7 +44,7 @@ export default function ClientsPage() {
     setLoading(true)
     const { data } = await supabase
       .from('clients')
-      .select('*, invoices(id, ttc_amount, status)')
+      .select('*, invoices(id, ttc_amount, status, payment_status)')
       .eq('company_id', activeCompany.id)
       .order('name')
     setClients((data ?? []) as ClientRow[])
@@ -81,7 +81,10 @@ export default function ClientsPage() {
     const validInvs = c.invoices?.filter(i => i.status !== 'draft') ?? []
     const count = validInvs.length
     const ca = validInvs.reduce((s, i) => s + Number(i.ttc_amount ?? 0), 0)
-    return { count, ca }
+    const balance = validInvs
+      .filter(i => i.payment_status !== 'paid')
+      .reduce((s, i) => s + Number(i.ttc_amount ?? 0), 0)
+    return { count, ca, balance }
   }
 
   async function handleDelete() {
@@ -237,7 +240,7 @@ export default function ClientsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-[#1a1b22]">
-                    {['Nom', 'Type', 'Matricule Fiscal', 'Telephone', 'Email', 'Factures', 'CA Total', ''].map(h => (
+                    {['Nom', 'Type', 'Matricule Fiscal', 'Telephone', 'Email', 'Factures', 'CA Total', 'Solde dû', ''].map(h => (
                       <th key={h} className="px-4 py-3 text-left text-[10px] text-gray-600 uppercase tracking-wider font-semibold whitespace-nowrap">
                         {h}
                       </th>
@@ -246,7 +249,7 @@ export default function ClientsPage() {
                 </thead>
                 <tbody className="divide-y divide-[#1a1b22]">
                   {paginated.map(c => {
-                    const { count, ca } = getStats(c)
+                    const { count, ca, balance } = getStats(c)
                     return (
                       <tr key={c.id} className="hover:bg-[#161b27]/50 transition-colors">
                         <td className="px-4 py-3">
@@ -272,6 +275,11 @@ export default function ClientsPage() {
                         <td className="px-4 py-3 text-sm font-mono text-gray-300 text-center">{count}</td>
                         <td className="px-4 py-3 font-mono text-xs text-gray-300 whitespace-nowrap">
                           {ca > 0 ? fmtTND(ca) + ' TND' : ''}
+                        </td>
+                        <td className="px-4 py-3 font-mono text-xs whitespace-nowrap">
+                          {balance > 0
+                            ? <span className="text-[#f59e0b] font-bold">{fmtTND(balance)} TND</span>
+                            : count > 0 ? <span className="text-[#2dd4a0] text-[10px]">✓ Soldé</span> : ''}
                         </td>
                         <td className="px-4 py-3">
                           <div className="relative">
