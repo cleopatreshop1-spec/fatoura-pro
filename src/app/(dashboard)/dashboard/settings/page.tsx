@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Building2, Shield, Key, Bell, Lock, CreditCard, History } from 'lucide-react'
+import { Building2, Shield, Key, Bell, Lock, CreditCard, History, Globe } from 'lucide-react'
 import { CompanyTab } from '@/components/settings/CompanyTab'
 import { SignatureTab } from '@/components/settings/SignatureTab'
 import { ApiKeysTab } from '@/components/settings/ApiKeysTab'
@@ -10,8 +10,9 @@ import { NotificationsTab } from '@/components/settings/NotificationsTab'
 import { SecurityTab } from '@/components/settings/SecurityTab'
 import { BillingTab } from '@/components/settings/BillingTab'
 import { ActivityLogTab } from '@/components/settings/ActivityLogTab'
+import { PublicProfileTab } from '@/components/settings/PublicProfileTab'
 
-type TabId = 'company' | 'signature' | 'api-keys' | 'notifications' | 'security' | 'billing' | 'history'
+type TabId = 'company' | 'signature' | 'api-keys' | 'notifications' | 'security' | 'billing' | 'history' | 'public-profile'
 
 const TABS: { id: TabId; label: string; Icon: any; desc: string }[] = [
   { id: 'company',       label: 'Entreprise',             Icon: Building2,  desc: 'Infos, logo, banque' },
@@ -21,6 +22,7 @@ const TABS: { id: TabId; label: string; Icon: any; desc: string }[] = [
   { id: 'notifications', label: 'Notifications',          Icon: Bell,       desc: 'Alertes et emails' },
   { id: 'security',      label: 'Securite',               Icon: Lock,       desc: 'Mot de passe, sessions' },
   { id: 'history',       label: 'Historique',             Icon: History,    desc: 'Journal des activités' },
+  { id: 'public-profile', label: 'Profil public',          Icon: Globe,      desc: 'Page /c/[slug]' },
 ]
 
 const VALID_TABS = TABS.map(t => t.id)
@@ -85,9 +87,10 @@ function SettingsContent() {
           {activeTab === 'billing'       && <BillingTab />}
           {activeTab === 'signature'     && <SignatureTab />}
           {activeTab === 'api-keys'      && <ApiKeysTab />}
-          {activeTab === 'notifications' && <NotificationsTab />}
-          {activeTab === 'security'      && <SecurityTab />}
+          {activeTab === 'notifications'  && <NotificationsTab />}
+          {activeTab === 'security'       && <SecurityTab />}
           {activeTab === 'history'        && <ActivityLogTab />}
+          {activeTab === 'public-profile' && <PublicProfileTab />}
         </div>
       </div>
     </div>
