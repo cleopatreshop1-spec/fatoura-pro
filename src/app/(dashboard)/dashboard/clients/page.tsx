@@ -276,6 +276,43 @@ export default function ClientsPage() {
         )
       })()}
 
+      {/* Client growth sparkline — new clients per month (last 6 months) */}
+      {clients.length >= 3 && (() => {
+        const now6 = new Date()
+        const months = Array.from({ length: 6 }, (_, i) => {
+          const d = new Date(now6.getFullYear(), now6.getMonth() - (5 - i), 1)
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+          const label = d.toLocaleDateString('fr-FR', { month: 'short' })
+          const count = clients.filter(c => c.created_at.startsWith(key)).length
+          return { label, count }
+        })
+        if (months.every(m => m.count === 0)) return null
+        const maxCount = Math.max(...months.map(m => m.count), 1)
+        const totalNew = months.reduce((s, m) => s + m.count, 0)
+        return (
+          <div className="bg-[#0f1118] border border-[#1a1b22] rounded-xl px-4 py-3 flex items-center gap-4">
+            <div className="shrink-0">
+              <p className="text-[10px] text-gray-600 uppercase tracking-wider">Nouveaux clients — 6 mois</p>
+              <p className="text-lg font-mono font-black text-[#4a9eff] mt-0.5">+{totalNew}</p>
+            </div>
+            <div className="flex items-end gap-1.5 h-10 flex-1">
+              {months.map((m, idx) => {
+                const h = Math.max(3, Math.round((m.count / maxCount) * 36))
+                const isLast = idx === 5
+                return (
+                  <div key={m.label} className="flex-1 flex flex-col items-center gap-0.5" title={`${m.label}: ${m.count} nouveau${m.count > 1 ? 'x' : ''}`}>
+                    <div className="w-full flex items-end justify-center" style={{ height: 36 }}>
+                      <div className={`w-full rounded-t-sm ${isLast ? 'bg-[#4a9eff]' : m.count > 0 ? 'bg-[#4a9eff]/40' : 'bg-[#1a1b22]'}`} style={{ height: h }} />
+                    </div>
+                    <span className="text-[9px] text-gray-600">{m.label}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Filters row */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
