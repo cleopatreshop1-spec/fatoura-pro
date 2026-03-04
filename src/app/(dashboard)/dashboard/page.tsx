@@ -76,6 +76,7 @@ export default async function DashboardPage() {
     r_upcomingDue,
     r_recentPaid,
     r_expenses,
+    r_expenses6m,
     r_clients,
   ] = await Promise.all([
     db.from('invoices').select('id, ht_amount, status, issue_date, created_at').eq('company_id', companyId).eq('status', 'valid').is('deleted_at', null),
@@ -92,6 +93,7 @@ export default async function DashboardPage() {
     db.from('invoices').select('id, ttc_amount, due_date').eq('company_id', companyId).in('status', ['valid', 'validated']).neq('payment_status', 'paid').gte('due_date', todayStr).lte('due_date', in90).is('deleted_at', null),
     db.from('invoices').select('id, ttc_amount, payment_date').eq('company_id', companyId).eq('payment_status', 'paid').gte('payment_date', ago90).lte('payment_date', todayStr).is('deleted_at', null),
     db.from('expenses').select('amount, category, date').eq('company_id', companyId).gte('date', monthStart).lte('date', todayStr),
+    db.from('expenses').select('amount, date').eq('company_id', companyId).gte('date', format(subDays(now, 180), 'yyyy-MM-dd')).lte('date', todayStr),
     db.from('invoices').select('client_id, ttc_amount, payment_status, clients(id, name)').eq('company_id', companyId).in('status', ['valid','validated']).is('deleted_at', null),
   ])
 
@@ -106,6 +108,7 @@ export default async function DashboardPage() {
   const upcomingDue     = r_upcomingDue.data     ?? []
   const recentPaid30    = r_recentPaid.data      ?? []
   const expensesMonth   = r_expenses.data        ?? []
+  const expenses6mRaw   = r_expenses6m.data       ?? []
   const clientInvRaw    = r_clients.data          ?? []
 
   // ── KPIs ──────────────────────────────────────────────────────────────
@@ -304,6 +307,17 @@ export default async function DashboardPage() {
 
   const monthLabel = new Date(monthStart).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
 
+  // ── 6-month monthly expense sparkline ────────────────────────────────
+  const expSparkline6m = Array.from({ length: 6 }, (_, i) => {
+    const d = subDays(now, (5 - i) * 30)
+    const mStart = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`
+    const mEnd   = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()}`
+    const amt = (expenses6mRaw as any[])
+      .filter((e: any) => (e.date ?? '') >= mStart && (e.date ?? '') <= mEnd)
+      .reduce((s: number, e: any) => s + Number(e.amount ?? 0), 0)
+    return { label: format(d, 'MMM', { locale: fr }), amount: amt }
+  })
+
   // ── Monthly Revenue Comparison (current vs prev, daily cumulative HT) ─────────
   const daysInCurrentMonth = new Date(y, m + 1, 0).getDate()
   const daysInPrevMonth    = new Date(prevY, prevM + 1, 0).getDate()
@@ -495,6 +509,7 @@ export default async function DashboardPage() {
             expensesTotal={expensesTotal}
             expensesByCategory={expByCat}
             month={monthLabel}
+            monthlyExpenses={expSparkline6m}
           />
 
           {/* WIDGET: Expense Category Donut */}

@@ -6,14 +6,48 @@ import Link from 'next/link'
 const fmt = (v: number) =>
   new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(v)
 
+type MonthPoint = { label: string; amount: number }
+
 interface Props {
   revenueHT: number
   expensesTotal: number
   expensesByCategory: { label: string; amount: number; color: string }[]
   month: string
+  monthlyExpenses?: MonthPoint[]
 }
 
-export function ProfitLossWidget({ revenueHT, expensesTotal, expensesByCategory, month }: Props) {
+function ExpenseSparkline({ data }: { data: MonthPoint[] }) {
+  const max = Math.max(...data.map(d => d.amount), 1)
+  const W = 120, H = 24
+  const pts = data.map((d, i) => {
+    const x = (i / (data.length - 1)) * W
+    const y = H - (d.amount / max) * H
+    return `${x},${y}`
+  }).join(' ')
+  return (
+    <div className="flex items-end gap-2">
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="overflow-visible">
+        <polyline points={pts} fill="none" stroke="#ef4444" strokeWidth="1.5"
+          strokeLinejoin="round" strokeLinecap="round" opacity="0.7" />
+        {data.map((d, i) => {
+          const x = (i / (data.length - 1)) * W
+          const y = H - (d.amount / max) * H
+          return <circle key={i} cx={x} cy={y} r="2" fill="#ef4444" opacity="0.6" />
+        })}
+      </svg>
+      <div className="flex gap-2">
+        {data.slice(-3).map(d => (
+          <div key={d.label} className="text-center">
+            <p className="text-[9px] text-gray-700">{d.label}</p>
+            <p className="text-[9px] font-mono text-gray-500">{(d.amount/1000).toFixed(1)}K</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export function ProfitLossWidget({ revenueHT, expensesTotal, expensesByCategory, month, monthlyExpenses }: Props) {
   const profit = revenueHT - expensesTotal
   const margin = revenueHT > 0 ? Math.round((profit / revenueHT) * 100) : 0
   const isProfit = profit >= 0
@@ -102,6 +136,14 @@ export function ProfitLossWidget({ revenueHT, expensesTotal, expensesByCategory,
               </span>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Monthly expense trend sparkline */}
+      {monthlyExpenses && monthlyExpenses.some(m => m.amount > 0) && (
+        <div className="mt-3 pt-3 border-t border-[#1a1b22]">
+          <p className="text-[10px] text-gray-600 uppercase tracking-wider mb-2">Tendance dépenses (6 mois)</p>
+          <ExpenseSparkline data={monthlyExpenses} />
         </div>
       )}
 
