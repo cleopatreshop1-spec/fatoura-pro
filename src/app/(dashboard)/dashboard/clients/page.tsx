@@ -33,6 +33,7 @@ export default function ClientsPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<FilterType>('all')
+  const [govFilter, setGovFilter] = useState('')
   const [page, setPage] = useState(1)
   const [modalOpen, setModalOpen] = useState(false)
   const [editClient, setEditClient] = useState<ClientRecord | undefined>()
@@ -97,6 +98,7 @@ export default function ClientsPage() {
   const filtered = useMemo(() => {
     let list = clients
     if (filter !== 'all') list = list.filter(c => c.type === filter)
+    if (govFilter) list = list.filter(c => c.gouvernorat === govFilter)
     if (search.trim()) {
       const q = search.toLowerCase()
       list = list.filter(c =>
@@ -118,7 +120,7 @@ export default function ClientsPage() {
       return sort.dir === 'asc' ? av - (bv as number) : (bv as number) - av
     })
     return list
-  }, [clients, filter, search, sort])
+  }, [clients, filter, govFilter, search, sort])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
@@ -227,6 +229,17 @@ export default function ClientsPage() {
             </button>
           ))}
         </div>
+        {(() => {
+          const govs = [...new Set(clients.map(c => c.gouvernorat).filter(Boolean))].sort() as string[]
+          if (govs.length < 2) return null
+          return (
+            <select value={govFilter} onChange={e => { setGovFilter(e.target.value); setPage(1) }}
+              className="bg-[#0f1118] border border-[#1a1b22] rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-[#d4a843] transition-colors">
+              <option value="">Tous gouvernorats</option>
+              {govs.map(g => <option key={g} value={g}>{g}</option>)}
+            </select>
+          )
+        })()}
       </div>
 
       {/* Table */}
