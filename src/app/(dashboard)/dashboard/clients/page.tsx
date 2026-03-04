@@ -261,6 +261,9 @@ export default function ClientsPage() {
         const totalCA      = filtered.reduce((s, c) => s + getStats(c).ca, 0)
         const totalUnpaid  = filtered.reduce((s, c) => s + getStats(c).balance, 0)
         const unpaidCount  = filtered.reduce((s, c) => s + getStats(c).unpaid, 0)
+        const topCA        = filtered.reduce((max, c) => { const ca = getStats(c).ca; return ca > max ? ca : max }, 0)
+        const concPct      = totalCA > 0 && filtered.length > 1 ? Math.round((topCA / totalCA) * 100) : null
+        const topClient    = concPct !== null ? filtered.find(c => getStats(c).ca === topCA) : null
         return (
           <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-gray-500 bg-[#0f1118] border border-[#1a1b22] rounded-xl px-4 py-2.5 items-center">
             <span className="font-bold text-gray-300">{filtered.length} client{filtered.length > 1 ? 's' : ''}</span>
@@ -270,6 +273,14 @@ export default function ClientsPage() {
               <span className="text-gray-700">·</span>
               <span>Impayé <span className="font-mono font-bold text-[#f59e0b]">{fmtTND(totalUnpaid)} TND</span>
                 <span className="ml-1 text-gray-600">({unpaidCount} fact.)</span>
+              </span>
+            </>}
+            {concPct !== null && topClient && <>
+              <span className="text-gray-700">·</span>
+              <span title={`${topClient.name} représente ${concPct}% du CA total`}
+                className={`flex items-center gap-1 font-bold ${concPct >= 50 ? 'text-amber-400' : 'text-gray-400'}`}>
+                {concPct >= 50 && <span>⚠</span>}
+                Conc. <span className="font-mono">{concPct}%</span>
               </span>
             </>}
           </div>
