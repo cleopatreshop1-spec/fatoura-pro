@@ -106,7 +106,16 @@ export default function ExpensesPage() {
     const byCat   = Object.fromEntries(
       CATEGORIES.map(c => [c.value, expenses.filter(e => e.category === c.value).reduce((s, e) => s + Number(e.amount), 0)])
     )
-    return { monthly, total, byCat }
+    // Last 6 months
+    const now = new Date()
+    const byMonth = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1)
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+      const label = d.toLocaleDateString('fr-FR', { month: 'short' })
+      const amount = expenses.filter(e => e.date.startsWith(key)).reduce((s, e) => s + Number(e.amount), 0)
+      return { key, label, amount }
+    })
+    return { monthly, total, byCat, byMonth }
   }, [expenses])
 
   async function handleReceiptFile(file: File) {
@@ -213,6 +222,27 @@ export default function ExpensesPage() {
           </div>
         ))}
       </div>
+
+      {/* Monthly trend chart */}
+      {expenses.length > 0 && totals.byMonth.some(m => m.amount > 0) && (
+        <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-5">
+          <h3 className="text-xs font-bold text-[#d4a843] uppercase tracking-wider mb-4">Tendance mensuelle (6 mois)</h3>
+          <div className="h-[160px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={totals.byMonth} margin={{ top: 0, right: 4, left: 0, bottom: 0 }}>
+                <XAxis dataKey="label" tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} />
+                <YAxis tickFormatter={v => fmtTND(v)} tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} width={52} />
+                <Tooltip
+                  contentStyle={{ background: '#0a0b0f', border: '1px solid #1a1b22', borderRadius: '8px', fontSize: '11px' }}
+                  formatter={(v: any) => [fmtTND(Number(v ?? 0)) + ' TND', 'Dépenses']}
+                  labelStyle={{ color: '#9ca3af' }}
+                />
+                <Bar dataKey="amount" radius={[4, 4, 0, 0]} fill="#ef4444" fillOpacity={0.75} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
 
       {/* Category bar chart */}
       {expenses.length > 0 && (() => {
