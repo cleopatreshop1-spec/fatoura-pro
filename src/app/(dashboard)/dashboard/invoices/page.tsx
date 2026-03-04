@@ -52,6 +52,7 @@ export default function InvoicesPage() {
   const [clientFilter, setClientFilter] = useState('')
   const [amountMin, setAmountMin] = useState('')
   const [amountMax, setAmountMax] = useState('')
+  const [paymentFilter, setPaymentFilter] = useState<'all'|'paid'|'unpaid'|'overdue'>('all')
   const [sort, setSort] = useState<{ field: SortField; dir: 'asc'|'desc' }>({ field: 'issue_date', dir: 'desc' })
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -118,6 +119,9 @@ export default function InvoicesPage() {
     }
     if (amountMin) list = list.filter(i => Number(i.ttc_amount ?? 0) >= Number(amountMin))
     if (amountMax) list = list.filter(i => Number(i.ttc_amount ?? 0) <= Number(amountMax))
+    if (paymentFilter === 'paid') list = list.filter(i => i.payment_status === 'paid')
+    if (paymentFilter === 'unpaid') list = list.filter(i => i.payment_status !== 'paid')
+    if (paymentFilter === 'overdue') list = list.filter(i => isOverdue(i))
     // Sort
     list = [...list].sort((a, b) => {
       let av: any = a[sort.field as keyof InvRow] ?? ''
@@ -126,7 +130,7 @@ export default function InvoicesPage() {
       return sort.dir === 'asc' ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av))
     })
     return list
-  }, [invoices, search, statusFilter, clientFilter, period, customFrom, customTo, sort, amountMin, amountMax])
+  }, [invoices, search, statusFilter, clientFilter, period, customFrom, customTo, sort, amountMin, amountMax, paymentFilter])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const paginated = filtered.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE)
@@ -135,7 +139,7 @@ export default function InvoicesPage() {
     tva: filtered.reduce((s,i) => s + Number(i.tva_amount ?? 0), 0),
     ttc: filtered.reduce((s,i) => s + Number(i.ttc_amount ?? 0), 0),
   }), [filtered])
-  const hasFilters = search || statusFilter !== 'all' || period !== 'all' || clientFilter || amountMin || amountMax
+  const hasFilters = search || statusFilter !== 'all' || period !== 'all' || clientFilter || amountMin || amountMax || paymentFilter !== 'all'
   const hasMultiCurrency = invoices.some(i => i.currency && i.currency !== 'TND')
 
   // Selection
@@ -377,7 +381,7 @@ export default function InvoicesPage() {
           />
         </div>
         {hasFilters && (
-          <button onClick={() => { setSearchInput(''); setSearch(''); setStatusFilter('all'); setPeriod('all'); setClientFilter(''); setCustomFrom(''); setCustomTo(''); setAmountMin(''); setAmountMax(''); setPage(1) }}
+          <button onClick={() => { setSearchInput(''); setSearch(''); setStatusFilter('all'); setPeriod('all'); setClientFilter(''); setCustomFrom(''); setCustomTo(''); setAmountMin(''); setAmountMax(''); setPaymentFilter('all'); setPage(1) }}
             className="px-3 py-2 text-xs text-gray-400 hover:text-white border border-[#1a1b22] rounded-xl transition-colors">
             Réinitialiser
           </button>
@@ -407,6 +411,32 @@ export default function InvoicesPage() {
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-all ${CHIP_COLOR[o.value] ?? ''}`}>
               {o.label}
               <span className={`text-[10px] font-mono ${active ? 'opacity-80' : 'opacity-50'}`}>{count}</span>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Payment filter chip bar */}
+      <div className="flex flex-wrap gap-1.5">
+        {([
+          { value: 'all',     label: 'Paiement',  count: invoices.length },
+          { value: 'paid',    label: '✓ Payées',   count: invoices.filter(i => i.payment_status === 'paid').length },
+          { value: 'unpaid',  label: 'Impayées',  count: invoices.filter(i => i.payment_status !== 'paid').length },
+          { value: 'overdue', label: '⚠ Retard',  count: invoices.filter(i => isOverdue(i)).length },
+        ] as { value: 'all'|'paid'|'unpaid'|'overdue'; label: string; count: number }[]).map(o => {
+          if (o.value !== 'all' && o.count === 0) return null
+          const active = paymentFilter === o.value
+          const col =
+            o.value === 'paid'    ? (active ? 'bg-[#2dd4a0]/15 border-[#2dd4a0]/40 text-[#2dd4a0]' : 'border-[#1a1b22] text-gray-600 hover:text-gray-300 hover:border-[#252830]') :
+            o.value === 'unpaid'  ? (active ? 'bg-[#f59e0b]/15 border-[#f59e0b]/40 text-[#f59e0b]' : 'border-[#1a1b22] text-gray-600 hover:text-gray-300 hover:border-[#252830]') :
+            o.value === 'overdue' ? (active ? 'bg-red-950/40 border-red-800/50 text-red-400'        : 'border-[#1a1b22] text-gray-600 hover:text-gray-300 hover:border-[#252830]') :
+            active ? 'bg-[#d4a843]/15 border-[#d4a843]/40 text-[#d4a843]' : 'border-[#1a1b22] text-gray-500 hover:text-gray-300 hover:border-[#252830]'
+          return (
+            <button key={o.value}
+              onClick={() => { setPaymentFilter(o.value); setPage(1) }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-all ${col}`}>
+              {o.label}
+              <span className={`text-[10px] font-mono ${active ? 'opacity-80' : 'opacity-50'}`}>{o.count}</span>
             </button>
           )
         })}
