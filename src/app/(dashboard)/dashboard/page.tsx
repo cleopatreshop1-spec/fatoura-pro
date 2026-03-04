@@ -741,6 +741,19 @@ export default async function DashboardPage() {
                   </span>
                 </div>
               )}
+              {caHT > 0 && expensesTotal > 0 && (() => {
+                const ratio = Math.round((expensesTotal / caHT) * 100)
+                return (
+                  <div className="flex items-center justify-between pt-2 mt-1 border-t border-[#1a1b22]">
+                    <span className="text-[10px] text-gray-600">Ratio charges / CA HT</span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                      ratio > 80 ? 'text-red-400 bg-red-950/30 border-red-900/30' :
+                      ratio > 50 ? 'text-[#f59e0b] bg-[#f59e0b]/10 border-[#f59e0b]/20' :
+                      'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20'
+                    }`}>{ratio}%</span>
+                  </div>
+                )
+              })()}
             </div>
           )}
 
