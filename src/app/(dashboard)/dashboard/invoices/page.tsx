@@ -69,6 +69,7 @@ export default function InvoicesPage() {
   const [zipProgress, setZipProgress] = useState<{ current: number; total: number } | null>(null)
   const [payDateInvoiceId, setPayDateInvoiceId] = useState<string | null>(null)
   const [payDate, setPayDate] = useState(new Date().toISOString().slice(0,10))
+  const [bulkPayDate, setBulkPayDate] = useState(new Date().toISOString().slice(0,10))
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const load = useCallback(async () => {
@@ -307,8 +308,9 @@ export default function InvoicesPage() {
   async function bulkMarkPaid() {
     const ids = invoices.filter(i => selected.has(i.id) && i.payment_status !== 'paid').map(i => i.id)
     if (!ids.length) return
+    const paidAt = bulkPayDate ? new Date(bulkPayDate).toISOString() : new Date().toISOString()
     await Promise.all(ids.map(id =>
-      supabase.from('invoices').update({ payment_status: 'paid', paid_at: new Date().toISOString() }).eq('id', id)
+      supabase.from('invoices').update({ payment_status: 'paid', paid_at: paidAt }).eq('id', id)
     ))
     setSelected(new Set()); showToast(`${ids.length} facture${ids.length > 1 ? 's' : ''} marquée${ids.length > 1 ? 's' : ''} comme payée${ids.length > 1 ? 's' : ''}`)
     load()
@@ -645,10 +647,19 @@ export default function InvoicesPage() {
             {selected.size} sélectionnée{selected.size > 1 ? 's' : ''}
           </span>
           <div className="flex gap-2 flex-wrap">
-            <button onClick={bulkMarkPaid}
-              className="flex items-center gap-1.5 text-xs text-[#2dd4a0] border border-[#2dd4a0]/30 bg-[#2dd4a0]/5 hover:bg-[#2dd4a0]/10 px-3 py-1.5 rounded-lg transition-colors font-medium">
-              <CheckSquare size={12} />Marquer payées
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button onClick={bulkMarkPaid}
+                className="flex items-center gap-1.5 text-xs text-[#2dd4a0] border border-[#2dd4a0]/30 bg-[#2dd4a0]/5 hover:bg-[#2dd4a0]/10 px-3 py-1.5 rounded-lg transition-colors font-medium">
+                <CheckSquare size={12} />Marquer payées
+              </button>
+              <input
+                type="date"
+                value={bulkPayDate}
+                onChange={e => setBulkPayDate(e.target.value)}
+                title="Date de paiement pour la sélection"
+                className="bg-[#0a0b0f] border border-[#2dd4a0]/20 rounded-lg px-2 py-1.5 text-xs text-[#2dd4a0] outline-none focus:border-[#2dd4a0]/50 transition-colors w-32"
+              />
+            </div>
             <button onClick={exportCSV}
               className="flex items-center gap-1.5 text-xs text-gray-300 hover:text-white border border-[#252830] px-3 py-1.5 rounded-lg transition-colors">
               <Download size={12} />CSV
