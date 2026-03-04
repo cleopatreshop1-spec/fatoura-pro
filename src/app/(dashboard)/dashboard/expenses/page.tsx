@@ -659,6 +659,40 @@ export default function ExpensesPage() {
         )
       })()}
 
+      {/* Budget vs Actual */}
+      {Object.keys(budgets).length > 0 && (
+        <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-5">
+          <h3 className="text-xs font-bold text-[#d4a843] uppercase tracking-wider mb-4">Budget vs Réel (ce mois)</h3>
+          <div className="space-y-2.5">
+            {CATEGORIES.filter(c => budgets[c.value]).map(c => {
+              const limit  = budgets[c.value]
+              const actual = expenses
+                .filter(e => e.category === c.value && e.date.startsWith(new Date().toISOString().slice(0, 7)))
+                .reduce((s, e) => s + Number(e.amount), 0)
+              const pct    = Math.min(100, limit > 0 ? Math.round((actual / limit) * 100) : 0)
+              const over   = actual > limit
+              return (
+                <div key={c.value}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-gray-400">{c.label.split(' ')[0]}</span>
+                    <span className={`text-xs font-mono ${over ? 'text-red-400' : 'text-gray-400'}`}>
+                      {fmtTND(actual)} / {fmtTND(limit)}
+                      {over && <span className="ml-1.5 text-[9px] font-bold text-red-400">+{fmtTND(actual - limit)}</span>}
+                    </span>
+                  </div>
+                  <div className="h-1.5 bg-[#1a1b22] rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${over ? 'bg-red-500' : pct >= 80 ? 'bg-[#f59e0b]' : 'bg-[#2dd4a0]'}`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Add expense form */}
       {formOpen && (
         <div className="bg-[#0f1118] border border-[#d4a843]/20 rounded-2xl p-5 space-y-4">
