@@ -458,6 +458,13 @@ export default async function DashboardPage() {
     .sort((a, b) => a.due_date.localeCompare(b.due_date))
     .slice(0, 3)
 
+  // ── Client retention rate (90d vs prior 90d) ─────────────────────────
+  const ago180 = format(subDays(now, 180), 'yyyy-MM-dd')
+  const clientsPrior90  = new Set((clientInvRaw as any[]).filter((i: any) => { const d = i.issue_date ?? i.created_at ?? ''; return d >= ago180 && d < ago90 }).map((i: any) => i.client_id).filter(Boolean))
+  const clientsCurrent90 = new Set((clientInvRaw as any[]).filter((i: any) => { const d = i.issue_date ?? i.created_at ?? ''; return d >= ago90 && d <= todayStr }).map((i: any) => i.client_id).filter(Boolean))
+  const retainedClients = [...clientsPrior90].filter(id => clientsCurrent90.has(id)).length
+  const retentionRate   = clientsPrior90.size > 0 ? Math.round((retainedClients / clientsPrior90.size) * 100) : null
+
   // ── Invoice Conversion Rate (draft → validated/paid, last 90 days) ──
   const totalInvs90    = (allInvoices90 as any[]).length
   const convertedInvs90 = (allInvoices90 as any[]).filter(i => i.status !== 'draft').length
@@ -1156,6 +1163,29 @@ export default async function DashboardPage() {
             year={y}
             monthLabel={monthLabel}
           />
+          {/* WIDGET: Client retention rate */}
+          {retentionRate !== null && clientsPrior90.size >= 2 && (
+            <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Fidélisation clients — 90j</p>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                  retentionRate >= 80 ? 'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20' :
+                  retentionRate >= 50 ? 'text-[#f59e0b] bg-[#f59e0b]/10 border-[#f59e0b]/20' :
+                  'text-red-400 bg-red-950/30 border-red-900/30'
+                }`}>{retentionRate}%</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-2 bg-[#1a1b22] rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full ${
+                    retentionRate >= 80 ? 'bg-[#2dd4a0]' : retentionRate >= 50 ? 'bg-[#f59e0b]' : 'bg-red-500'
+                  }`} style={{ width: `${retentionRate}%` }} />
+                </div>
+                <span className="text-[10px] text-gray-600 shrink-0 font-mono">{retainedClients}/{clientsPrior90.size}</span>
+              </div>
+              <p className="text-[9px] text-gray-600 mt-1.5">{retainedClients} client{retainedClients > 1 ? 's' : ''} actif{retainedClients > 1 ? 's' : ''} sur les 2 dernières périodes de 90j</p>
+            </div>
+          )}
+
           <TopClientsWidget clients={topClients} />
           <AIInsightsPanel />
           <RemindersPanel />
