@@ -459,6 +459,20 @@ export default async function DashboardPage() {
   const netCash = cashCollectedMonth - expensesTotal
   const netCashPct = cashCollectedMonth > 0 ? Math.round((netCash / cashCollectedMonth) * 100) : 0
 
+  // ── Fiscal Health Score (0-100) ───────────────────────────────────────
+  let fiscalScore = 100
+  const totalCA = (clientInvRaw as any[]).filter(i => i.status !== 'draft').reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
+  if (totalCA > 0) fiscalScore -= Math.min(30, Math.round((overdueAmtAll / totalCA) * 60))
+  fiscalScore -= Math.min(20, unpaidOld60 * 5)
+  fiscalScore -= missingFields.length * 5
+  fiscalScore -= Math.min(15, expiredTTN * 5)
+  if (netCash < 0) fiscalScore -= 10
+  fiscalScore = Math.max(0, Math.min(100, fiscalScore))
+  const fiscalLabel  = fiscalScore >= 80 ? 'Excellent' : fiscalScore >= 60 ? 'Correct' : fiscalScore >= 40 ? 'À surveiller' : 'Critique'
+  const fiscalColor  = fiscalScore >= 80 ? 'text-[#2dd4a0]' : fiscalScore >= 60 ? 'text-[#d4a843]' : fiscalScore >= 40 ? 'text-[#f59e0b]' : 'text-red-400'
+  const fiscalBg     = fiscalScore >= 80 ? 'bg-[#2dd4a0]' : fiscalScore >= 60 ? 'bg-[#d4a843]' : fiscalScore >= 40 ? 'bg-[#f59e0b]' : 'bg-red-500'
+  const fiscalBorder = fiscalScore >= 80 ? 'border-[#2dd4a0]/20' : fiscalScore >= 60 ? 'border-[#d4a843]/20' : fiscalScore >= 40 ? 'border-[#f59e0b]/20' : 'border-red-900/30'
+
   // ── 7-day cash collected sparkline ───────────────────────────────────
   const cashSparkline7d = Array.from({ length: 7 }, (_, i) => {
     const d = format(subDays(now, 6 - i), 'yyyy-MM-dd')
@@ -574,6 +588,52 @@ export default async function DashboardPage() {
             month={monthLabel}
             monthlyExpenses={expSparkline6m}
           />
+
+          {/* WIDGET: Fiscal Health Score */}
+          <div className={`bg-[#0f1118] border ${fiscalBorder} rounded-2xl p-5`}>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xs font-bold text-[#d4a843] uppercase tracking-wider">Score de santé fiscale</h2>
+              <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${fiscalBorder} ${fiscalColor} bg-opacity-10`}>
+                {fiscalLabel}
+              </span>
+            </div>
+            <div className="flex items-end gap-4 mb-3">
+              <span className={`text-4xl font-black font-mono ${fiscalColor}`}>{fiscalScore}</span>
+              <span className="text-gray-600 text-sm mb-1">/100</span>
+            </div>
+            <div className="h-2 bg-[#1a1b22] rounded-full overflow-hidden mb-3">
+              <div className={`h-full rounded-full transition-all duration-700 ${fiscalBg}`}
+                style={{ width: `${fiscalScore}%` }} />
+            </div>
+            {(overdueInvsAll.length > 0 || missingFields.length > 0 || expiredTTN > 0 || unpaidOld60 > 0) && (
+              <ul className="space-y-1">
+                {overdueInvsAll.length > 0 && (
+                  <li className="flex items-center gap-1.5 text-[10px] text-red-400">
+                    <span className="w-1 h-1 rounded-full bg-red-500 shrink-0" />
+                    {overdueInvsAll.length} facture{overdueInvsAll.length > 1 ? 's' : ''} en retard
+                  </li>
+                )}
+                {unpaidOld60 > 0 && (
+                  <li className="flex items-center gap-1.5 text-[10px] text-orange-400">
+                    <span className="w-1 h-1 rounded-full bg-orange-500 shrink-0" />
+                    {unpaidOld60} impayée{unpaidOld60 > 1 ? 's' : ''} &gt;60j
+                  </li>
+                )}
+                {expiredTTN > 0 && (
+                  <li className="flex items-center gap-1.5 text-[10px] text-[#f59e0b]">
+                    <span className="w-1 h-1 rounded-full bg-[#f59e0b] shrink-0" />
+                    {expiredTTN} facture{expiredTTN > 1 ? 's' : ''} rejetée{expiredTTN > 1 ? 's' : ''} TTN
+                  </li>
+                )}
+                {missingFields.length > 0 && (
+                  <li className="flex items-center gap-1.5 text-[10px] text-gray-500">
+                    <span className="w-1 h-1 rounded-full bg-gray-600 shrink-0" />
+                    Champs manquants : {missingFields.join(', ')}
+                  </li>
+                )}
+              </ul>
+            )}
+          </div>
 
           {/* WIDGET: Net Cash Position */}
           {(cashCollectedMonth > 0 || expensesTotal > 0) && (
