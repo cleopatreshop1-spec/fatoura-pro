@@ -182,6 +182,31 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
         )
       })()}
 
+      {/* Overdue amount highlight card */}
+      {overdueInvs.length > 0 && (() => {
+        const overdueAmt = overdueInvs.reduce((s, i) => s + Number(i.ttc_amount ?? 0), 0)
+        const maxDays = overdueInvs.reduce((max, i) => {
+          const d = Math.floor((now.getTime() - new Date(i.due_date!).getTime()) / 86400000)
+          return d > max ? d : max
+        }, 0)
+        const col = maxDays > 90 ? 'border-red-800/50 bg-red-950/20' : maxDays > 30 ? 'border-orange-900/50 bg-orange-950/20' : 'border-amber-900/50 bg-amber-950/20'
+        const textCol = maxDays > 90 ? 'text-red-400' : maxDays > 30 ? 'text-orange-400' : 'text-amber-400'
+        return (
+          <div className={`border rounded-2xl px-4 py-3 flex items-center justify-between ${col}`}>
+            <div>
+              <p className={`text-[10px] font-bold uppercase tracking-wider mb-0.5 ${textCol}`}>
+                ⚠ {overdueInvs.length} facture{overdueInvs.length > 1 ? 's' : ''} en retard
+              </p>
+              <p className="text-[9px] text-gray-600">Retard max : {maxDays}j</p>
+            </div>
+            <div className="text-right">
+              <p className={`text-sm font-mono font-black ${textCol}`}>{fmtTND(overdueAmt)} TND</p>
+              <p className="text-[9px] text-gray-600">à encaisser</p>
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Lifetime value badge */}
       {totalTTC > 0 && validInvs.length >= 2 && (() => {
         const firstDate = validInvs.map((i: any) => i.issue_date).filter(Boolean).sort()[0]
