@@ -48,6 +48,8 @@ export default function InvoicesPage() {
   const [customFrom, setCustomFrom] = useState('')
   const [customTo, setCustomTo] = useState('')
   const [clientFilter, setClientFilter] = useState('')
+  const [amountMin, setAmountMin] = useState('')
+  const [amountMax, setAmountMax] = useState('')
   const [sort, setSort] = useState<{ field: SortField; dir: 'asc'|'desc' }>({ field: 'issue_date', dir: 'desc' })
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -110,6 +112,8 @@ export default function InvoicesPage() {
       if (customFrom) list = list.filter(i => (i.issue_date ?? '') >= customFrom)
       if (customTo)   list = list.filter(i => (i.issue_date ?? '') <= customTo)
     }
+    if (amountMin) list = list.filter(i => Number(i.ttc_amount ?? 0) >= Number(amountMin))
+    if (amountMax) list = list.filter(i => Number(i.ttc_amount ?? 0) <= Number(amountMax))
     // Sort
     list = [...list].sort((a, b) => {
       let av: any = a[sort.field as keyof InvRow] ?? ''
@@ -118,7 +122,7 @@ export default function InvoicesPage() {
       return sort.dir === 'asc' ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av))
     })
     return list
-  }, [invoices, search, statusFilter, clientFilter, period, customFrom, customTo, sort])
+  }, [invoices, search, statusFilter, clientFilter, period, customFrom, customTo, sort, amountMin, amountMax])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const paginated = filtered.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE)
@@ -127,7 +131,7 @@ export default function InvoicesPage() {
     tva: filtered.reduce((s,i) => s + Number(i.tva_amount ?? 0), 0),
     ttc: filtered.reduce((s,i) => s + Number(i.ttc_amount ?? 0), 0),
   }), [filtered])
-  const hasFilters = search || statusFilter !== 'all' || period !== 'all' || clientFilter
+  const hasFilters = search || statusFilter !== 'all' || period !== 'all' || clientFilter || amountMin || amountMax
 
   // Selection
   const allPageSelected = paginated.length > 0 && paginated.every(i => selected.has(i.id))
@@ -287,10 +291,24 @@ export default function InvoicesPage() {
           <option value="">Tous les clients</option>
           {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
+        {/* Amount range */}
+        <div className="flex items-center gap-1">
+          <input
+            type="number" min="0" step="1" placeholder="Min TND"
+            value={amountMin} onChange={e => { setAmountMin(e.target.value); setPage(1) }}
+            className="w-24 bg-[#0f1118] border border-[#1a1b22] rounded-xl px-2.5 py-2 text-xs text-white placeholder-gray-600 outline-none focus:border-[#d4a843] transition-colors"
+          />
+          <span className="text-gray-600 text-xs">–</span>
+          <input
+            type="number" min="0" step="1" placeholder="Max TND"
+            value={amountMax} onChange={e => { setAmountMax(e.target.value); setPage(1) }}
+            className="w-24 bg-[#0f1118] border border-[#1a1b22] rounded-xl px-2.5 py-2 text-xs text-white placeholder-gray-600 outline-none focus:border-[#d4a843] transition-colors"
+          />
+        </div>
         {hasFilters && (
-          <button onClick={() => { setSearchInput(''); setSearch(''); setStatusFilter('all'); setPeriod('all'); setClientFilter(''); setCustomFrom(''); setCustomTo(''); setPage(1) }}
+          <button onClick={() => { setSearchInput(''); setSearch(''); setStatusFilter('all'); setPeriod('all'); setClientFilter(''); setCustomFrom(''); setCustomTo(''); setAmountMin(''); setAmountMax(''); setPage(1) }}
             className="px-3 py-2 text-xs text-gray-400 hover:text-white border border-[#1a1b22] rounded-xl transition-colors">
-            Reinitialiser
+            Réinitialiser
           </button>
         )}
       </div>
