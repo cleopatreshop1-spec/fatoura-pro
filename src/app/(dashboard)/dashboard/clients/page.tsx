@@ -523,18 +523,27 @@ export default function ClientsPage() {
                             ? <span className="text-[#f59e0b] font-bold">{fmtTND(balance)} TND</span>
                             : count > 0 ? <span className="text-[#2dd4a0] text-[10px]">✓ Soldé</span> : ''}
                         </td>
-                        <td className="px-4 py-3 font-mono text-xs whitespace-nowrap">
-                          {c.credit_limit ? (
-                            <span className={`${
-                              balance > Number(c.credit_limit)
-                                ? 'text-red-400 font-bold'
-                                : balance > Number(c.credit_limit) * 0.8
-                                ? 'text-amber-400'
-                                : 'text-gray-500'
-                            }`}>
-                              {fmtTND(Number(c.credit_limit))} TND
-                            </span>
-                          ) : <span className="text-gray-700">—</span>}
+                        <td className="px-4 py-3 text-xs whitespace-nowrap min-w-[100px]">
+                          {c.credit_limit ? (() => {
+                            const limit = Number(c.credit_limit)
+                            const pct   = Math.min(100, Math.round((balance / limit) * 100))
+                            const over  = balance > limit
+                            const warn  = balance > limit * 0.8
+                            return (
+                              <div title={`${pct}% utilisé — ${fmtTND(balance)} / ${fmtTND(limit)} TND`}>
+                                <div className="flex items-center justify-between mb-0.5">
+                                  <span className={`font-mono text-[10px] font-bold ${over ? 'text-red-400' : warn ? 'text-amber-400' : 'text-gray-500'}`}>
+                                    {pct}%
+                                  </span>
+                                  {over && <span className="text-[9px] text-red-400 font-bold">Dépassé</span>}
+                                </div>
+                                <div className="h-1 bg-[#1a1b22] rounded-full overflow-hidden w-16">
+                                  <div className={`h-full rounded-full transition-all ${over ? 'bg-red-500' : warn ? 'bg-amber-400' : 'bg-[#2dd4a0]'}`}
+                                    style={{ width: `${pct}%` }} />
+                                </div>
+                              </div>
+                            )
+                          })() : <span className="text-gray-700">—</span>}
                         </td>
                         <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap hidden xl:table-cell">
                           {lastInvDate ? new Date(lastInvDate).toLocaleDateString('fr-FR') : <span className="text-gray-700">—</span>}
