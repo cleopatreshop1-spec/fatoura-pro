@@ -9,6 +9,7 @@ import { ClientModal } from '@/components/clients/ClientModal'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { fmtTND } from '@/lib/utils/tva-calculator'
 import type { ClientRecord } from '@/components/clients/ClientModal'
+import { ClientCSVImport } from '@/components/clients/ClientCSVImport'
 
 type ClientRow = {
   id: string; name: string; type: string
@@ -127,11 +128,14 @@ export default function ClientsPage() {
           </h1>
           <p className="text-gray-500 text-sm">Gestion de votre portefeuille clients</p>
         </div>
-        <button onClick={openAdd}
-          className="flex items-center gap-2 px-4 py-2.5 bg-[#d4a843] hover:bg-[#f0c060] text-black text-sm font-bold rounded-xl transition-colors">
-          <Plus size={15} strokeWidth={2.5} />
-          Ajouter un client
-        </button>
+        <div className="flex items-center gap-2">
+          <ClientCSVImport onDone={load} />
+          <button onClick={openAdd}
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#d4a843] hover:bg-[#f0c060] text-black text-sm font-bold rounded-xl transition-colors">
+            <Plus size={15} strokeWidth={2.5} />
+            Ajouter un client
+          </button>
+        </div>
       </div>
 
       {/* Filters row */}
