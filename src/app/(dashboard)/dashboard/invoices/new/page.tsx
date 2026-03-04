@@ -180,6 +180,7 @@ export default function NewInvoicePage() {
           tva_rate: Number(l.tva_rate) as TvaRate,
           line_ht: Number(l.line_ht),
           line_ttc: Number(l.line_ttc),
+          notes: l.notes ?? undefined,
         })))
       }
     } else {
@@ -329,6 +330,7 @@ export default function NewInvoicePage() {
           quantity:    Number(l.quantity),
           unit_price:  Number(l.unit_price),
           tva_rate:    Number(l.tva_rate),
+          notes:       l.notes ?? null,
         }))
       )
       if (lineErr) { showToast(`Erreur lignes: ${lineErr.message}`, 'error'); return null }
@@ -354,6 +356,7 @@ export default function NewInvoicePage() {
           quantity:    Number(l.quantity),
           unit_price:  Number(l.unit_price),
           tva_rate:    Number(l.tva_rate),
+          notes:       l.notes ?? null,
         })),
       }),
     })

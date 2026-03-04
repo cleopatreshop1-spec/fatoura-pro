@@ -1,7 +1,7 @@
 ﻿'use client'
 
 import { useRef, useState } from 'react'
-import { Sparkles, Loader2, Copy } from 'lucide-react'
+import { Sparkles, Loader2, Copy, MessageSquare } from 'lucide-react'
 import { fmtTND } from '@/lib/utils/tva-calculator'
 
 export type TvaRate = 0 | 7 | 13 | 19
@@ -15,6 +15,7 @@ export type InvLine = {
   line_ht: number
   line_ttc: number
   category?: string
+  notes?: string
 }
 
 interface Props {
@@ -41,6 +42,7 @@ export function InvoiceLineItem({ line, index, isOnly, onChange, onRemove, onDup
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError]     = useState<string | null>(null)
   const [showSugg, setShowSugg]   = useState(false)
+  const [showNotes, setShowNotes] = useState(!!line.notes)
   const descRef = useRef<HTMLDivElement>(null)
 
   const handleAISuggest = async () => {
@@ -184,15 +186,39 @@ export function InvoiceLineItem({ line, index, isOnly, onChange, onRemove, onDup
       </div>
       </div>
 
-      {/* Category badge + AI error */}
+      {/* Category badge + notes toggle + AI error */}
       <div className="flex items-center gap-2 px-0.5">
         {line.category && (
           <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full border border-[#252830] text-gray-500 bg-[#161b27] uppercase tracking-wide">
             {line.category}
           </span>
         )}
+        <button
+          type="button"
+          onClick={() => setShowNotes(v => !v)}
+          className={`flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full border transition-colors ${
+            showNotes || line.notes
+              ? 'border-[#d4a843]/30 text-[#d4a843] bg-[#d4a843]/5'
+              : 'border-[#1a1b22] text-gray-600 hover:text-gray-400 hover:border-[#252830]'
+          }`}
+          title="Ajouter une note à cette ligne"
+        >
+          <MessageSquare size={9} />
+          {line.notes ? 'Note' : '+ Note'}
+        </button>
         {aiError && <p className="text-[10px] text-red-400">{aiError}</p>}
       </div>
+
+      {/* Notes textarea */}
+      {showNotes && (
+        <textarea
+          value={line.notes ?? ''}
+          onChange={e => onChange(line.id, 'notes', e.target.value || undefined)}
+          placeholder="Note interne pour cette ligne (ex: référence, détail technique)..."
+          rows={2}
+          className="w-full bg-[#0a0b0f] border border-[#1a1b22] rounded-lg px-2.5 py-2 text-xs text-gray-400 placeholder-gray-700 outline-none focus:border-[#d4a843]/50 transition-colors resize-none"
+        />
+      )}
     </div>
   )
 }
