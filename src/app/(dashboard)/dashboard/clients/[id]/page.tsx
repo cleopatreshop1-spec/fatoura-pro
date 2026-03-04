@@ -496,6 +496,30 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
               </div>
             )
           })()}
+          {/* Avg days between invoices */}
+          {validInvs.length >= 3 && (() => {
+            const sorted = [...validInvs].filter(i => i.issue_date).sort((a: any, b: any) => a.issue_date.localeCompare(b.issue_date))
+            const gaps: number[] = []
+            for (let i = 1; i < sorted.length; i++) {
+              const days = Math.round((new Date(sorted[i].issue_date).getTime() - new Date(sorted[i-1].issue_date).getTime()) / 86400000)
+              if (days > 0) gaps.push(days)
+            }
+            if (gaps.length === 0) return null
+            const avgGap = Math.round(gaps.reduce((s, d) => s + d, 0) / gaps.length)
+            return (
+              <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Fréquence de facturation</p>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-2xl font-mono font-black text-[#d4a843]">{avgGap}</span>
+                  <span className="text-xs text-gray-500">jours entre factures (moy.)</span>
+                </div>
+                <p className="text-[9px] text-gray-600 mt-1">
+                  {avgGap <= 14 ? '⚡ Activité hebdomadaire' : avgGap <= 31 ? '📅 Activité mensuelle' : avgGap <= 90 ? '📆 Activité trimestrielle' : '🔔 Activité irrégulière'}
+                </p>
+              </div>
+            )
+          })()}
+
           {/* Day-of-week invoice heatmap */}
           {validInvs.length >= 3 && (() => {
             const DOW_LABELS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
