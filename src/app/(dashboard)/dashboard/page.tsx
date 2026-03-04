@@ -505,6 +505,17 @@ export default async function DashboardPage() {
   const netCash = cashCollectedMonth - expensesTotal
   const netCashPct = cashCollectedMonth > 0 ? Math.round((netCash / cashCollectedMonth) * 100) : 0
 
+  // ── Avg invoice size trend (this month vs prev month) ────────────────
+  const thisMonthPrefix = todayStr.slice(0, 7)
+  const prevMonthDate   = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+  const prevMonthPrefix = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, '0')}`
+  const thisMonthInvs   = (clientInvRaw as any[]).filter(i => i.status !== 'draft' && (i.issue_date ?? '').startsWith(thisMonthPrefix))
+  const prevMonthInvs   = (clientInvRaw as any[]).filter(i => i.status !== 'draft' && (i.issue_date ?? '').startsWith(prevMonthPrefix))
+  const avgSizeThis = thisMonthInvs.length > 0 ? thisMonthInvs.reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0) / thisMonthInvs.length : null
+  const avgSizePrev = prevMonthInvs.length > 0 ? prevMonthInvs.reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0) / prevMonthInvs.length : null
+  const avgSizeDelta = avgSizeThis !== null && avgSizePrev !== null && avgSizePrev > 0
+    ? Math.round(((avgSizeThis - avgSizePrev) / avgSizePrev) * 100) : null
+
   // ── Repeat client rate ───────────────────────────────────────────────
   const invsByClient: Record<string, number> = {}
   for (const i of clientInvRaw as any[]) {
@@ -989,6 +1000,33 @@ export default async function DashboardPage() {
                 <div className={`h-full rounded-full ${repeatRate >= 60 ? 'bg-[#2dd4a0]' : repeatRate >= 30 ? 'bg-[#d4a843]' : 'bg-gray-600'}`}
                   style={{ width: `${repeatRate}%` }} />
               </div>
+            </div>
+          )}
+
+          {/* WIDGET: Avg invoice size trend */}
+          {avgSizeThis !== null && avgSizeThis > 0 && (
+            <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Taille moy. facture (ce mois)</p>
+                {avgSizeDelta !== null && (
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                    avgSizeDelta > 10  ? 'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20' :
+                    avgSizeDelta < -10 ? 'text-red-400 bg-red-950/30 border-red-900/30' :
+                    'text-gray-500 bg-[#1a1b22] border-[#252830]'
+                  }`}>{avgSizeDelta > 0 ? '+' : ''}{avgSizeDelta}% vs mois préc.</span>
+                )}
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl font-mono font-black text-[#d4a843]">
+                  {new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(avgSizeThis)}
+                </span>
+                <span className="text-xs text-gray-500">TND</span>
+              </div>
+              {avgSizePrev !== null && (
+                <p className="text-[9px] text-gray-600 mt-1">
+                  Mois préc. : {new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(avgSizePrev)} TND
+                </p>
+              )}
             </div>
           )}
 
