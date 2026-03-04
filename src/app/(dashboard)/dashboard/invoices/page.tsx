@@ -156,6 +156,24 @@ export default function InvoicesPage() {
     unpaid: filtered.filter(i => i.payment_status !== 'paid').reduce((s,i) => s + Number(i.ttc_amount ?? 0), 0),
   }), [filtered])
   const hasFilters = search || statusFilter !== 'all' || period !== 'all' || clientFilter || amountMin || amountMax || paymentFilter !== 'all'
+
+  const agingHeatmap = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10)
+    const buckets = [
+      { label: '1–30j',  min: 1,  max: 30,  color: 'bg-amber-500' },
+      { label: '31–60j', min: 31, max: 60,  color: 'bg-orange-500' },
+      { label: '61–90j', min: 61, max: 90,  color: 'bg-red-500' },
+      { label: '>90j',   min: 91, max: Infinity, color: 'bg-red-900' },
+    ].map(b => {
+      const invs = invoices.filter(i => {
+        if (i.payment_status === 'paid' || !i.due_date) return false
+        const days = Math.floor((new Date(today).getTime() - new Date(i.due_date).getTime()) / 86400000)
+        return days >= b.min && days <= b.max
+      })
+      return { ...b, amount: invs.reduce((s, i) => s + Number(i.ttc_amount ?? 0), 0), count: invs.length }
+    })
+    return buckets
+  }, [invoices])
   const hasMultiCurrency = invoices.some(i => i.currency && i.currency !== 'TND')
 
   // Selection
@@ -501,6 +519,38 @@ export default function InvoicesPage() {
           )
         })}
       </div>
+
+      {/* Aging heatmap */}
+      {agingHeatmap.some(b => b.count > 0) && (
+        <div className="bg-[#0f1118] border border-[#1a1b22] rounded-xl px-4 py-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">Créances en retard</span>
+            <span className="text-[10px] font-mono text-red-400 font-bold">
+              {fmtTND(agingHeatmap.reduce((s, b) => s + b.amount, 0))} TND
+            </span>
+          </div>
+          <div className="flex gap-1 h-2 rounded-full overflow-hidden mb-2">
+            {(() => {
+              const total = agingHeatmap.reduce((s, b) => s + b.amount, 0) || 1
+              return agingHeatmap.map(b => b.amount > 0 ? (
+                <div key={b.label} title={`${b.label}: ${fmtTND(b.amount)} TND (${b.count})`}
+                  className={`h-full ${b.color} transition-all`} style={{ width: `${(b.amount / total) * 100}%` }} />
+              ) : null)
+            })()}
+          </div>
+          <div className="flex gap-4 flex-wrap">
+            {agingHeatmap.map(b => b.count > 0 ? (
+              <button key={b.label} onClick={() => { setPaymentFilter('overdue'); setPage(1) }}
+                className="flex items-center gap-1.5 group">
+                <span className={`w-2 h-2 rounded-full ${b.color} shrink-0`} />
+                <span className="text-[10px] text-gray-600 group-hover:text-gray-300 transition-colors">{b.label}</span>
+                <span className="text-[10px] font-mono text-gray-400">{fmtTND(b.amount)}</span>
+                <span className="text-[10px] text-gray-600">({b.count})</span>
+              </button>
+            ) : null)}
+          </div>
+        </div>
+      )}
 
       {/* Summary */}
       {filtered.length > 0 && (
