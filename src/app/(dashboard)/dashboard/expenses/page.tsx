@@ -96,6 +96,8 @@ export default function ExpensesPage() {
   const [inlineEdit, setInlineEdit] = useState<{ amount: string; category: string; description: string }>({ amount: '', category: 'autre', description: '' })
   const [savingInline, setSavingInline] = useState(false)
   const [chartYear, setChartYear] = useState(new Date().getFullYear())
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(''), 3000) }
 
@@ -196,12 +198,14 @@ export default function ExpensesPage() {
   const filtered = useMemo(() => {
     let list = expenses
     if (catFilter !== 'all') list = list.filter(e => e.category === catFilter)
+    if (dateFrom) list = list.filter(e => e.date >= dateFrom)
+    if (dateTo)   list = list.filter(e => e.date <= dateTo)
     if (search.trim()) {
       const q = search.toLowerCase()
       list = list.filter(e => e.description.toLowerCase().includes(q) || e.notes?.toLowerCase().includes(q))
     }
     return list
-  }, [expenses, catFilter, search])
+  }, [expenses, catFilter, dateFrom, dateTo, search])
 
   const totals = useMemo(() => {
     const thisMonth = new Date().toISOString().slice(0, 7)
@@ -707,8 +711,8 @@ export default function ExpensesPage() {
       )}
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
+      <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-[160px]">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher..."
             className="w-full bg-[#0f1118] border border-[#1a1b22] rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#d4a843] transition-colors" />
@@ -718,6 +722,18 @@ export default function ExpensesPage() {
           <option value="all">Toutes catégories</option>
           {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
         </select>
+        <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+          title="Date de début"
+          className="bg-[#0f1118] border border-[#1a1b22] rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-[#d4a843] transition-colors" />
+        <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+          title="Date de fin"
+          className="bg-[#0f1118] border border-[#1a1b22] rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-[#d4a843] transition-colors" />
+        {(dateFrom || dateTo || catFilter !== 'all' || search) && (
+          <button onClick={() => { setDateFrom(''); setDateTo(''); setCatFilter('all'); setSearch('') }}
+            className="px-3 py-2.5 border border-[#252830] text-gray-600 hover:text-white text-xs rounded-xl transition-colors whitespace-nowrap">
+            ✕ Réinitialiser
+          </button>
+        )}
       </div>
 
       {/* Table */}
