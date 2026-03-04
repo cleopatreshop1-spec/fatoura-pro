@@ -455,6 +455,11 @@ export default async function DashboardPage() {
     .sort((a, b) => a.due_date.localeCompare(b.due_date))
     .slice(0, 3)
 
+  // ── Invoice Conversion Rate (draft → validated/paid, last 90 days) ──
+  const totalInvs90    = (allInvoices90 as any[]).length
+  const convertedInvs90 = (allInvoices90 as any[]).filter(i => i.status !== 'draft').length
+  const conversionRate  = totalInvs90 > 0 ? Math.round((convertedInvs90 / totalInvs90) * 100) : null
+
   // ── Net Cash Position (this month) ───────────────────────────────────
   const cashCollectedMonth = (paidThisMonth as any[]).reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
   const netCash = cashCollectedMonth - expensesTotal
@@ -808,6 +813,23 @@ export default async function DashboardPage() {
             paid={paidCount}
             overdue={overdueCount90}
           />
+
+          {/* Invoice Conversion Rate Badge */}
+          {conversionRate !== null && totalInvs90 >= 3 && (
+            <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl px-4 py-3 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] text-gray-600 uppercase tracking-wider mb-1">Taux de conversion — 90j</p>
+                <p className={`text-xl font-mono font-black ${
+                  conversionRate >= 80 ? 'text-[#2dd4a0]' :
+                  conversionRate >= 50 ? 'text-[#d4a843]' : 'text-red-400'
+                }`}>{conversionRate}%</p>
+              </div>
+              <div className="text-right text-[10px] text-gray-600">
+                <p>{convertedInvs90} / {totalInvs90}</p>
+                <p>factures validées</p>
+              </div>
+            </div>
+          )}
 
           {/* Top 3 urgent pending invoices */}
           {top3Pending.length > 0 && (
