@@ -280,8 +280,9 @@ export default function ExpensesPage() {
   }
 
   function exportCSV() {
+    const toExport = filtered
     const header = 'Date,Description,Catégorie,Montant (TND),Notes'
-    const rows = expenses.map(e =>
+    const rows = toExport.map(e =>
       [e.date, `"${e.description.replace(/"/g,'""')}"`, e.category, e.amount, e.notes ? `"${e.notes.replace(/"/g,'""')}"` : ''].join(',')
     )
     const csv = [header, ...rows].join('\n')
