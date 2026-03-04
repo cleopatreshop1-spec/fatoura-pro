@@ -1027,6 +1027,44 @@ export default async function DashboardPage() {
             )
           })()}
 
+          {/* WIDGET: 30-day cash flow projection */}
+          {(dailyRate > 0 || dueNext30 > 0) && (() => {
+            const projIncome   = Math.round(dailyRate * 30)
+            const projExpenses = Math.round(expensesTotal)
+            const projNet      = projIncome + dueNext30 - projExpenses
+            return (
+              <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4">
+                <h2 className="text-xs font-bold text-[#4a9eff] uppercase tracking-wider mb-3">Projection 30 jours</h2>
+                <div className="space-y-2">
+                  {[
+                    { label: 'Revenus tendance', value: projIncome,  color: 'text-[#2dd4a0]', bar: 'bg-[#2dd4a0]' },
+                    { label: 'Échéances dues',   value: dueNext30,   color: 'text-[#f59e0b]', bar: 'bg-[#f59e0b]' },
+                    { label: 'Charges (mois)',   value: projExpenses, color: 'text-red-400',  bar: 'bg-red-500' },
+                  ].map(r => (
+                    <div key={r.label}>
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="text-[10px] text-gray-600">{r.label}</span>
+                        <span className={`text-[10px] font-mono font-bold ${r.color}`}>
+                          {new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 0 }).format(r.value)} TND
+                        </span>
+                      </div>
+                      <div className="h-1 bg-[#1a1b22] rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full ${r.bar} opacity-60`}
+                          style={{ width: `${Math.min(100, Math.round((r.value / Math.max(projIncome + dueNext30, 1)) * 100))}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                  <div className="pt-2 mt-1 border-t border-[#1a1b22] flex items-center justify-between">
+                    <span className="text-[10px] text-gray-500 font-semibold">Net estimé</span>
+                    <span className={`text-sm font-mono font-black ${projNet >= 0 ? 'text-[#2dd4a0]' : 'text-red-400'}`}>
+                      {projNet >= 0 ? '+' : ''}{new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 0 }).format(projNet)} TND
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )
+          })()}
+
           <RecentActivityFeed items={recentActivity} />
           <RevenueGoalWidget
             caHT={caHT}
