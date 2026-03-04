@@ -13,8 +13,8 @@ const WHITE = '#ffffff'
 const RED   = '#dc2626'
 const GREEN = '#16a34a'
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(n) + ' TND'
+const fmtCurrency = (n: number, currency = 'TND') =>
+  new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(n) + ' ' + (currency || 'TND')
 
 const fmtDate = (d: string | null) =>
   d ? new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : ''
@@ -103,6 +103,8 @@ export interface InvoicePDFProps {
     total_in_words: string | null; notes: string | null
     ttn_id: string | null
     payment_status?: string | null
+    currency?: string | null
+    exchange_rate?: number | null
   }
   company: {
     name: string; matricule_fiscal: string | null; address: string | null
@@ -122,6 +124,8 @@ export interface InvoicePDFProps {
 }
 
 export function InvoicePDFTemplate({ invoice: inv, company: co, client: cl, lines, qrDataUrl }: InvoicePDFProps) {
+  const currency = inv.currency && inv.currency !== 'TND' ? inv.currency : 'TND'
+  const fmt = (n: number) => fmtCurrency(n, currency)
   // TVA groups from line items
   const tvaGroups: Record<number, { base: number; tva: number }> = {}
   for (const l of lines) {
@@ -177,6 +181,13 @@ export function InvoicePDFTemplate({ invoice: inv, company: co, client: cl, line
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={s.invTitle}>FACTURE</Text>
             <Text style={s.invNum}>N° {inv.number ?? ''}</Text>
+            {currency !== 'TND' && (
+              <View style={{ marginTop: 4, paddingHorizontal: 6, paddingVertical: 2, backgroundColor: '#eff6ff', borderRadius: 3, borderWidth: 0.5, borderColor: '#93c5fd', alignSelf: 'flex-end' }}>
+                <Text style={{ fontSize: 7, color: '#2563eb', fontFamily: 'Helvetica-Bold' }}>
+                  Devise : {currency}{inv.exchange_rate && inv.exchange_rate !== 1 ? `  (1 ${currency} = ${inv.exchange_rate} TND)` : ''}
+                </Text>
+              </View>
+            )}
             <View style={[s.invMetaRow, { marginTop: 6 }]}>
               <Text style={s.invMetaLabel}>Date :</Text>
               <Text style={s.invMetaVal}>{fmtDate(inv.issue_date)}</Text>

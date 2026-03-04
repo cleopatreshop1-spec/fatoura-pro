@@ -70,6 +70,8 @@ export async function GET(req: NextRequest, { params }: Ctx) {
         notes: inv.notes ?? null,
         ttn_id: inv.ttn_id ?? null,
         payment_status: inv.payment_status ?? null,
+        currency: inv.currency ?? null,
+        exchange_rate: inv.exchange_rate ?? null,
       },
       company: {
         name:                  (company as any).name ?? '',
