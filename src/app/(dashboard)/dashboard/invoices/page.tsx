@@ -19,7 +19,7 @@ type InvRow = {
   issue_date: string | null; due_date: string | null
   ht_amount: number; tva_amount: number; ttc_amount: number
   ttn_id: string | null; ttn_rejection_reason: string | null
-  payment_status: string | null; created_at: string
+  payment_status: string | null; created_at: string; currency: string | null
   clients: { id: string; name: string; type: string; matricule_fiscal: string | null } | null
 }
 type SortField = 'number' | 'issue_date' | 'due_date' | 'ttc_amount' | 'status'
@@ -525,7 +525,12 @@ export default function InvoicesPage() {
                       </td>
                       <td className="px-4 py-3 font-mono text-xs text-gray-400 whitespace-nowrap text-right hidden lg:table-cell">{fmtTND(Number(inv.ht_amount??0))}</td>
                       <td className="px-4 py-3 font-mono text-xs text-gray-500 whitespace-nowrap text-right hidden lg:table-cell">{fmtTND(Number(inv.tva_amount??0))}</td>
-                      <td className="px-4 py-3 font-mono text-xs text-gray-200 font-bold whitespace-nowrap text-right">{fmtTND(Number(inv.ttc_amount??0))}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-gray-200 font-bold whitespace-nowrap text-right">
+                        {fmtTND(Number(inv.ttc_amount??0))}
+                        {inv.currency && inv.currency !== 'TND' && (
+                          <span className="ml-1 text-[9px] font-bold px-1 py-0.5 rounded bg-[#4a9eff]/10 text-[#4a9eff] border border-[#4a9eff]/20">{inv.currency}</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3"><InvoiceStatusBadge status={inv.status} /></td>
                       <td className="px-4 py-3 hidden xl:table-cell">
                         {inv.ttn_id ? (
