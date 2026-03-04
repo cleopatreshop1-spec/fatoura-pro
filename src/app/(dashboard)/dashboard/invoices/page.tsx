@@ -134,6 +134,7 @@ export default function InvoicesPage() {
     ttc: filtered.reduce((s,i) => s + Number(i.ttc_amount ?? 0), 0),
   }), [filtered])
   const hasFilters = search || statusFilter !== 'all' || period !== 'all' || clientFilter || amountMin || amountMax
+  const hasMultiCurrency = invoices.some(i => i.currency && i.currency !== 'TND')
 
   // Selection
   const allPageSelected = paginated.length > 0 && paginated.every(i => selected.has(i.id))
@@ -455,7 +456,9 @@ export default function InvoicesPage() {
                         className="w-3.5 h-3.5 rounded accent-[#d4a843] cursor-pointer" />
                     </th>
                     {([['number','N° Facture',''],['','Client',''],['issue_date','Date',''],['due_date','Échéance','hidden md:table-cell'],
-                       ['ht_amount','HT','hidden lg:table-cell'],['tva_amount','TVA','hidden lg:table-cell'],['ttc_amount','TTC',''],['status','Statut',''],['','TTN_ID','hidden xl:table-cell'],['','']
+                       ['ht_amount','HT','hidden lg:table-cell'],['tva_amount','TVA','hidden lg:table-cell'],['ttc_amount','TTC',''],
+                       ...(hasMultiCurrency ? [['','Devise','hidden xl:table-cell']] as [SortField|'',string,string][] : []),
+                       ['status','Statut',''],['','TTN_ID','hidden xl:table-cell'],['','']
                     ] as [SortField|'',string,string][]).map(([field, label, hide]) => (
                       <th key={label} onClick={() => field && toggleSort(field as SortField)}
                         className={`px-4 py-3 text-left text-[10px] text-gray-600 uppercase tracking-wider font-semibold whitespace-nowrap ${hide} ${field?'cursor-pointer hover:text-gray-400 select-none':''}`}>
@@ -527,10 +530,16 @@ export default function InvoicesPage() {
                       <td className="px-4 py-3 font-mono text-xs text-gray-500 whitespace-nowrap text-right hidden lg:table-cell">{fmtTND(Number(inv.tva_amount??0))}</td>
                       <td className="px-4 py-3 font-mono text-xs text-gray-200 font-bold whitespace-nowrap text-right">
                         {fmtTND(Number(inv.ttc_amount??0))}
-                        {inv.currency && inv.currency !== 'TND' && (
-                          <span className="ml-1 text-[9px] font-bold px-1 py-0.5 rounded bg-[#4a9eff]/10 text-[#4a9eff] border border-[#4a9eff]/20">{inv.currency}</span>
-                        )}
                       </td>
+                      {hasMultiCurrency && (
+                        <td className="px-4 py-3 hidden xl:table-cell">
+                          {inv.currency && inv.currency !== 'TND' ? (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-950/30 text-blue-400 border border-blue-900/30">{inv.currency}</span>
+                          ) : (
+                            <span className="text-[10px] text-gray-700">TND</span>
+                          )}
+                        </td>
+                      )}
                       <td className="px-4 py-3"><InvoiceStatusBadge status={inv.status} /></td>
                       <td className="px-4 py-3 hidden xl:table-cell">
                         {inv.ttn_id ? (
