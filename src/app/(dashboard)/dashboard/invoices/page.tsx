@@ -1025,10 +1025,28 @@ export default function InvoicesPage() {
                             />
                           )}
                         </div>
+                        {inv.clients?.id && (() => {
+                          const cid = inv.clients.id
+                          const clientInvs = invoices
+                            .filter(i => i.clients?.id === cid && i.status !== 'draft')
+                            .sort((a, b) => (a.issue_date ?? '') < (b.issue_date ?? '') ? -1 : 1)
+                            .slice(-5)
+                          if (clientInvs.length < 2) return null
+                          const today = new Date().toISOString().slice(0, 10)
+                          return (
+                            <div className="mt-1 flex items-center gap-0.5">
+                              {clientInvs.map(ci => {
+                                const overdue = ci.payment_status !== 'paid' && ci.due_date && ci.due_date < today
+                                const col = ci.payment_status === 'paid' ? 'bg-[#2dd4a0]' : overdue ? 'bg-red-500' : 'bg-[#f59e0b]/60'
+                                return <span key={ci.id} title={ci.number ?? ''} className={`w-1.5 h-1.5 rounded-full ${col}`} />
+                              })}
+                            </div>
+                          )
+                        })()}
                         {inv.clients?.id && summary.ttc > 0 && (() => {
                           const share = Math.round((clientTotals[inv.clients.id] ?? 0) / summary.ttc * 100)
                           return share >= 5 ? (
-                            <div className="mt-1 flex items-center gap-1">
+                            <div className="mt-0.5 flex items-center gap-1">
                               <div className="h-0.5 bg-[#1a1b22] rounded-full overflow-hidden w-16">
                                 <div className="h-full bg-[#d4a843]/50 rounded-full" style={{ width: `${share}%` }} />
                               </div>
