@@ -23,6 +23,10 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
 
   if (!client) notFound()
 
+  const { data: companyInvs } = client?.company_id
+    ? await (supabase as any).from('invoices').select('ttc_amount').eq('company_id', (client as any).company_id).neq('status', 'draft').is('deleted_at', null)
+    : { data: [] }
+
   const c    = client as any
   const invs = (invoices ?? []) as any[]
 
@@ -203,6 +207,30 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
               <p className={`text-sm font-mono font-black ${textCol}`}>{fmtTND(overdueAmt)} TND</p>
               <p className="text-[9px] text-gray-600">à encaisser</p>
             </div>
+          </div>
+        )
+      })()}
+
+      {/* Revenue share of total badge */}
+      {totalTTC > 0 && (() => {
+        const companyTotal = ((companyInvs ?? []) as any[]).reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
+        if (companyTotal <= 0) return null
+        const share = Math.round((totalTTC / companyTotal) * 100)
+        const r = 16, circ = 2 * Math.PI * r
+        const filled = (share / 100) * circ
+        return (
+          <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl px-4 py-3 flex items-center gap-4">
+            <svg width="44" height="44" viewBox="0 0 44 44" className="shrink-0 -rotate-90">
+              <circle cx="22" cy="22" r={r} fill="none" stroke="#1a1b22" strokeWidth="6" />
+              <circle cx="22" cy="22" r={r} fill="none" stroke="#d4a843" strokeWidth="6"
+                strokeDasharray={`${filled} ${circ - filled}`} strokeLinecap="round" />
+            </svg>
+            <div className="flex-1">
+              <p className="text-[10px] text-gray-600 uppercase tracking-wider mb-0.5">Part du CA total</p>
+              <p className="text-xl font-mono font-black text-[#d4a843]">{share}%</p>
+              <p className="text-[9px] text-gray-600">{fmtTND(totalTTC)} / {fmtTND(companyTotal)} TND</p>
+            </div>
+            {share >= 30 && <span className="text-[10px] font-bold px-2 py-0.5 rounded border text-[#d4a843] bg-[#d4a843]/10 border-[#d4a843]/20 shrink-0">Client clé</span>}
           </div>
         )
       })()}
