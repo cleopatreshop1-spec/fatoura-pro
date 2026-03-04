@@ -18,7 +18,7 @@ type ClientRow = {
   postal_code: string | null; bank_name: string | null; bank_rib: string | null
   credit_limit: number | null
   created_at: string
-  invoices: { id: string; ttc_amount: number | null; status: string; payment_status: string | null; due_date: string | null; issue_date: string | null }[]
+  invoices: { id: string; ttc_amount: number | null; status: string; payment_status: string | null; due_date: string | null; issue_date: string | null; paid_at: string | null }[]
 }
 type FilterType = 'all' | 'B2B' | 'B2C'
 type SortField = 'name' | 'count' | 'ca' | 'balance' | 'credit' | 'lastInv'
@@ -87,7 +87,7 @@ export default function ClientsPage() {
     setLoading(true)
     const { data } = await supabase
       .from('clients')
-      .select('*, invoices(id, ttc_amount, status, payment_status, due_date, issue_date)')
+      .select('*, invoices(id, ttc_amount, status, payment_status, due_date, issue_date, paid_at)')
       .eq('company_id', activeCompany.id)
       .order('name')
     setClients((data ?? []) as ClientRow[])
@@ -116,7 +116,13 @@ export default function ClientsPage() {
         const days = Math.floor((new Date(todayStr).getTime() - new Date(i.due_date!).getTime()) / 86400000)
         return days > max ? days : max
       }, 0)
-    return { count, ca, balance, unpaid, maxOverdueDays }
+    const paidWithDue = validInvs.filter(i => i.payment_status === 'paid' && i.paid_at && i.due_date)
+    const avgPayDelay = paidWithDue.length > 0
+      ? Math.round(paidWithDue.reduce((s, i) => {
+          return s + (new Date(i.paid_at!).getTime() - new Date(i.due_date!).getTime()) / 86400000
+        }, 0) / paidWithDue.length)
+      : null
+    return { count, ca, balance, unpaid, maxOverdueDays, avgPayDelay }
   }
 
   function getRisk(c: ClientRow): { label: string; color: string; bg: string } | null {
@@ -436,7 +442,7 @@ export default function ClientsPage() {
                 </thead>
                 <tbody className="divide-y divide-[#1a1b22]">
                   {paginated.map(c => {
-                    const { count, ca, balance, unpaid, maxOverdueDays } = getStats(c)
+                    const { count, ca, balance, unpaid, maxOverdueDays, avgPayDelay } = getStats(c)
                     const lastInvDate = c.invoices?.reduce((m: string, i: any) => i.status !== 'draft' && (i.issue_date ?? '') > m ? (i.issue_date ?? '') : m, '') ?? ''
                     const risk = getRisk(c)
                     return (
@@ -470,6 +476,16 @@ export default function ClientsPage() {
                                   'bg-amber-950/40 text-amber-400 border-amber-900/30'
                                 }`}>
                                 +{maxOverdueDays}j
+                              </span>
+                            )}
+                            {avgPayDelay !== null && (
+                              <span title={`Délai moyen de paiement : ${avgPayDelay >= 0 ? '+' : ''}${avgPayDelay} jours après échéance`}
+                                className={`shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded border ${
+                                  avgPayDelay > 15 ? 'bg-red-950/40 text-red-400 border-red-900/30' :
+                                  avgPayDelay > 0  ? 'bg-amber-950/40 text-amber-400 border-amber-900/30' :
+                                  'bg-[#2dd4a0]/10 text-[#2dd4a0] border-[#2dd4a0]/20'
+                                }`}>
+                                ø {avgPayDelay >= 0 ? '+' : ''}{avgPayDelay}j
                               </span>
                             )}
                             {count > 0 && lastInvDate && (() => {
