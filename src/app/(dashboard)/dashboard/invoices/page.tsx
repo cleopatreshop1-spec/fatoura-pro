@@ -11,6 +11,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { fmtTND } from '@/lib/utils/tva-calculator'
 import { nextInvoiceNumber } from '@/lib/utils/invoice-number'
 import { LatePaymentRisk } from '@/components/invoice/LatePaymentRisk'
+import { InvoiceGapDetector } from '@/components/invoice/InvoiceGapDetector'
 
 type InvRow = {
   id: string; number: string | null; status: string
@@ -373,6 +374,9 @@ export default function InvoicesPage() {
           </div>
         </div>
       )}
+
+      {/* Gap detector */}
+      <InvoiceGapDetector invoices={invoices} prefix={activeCompany?.invoice_prefix ?? 'FP'} />
 
       {/* Table */}
       <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl overflow-hidden">
