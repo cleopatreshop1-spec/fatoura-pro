@@ -20,6 +20,8 @@ import { ExpenseCategoryDonut } from '@/components/dashboard/ExpenseCategoryDonu
 import { RevenueGoalWidget } from '@/components/dashboard/RevenueGoalWidget'
 import { PendingActionsWidget } from '@/components/dashboard/PendingActionsWidget'
 import { InvoiceStatusDonut } from '@/components/dashboard/InvoiceStatusDonut'
+import { RecentActivityFeed } from '@/components/dashboard/RecentActivityFeed'
+import type { ActivityItem } from '@/components/dashboard/RecentActivityFeed'
 import { format, subDays, addDays, parseISO, endOfWeek, eachWeekOfInterval } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
@@ -441,6 +443,33 @@ export default async function DashboardPage() {
 
   const firstName = user.user_metadata?.first_name ?? user.email?.split('@')[0] ?? 'vous'
 
+  // ── Recent activity feed (last 14 days) ───────────────────────────
+  const activityItems: ActivityItem[] = []
+  for (const inv of (allInvoices90 as any[]).filter(i => (i.created_at ?? '') >= ago14).slice(0, 6)) {
+    activityItems.push({
+      id:     'inv-c-' + inv.id,
+      type:   'invoice_created',
+      label:  inv.number ? `Facture ${inv.number}` : 'Nouvelle facture',
+      sub:    inv.clients?.name ?? '',
+      amount: Number(inv.ttc_amount ?? 0),
+      date:   (inv.created_at ?? inv.issue_date ?? '').slice(0, 10),
+      href:   `/dashboard/invoices/${inv.id}`,
+    })
+  }
+  for (const inv of (allInvoices90 as any[]).filter(i => i.payment_status === 'paid' && (i.payment_date ?? '') >= ago14).slice(0, 4)) {
+    activityItems.push({
+      id:     'inv-p-' + inv.id,
+      type:   'invoice_paid',
+      label:  inv.number ? `Payée : ${inv.number}` : 'Facture payée',
+      sub:    inv.clients?.name ?? '',
+      amount: Number(inv.ttc_amount ?? 0),
+      date:   (inv.payment_date ?? inv.paid_at ?? '').slice(0, 10),
+      href:   `/dashboard/invoices/${inv.id}`,
+    })
+  }
+  activityItems.sort((a, b) => b.date.localeCompare(a.date))
+  const recentActivity = activityItems.slice(0, 8)
+
   return (
     <div>
       <Suspense fallback={null}><PaymentSuccessToast /></Suspense>
@@ -638,6 +667,7 @@ export default async function DashboardPage() {
             )
           })()}
 
+          <RecentActivityFeed items={recentActivity} />
           <RevenueGoalWidget
             caHT={caHT}
             ytdHT={ytdHT}
