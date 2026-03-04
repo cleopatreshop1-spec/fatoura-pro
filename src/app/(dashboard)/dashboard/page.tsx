@@ -978,6 +978,54 @@ export default async function DashboardPage() {
             )
           })()}
 
+          {/* WIDGET: Cash flow forecast (next 30 days) */}
+          {(() => {
+            const upcoming = (clientInvRaw as any[]).filter(i =>
+              i.payment_status !== 'paid' && i.due_date && i.status !== 'draft' &&
+              i.due_date >= todayStr
+            )
+            if (upcoming.length === 0) return null
+            const isoDay = (d: Date) => d.toISOString().slice(0, 10)
+            const d7  = isoDay(new Date(now.getTime() + 7  * 86400000))
+            const d14 = isoDay(new Date(now.getTime() + 14 * 86400000))
+            const d30 = isoDay(new Date(now.getTime() + 30 * 86400000))
+            const in7  = upcoming.filter(i => i.due_date <= d7).reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
+            const in14 = upcoming.filter(i => i.due_date > d7  && i.due_date <= d14).reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
+            const in30 = upcoming.filter(i => i.due_date > d14 && i.due_date <= d30).reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
+            const total = in7 + in14 + in30
+            if (total === 0) return null
+            const fmt3 = (v: number) => new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(v)
+            const bands = [
+              { label: '0–7j',  amt: in7,  col: 'bg-[#2dd4a0]' },
+              { label: '8–14j', amt: in14, col: 'bg-[#d4a843]' },
+              { label: '15–30j',amt: in30, col: 'bg-[#4a9eff]' },
+            ]
+            return (
+              <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Rentrées attendues — 30j</p>
+                  <span className="text-[10px] font-mono font-bold text-[#2dd4a0]">{fmt3(total)} TND</span>
+                </div>
+                <div className="space-y-2">
+                  {bands.map(b => {
+                    const pct = total > 0 ? Math.round((b.amt / total) * 100) : 0
+                    return b.amt > 0 ? (
+                      <div key={b.label}>
+                        <div className="flex justify-between items-center mb-0.5">
+                          <span className="text-[9px] text-gray-500">{b.label}</span>
+                          <span className="text-[9px] font-mono text-gray-400">{fmt3(b.amt)} TND</span>
+                        </div>
+                        <div className="h-1 bg-[#1a1b22] rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full ${b.col}`} style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    ) : null
+                  })}
+                </div>
+              </div>
+            )
+          })()}
+
           {/* WIDGET: Top services/products (90 days) */}
           {lineItems90.length >= 3 && (() => {
             const byDesc: Record<string, { ht: number; count: number }> = {}
