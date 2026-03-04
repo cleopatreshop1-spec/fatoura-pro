@@ -17,6 +17,7 @@ type Expense = {
   notes: string | null
   receipt_url: string | null
   created_at: string
+  recurring_expense_id: string | null
 }
 
 const CATEGORIES = [
@@ -804,6 +805,9 @@ export default function ExpensesPage() {
                       ) : (
                         <div className="flex items-center gap-1.5">
                           <p className="text-sm text-gray-200 font-medium">{e.description}</p>
+                          {e.recurring_expense_id && (
+                            <span title="Dépense récurrente" className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[#2dd4a0]/10 text-[#2dd4a0] border border-[#2dd4a0]/20">↻</span>
+                          )}
                           {e.receipt_url && (
                             <button type="button" onClick={() => setLightboxUrl(e.receipt_url)}
                               title="Voir le justificatif"
