@@ -67,6 +67,7 @@ export default function NewInvoicePage() {
   const [duplicateWarning, setDuplicateWarning] = useState<{ number: string; id: string } | null>(null)
   const [duplicateDismissed, setDuplicateDismissed] = useState(false)
   const [pastDescriptions, setPastDescriptions] = useState<string[]>([])
+  const [applyStamp, setApplyStamp] = useState(true)
 
   const autoSaveRef    = useRef<ReturnType<typeof setTimeout> | null>(null)
   const buildAndSaveRef = useRef<((status: string) => Promise<string | null>) | null>(null)
@@ -280,8 +281,8 @@ export default function NewInvoicePage() {
   }
 
   const totals = useMemo(() =>
-    calcInvoiceTotals(lines.map(l => ({ quantity: l.quantity, unit_price: l.unit_price, tva_rate: l.tva_rate, discount: l.discount }))),
-    [lines]
+    calcInvoiceTotals(lines.map(l => ({ quantity: l.quantity, unit_price: l.unit_price, tva_rate: l.tva_rate, discount: l.discount })), applyStamp),
+    [lines, applyStamp]
   )
 
   // Duplicate detection: check same client + same date + amount within 5 TND
@@ -854,9 +855,22 @@ export default function NewInvoicePage() {
                   </div>
                 ))}
 
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Droit de timbre</span>
-                  <span className="font-mono text-gray-400">{fmtTND(STAMP_DUTY)} TND</span>
+                <div className="flex justify-between text-sm items-center">
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-500">Droit de timbre</span>
+                    <button
+                      type="button"
+                      onClick={() => setApplyStamp(v => !v)}
+                      className={`text-[9px] font-bold px-1.5 py-0.5 rounded border transition-colors ${
+                        applyStamp
+                          ? 'text-[#d4a843] bg-[#d4a843]/10 border-[#d4a843]/30 hover:bg-[#d4a843]/20'
+                          : 'text-gray-600 bg-[#1a1b22] border-[#252830] hover:text-gray-400'
+                      }`}
+                      title={applyStamp ? 'Cliquer pour exclure le droit de timbre' : 'Cliquer pour inclure le droit de timbre'}>
+                      {applyStamp ? 'Inclus' : 'Exclu'}
+                    </button>
+                  </div>
+                  <span className={`font-mono ${applyStamp ? 'text-gray-400' : 'text-gray-600 line-through'}`}>{fmtTND(STAMP_DUTY)} TND</span>
                 </div>
 
                 <div className="border-t-2 border-[#252830] pt-3 mt-2">

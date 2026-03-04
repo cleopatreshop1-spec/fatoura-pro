@@ -34,7 +34,7 @@ export function calcLineTotals(item: LineItem): LineTotals {
   return { line_ht, line_tva, line_ttc }
 }
 
-export function calcInvoiceTotals(items: LineItem[]): InvoiceTotals {
+export function calcInvoiceTotals(items: LineItem[], applyStamp = true): InvoiceTotals {
   const tva_by_rate: Record<number, { base: number; tva: number }> = {}
 
   let total_ht = 0
@@ -53,9 +53,10 @@ export function calcInvoiceTotals(items: LineItem[]): InvoiceTotals {
 
   total_ht = round3(total_ht)
   total_tva = round3(total_tva)
-  const total_ttc = round3(total_ht + total_tva + STAMP_DUTY)
+  const stamp = applyStamp ? STAMP_DUTY : 0
+  const total_ttc = round3(total_ht + total_tva + stamp)
 
-  return { total_ht, total_tva, stamp_duty: STAMP_DUTY, total_ttc, tva_by_rate }
+  return { total_ht, total_tva, stamp_duty: stamp, total_ttc, tva_by_rate }
 }
 
 /** Format a number with 3 decimal places (TND) */
