@@ -111,6 +111,7 @@ export interface InvoicePDFProps {
     phone: string | null; email: string | null; website: string | null
     bank_name: string | null; bank_rib: string | null; logo_url: string | null
     default_payment_terms: string | null; tva_regime: string | null
+    invoice_footer?: string | null
   }
   client: {
     name: string; matricule_fiscal: string | null; address: string | null
@@ -343,6 +344,13 @@ export function InvoicePDFTemplate({ invoice: inv, company: co, client: cl, line
           {co.default_payment_terms && (
             <Text style={{ fontSize: 7, color: LGRAY, fontStyle: 'italic', marginBottom: 4 }}>
               {co.default_payment_terms}
+            </Text>
+          )}
+
+          {/* Custom footer text */}
+          {co.invoice_footer && (
+            <Text style={{ fontSize: 7, color: LGRAY, marginBottom: 4, lineHeight: 1.4 }}>
+              {co.invoice_footer}
             </Text>
           )}
 

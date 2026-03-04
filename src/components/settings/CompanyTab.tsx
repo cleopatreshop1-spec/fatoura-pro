@@ -26,6 +26,7 @@ const schema = z.object({
   bank_rib: z.string().optional(),
   invoice_prefix: z.string().min(1).max(5).regex(/^[A-Z0-9-]+$/).optional(),
   default_payment_terms: z.string().optional(),
+  invoice_footer: z.string().max(500).optional(),
 })
 type F = z.infer<typeof schema>
 const IC = 'w-full bg-[#161b27] border border-[#1a1b22] rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#d4a843] transition-colors'
@@ -77,6 +78,7 @@ export function CompanyTab() {
       bank_name: c.bank_name ?? '', bank_rib: c.bank_rib ?? '',
       invoice_prefix: c.invoice_prefix ?? 'FP',
       default_payment_terms: c.default_payment_terms ?? '',
+      invoice_footer: c.invoice_footer ?? '',
     })
   }, [activeCompany, reset])
 
@@ -110,6 +112,7 @@ export function CompanyTab() {
       invoice_prefix:          sanitizeString(data.invoice_prefix || 'FP', 10),
       invoice_accent_color:    accentColor,
       invoice_logo_position:   logoPosition,
+      invoice_footer:          data.invoice_footer ? sanitizeString(data.invoice_footer, 500) : null,
     }).eq('id', activeCompany.id)
     await refreshCompanies()
     setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 3000)
@@ -240,6 +243,16 @@ export function CompanyTab() {
           <div className="col-span-2">
             <label className={LC}>Conditions de paiement par defaut</label>
             <input {...register('default_payment_terms')} placeholder="Paiement a 30 jours." className={IC} />
+          </div>
+          <div className="col-span-2">
+            <label className={LC}>Pied de page facture <span className="normal-case text-gray-600 font-normal">(max 500 car.)</span></label>
+            <textarea
+              {...register('invoice_footer')}
+              rows={3}
+              placeholder="Ex: Merci pour votre confiance. Tout retard de paiement entraine des penalites."
+              className={`${IC} resize-none`}
+            />
+            <p className="text-[10px] text-gray-600 mt-1">Apparaitra en bas de chaque facture PDF.</p>
           </div>
         </div>
       </div>

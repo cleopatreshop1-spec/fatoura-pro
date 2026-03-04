@@ -85,6 +85,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
         logo_url:              logoDataUrl ?? null,
         default_payment_terms: (company as any).default_payment_terms ?? null,
         tva_regime:            (company as any).tva_regime ?? null,
+        invoice_footer:        (company as any).invoice_footer ?? null,
       },
       client: cl ? {
         name: cl.name, matricule_fiscal: cl.matricule_fiscal ?? null,
