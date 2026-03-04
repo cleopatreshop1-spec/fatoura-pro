@@ -505,6 +505,16 @@ export default async function DashboardPage() {
   const netCash = cashCollectedMonth - expensesTotal
   const netCashPct = cashCollectedMonth > 0 ? Math.round((netCash / cashCollectedMonth) * 100) : 0
 
+  // ── Repeat client rate ───────────────────────────────────────────────
+  const invsByClient: Record<string, number> = {}
+  for (const i of clientInvRaw as any[]) {
+    if (i.status === 'draft' || !i.client_id) continue
+    invsByClient[i.client_id] = (invsByClient[i.client_id] ?? 0) + 1
+  }
+  const totalClientsWithInv = Object.keys(invsByClient).length
+  const repeatClients = Object.values(invsByClient).filter(c => c >= 2).length
+  const repeatRate = totalClientsWithInv > 0 ? Math.round((repeatClients / totalClientsWithInv) * 100) : null
+
   // ── Fiscal Health Score (0-100) ───────────────────────────────────────
   let fiscalScore = 100
   const totalCA = (clientInvRaw as any[]).filter(i => i.status !== 'draft').reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
@@ -957,6 +967,28 @@ export default async function DashboardPage() {
               {ytdRevPrev > 0 && (
                 <p className="text-[9px] text-gray-600 mt-1">{now.getFullYear() - 1} : {new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(ytdRevPrev)} TND à la même date</p>
               )}
+            </div>
+          )}
+
+          {/* WIDGET: Repeat client rate */}
+          {repeatRate !== null && totalClientsWithInv >= 3 && (
+            <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Taux de fidélisation</p>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                  repeatRate >= 60 ? 'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20' :
+                  repeatRate >= 30 ? 'text-[#d4a843] bg-[#d4a843]/10 border-[#d4a843]/20' :
+                  'text-gray-500 bg-[#1a1b22] border-[#252830]'
+                }`}>{repeatRate}%</span>
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl font-mono font-black text-[#d4a843]">{repeatClients}</span>
+                <span className="text-xs text-gray-500">/ {totalClientsWithInv} clients récurrents</span>
+              </div>
+              <div className="mt-2 h-1 bg-[#1a1b22] rounded-full overflow-hidden">
+                <div className={`h-full rounded-full ${repeatRate >= 60 ? 'bg-[#2dd4a0]' : repeatRate >= 30 ? 'bg-[#d4a843]' : 'bg-gray-600'}`}
+                  style={{ width: `${repeatRate}%` }} />
+              </div>
             </div>
           )}
 
