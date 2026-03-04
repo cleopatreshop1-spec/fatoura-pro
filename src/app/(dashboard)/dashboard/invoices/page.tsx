@@ -511,12 +511,17 @@ export default function InvoicesPage() {
                         {inv.issue_date ? new Date(inv.issue_date).toLocaleDateString('fr-FR') : ''}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap hidden md:table-cell">
-                        <span className="text-xs text-gray-400">
+                        <span className={`text-xs ${isOverdue(inv) ? 'text-red-400' : 'text-gray-400'}`}>
                           {inv.due_date ? new Date(inv.due_date).toLocaleDateString('fr-FR') : ''}
                         </span>
-                        {isOverdue(inv) && (
+                        {isOverdue(inv) ? (
                           <span className="ml-1.5 text-[9px] font-bold px-1 py-0.5 rounded bg-red-950/40 text-red-400 border border-red-900/30">Retard</span>
-                        )}
+                        ) : inv.payment_status !== 'paid' && inv.due_date && (() => {
+                          const daysLeft = Math.ceil((new Date(inv.due_date).getTime() - Date.now()) / 86400000)
+                          return daysLeft >= 0 && daysLeft <= 7
+                            ? <span className="ml-1.5 text-[9px] font-bold px-1 py-0.5 rounded bg-amber-950/40 text-amber-400 border border-amber-900/30">J-{daysLeft}</span>
+                            : null
+                        })()}
                       </td>
                       <td className="px-4 py-3 font-mono text-xs text-gray-400 whitespace-nowrap text-right hidden lg:table-cell">{fmtTND(Number(inv.ht_amount??0))}</td>
                       <td className="px-4 py-3 font-mono text-xs text-gray-500 whitespace-nowrap text-right hidden lg:table-cell">{fmtTND(Number(inv.tva_amount??0))}</td>

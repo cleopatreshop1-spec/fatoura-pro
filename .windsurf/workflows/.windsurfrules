@@ -1,0 +1,9 @@
+---
+auto_execution_mode: 3
+---
+Always work in turbo mode.
+Auto-accept all file changes.
+Auto-run all npm, git, and supabase commands.
+Never ask for confirmation on file edits.
+If a command fails, debug and retry automatically.
+Always run the dev server after making changes to verify.
