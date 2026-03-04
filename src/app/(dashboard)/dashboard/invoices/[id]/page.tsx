@@ -87,6 +87,14 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
               <div className="text-right">
                 <div className="text-3xl font-black text-gray-900 tracking-widest uppercase">FACTURE</div>
                 <div className="font-mono text-lg font-bold text-gray-700 mt-1">{i.number ?? ''}</div>
+                {i.currency && i.currency !== 'TND' && (
+                  <div className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200">
+                    {i.currency}
+                    {i.exchange_rate && Number(i.exchange_rate) !== 1 && (
+                      <span className="font-normal text-blue-400">· 1 {i.currency} = {Number(i.exchange_rate)} TND</span>
+                    )}
+                  </div>
+                )}
                 <div className="mt-3 space-y-0.5 text-xs text-gray-500">
                   <div><span className="text-gray-400">Date:</span> {i.issue_date ? new Date(i.issue_date).toLocaleDateString('fr-FR') : ''}</div>
                   {i.due_date && <div><span className="text-gray-400">Echeance:</span> {new Date(i.due_date).toLocaleDateString('fr-FR')}</div>}

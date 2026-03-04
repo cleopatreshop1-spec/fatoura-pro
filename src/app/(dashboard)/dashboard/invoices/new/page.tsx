@@ -154,6 +154,8 @@ export default function NewInvoicePage() {
         setDueDate((inv as any).due_date ?? '')
         setNotes((inv as any).notes ?? '')
         setReference((inv as any).reference ?? '')
+        if ((inv as any).currency) setCurrency((inv as any).currency as 'TND' | 'EUR' | 'USD')
+        if ((inv as any).exchange_rate) setExchangeRate(String((inv as any).exchange_rate))
         const clientId = (inv as any).client_id
         if (clientId && cls) {
           const pre = (cls as ComboClient[]).find(c => c.id === clientId)
