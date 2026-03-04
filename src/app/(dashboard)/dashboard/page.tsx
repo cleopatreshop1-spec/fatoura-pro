@@ -944,6 +944,40 @@ export default async function DashboardPage() {
             </div>
           )}
 
+          {/* WIDGET: Invoice size distribution histogram */}
+          {(() => {
+            const amts = (clientInvRaw as any[]).filter(i => i.status !== 'draft' && Number(i.ttc_amount ?? 0) > 0).map((i: any) => Number(i.ttc_amount))
+            if (amts.length < 5) return null
+            const buckets = [
+              { label: '<500',   min: 0,    max: 500 },
+              { label: '500-1k', min: 500,  max: 1000 },
+              { label: '1-5k',   min: 1000, max: 5000 },
+              { label: '5-20k',  min: 5000, max: 20000 },
+              { label: '>20k',   min: 20000, max: Infinity },
+            ].map(b => ({ ...b, count: amts.filter(a => a >= b.min && a < b.max).length }))
+            const maxCount = Math.max(...buckets.map(b => b.count), 1)
+            const total = amts.length
+            return (
+              <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Distribution taille factures (TND)</p>
+                <div className="flex items-end gap-1.5 h-14">
+                  {buckets.map(b => {
+                    const h = Math.max(3, Math.round((b.count / maxCount) * 52))
+                    const pct = total > 0 ? Math.round((b.count / total) * 100) : 0
+                    return (
+                      <div key={b.label} className="flex-1 flex flex-col items-center gap-1" title={`${b.label} TND — ${b.count} facture${b.count !== 1 ? 's' : ''} (${pct}%)`}>
+                        <div className="w-full flex items-end justify-center" style={{ height: 52 }}>
+                          <div className="w-full rounded-t-sm bg-[#d4a843]/60" style={{ height: h }} />
+                        </div>
+                        <span className="text-[8px] text-gray-600">{b.label}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })()}
+
           {/* WIDGET: Top services/products (90 days) */}
           {lineItems90.length >= 3 && (() => {
             const byDesc: Record<string, { ht: number; count: number }> = {}
