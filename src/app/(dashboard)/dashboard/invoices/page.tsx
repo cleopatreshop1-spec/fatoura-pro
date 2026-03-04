@@ -137,9 +137,10 @@ export default function InvoicesPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const paginated = filtered.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE)
   const summary = useMemo(() => ({
-    ht:  filtered.reduce((s,i) => s + Number(i.ht_amount ?? 0), 0),
-    tva: filtered.reduce((s,i) => s + Number(i.tva_amount ?? 0), 0),
-    ttc: filtered.reduce((s,i) => s + Number(i.ttc_amount ?? 0), 0),
+    ht:     filtered.reduce((s,i) => s + Number(i.ht_amount ?? 0), 0),
+    tva:    filtered.reduce((s,i) => s + Number(i.tva_amount ?? 0), 0),
+    ttc:    filtered.reduce((s,i) => s + Number(i.ttc_amount ?? 0), 0),
+    unpaid: filtered.filter(i => i.payment_status !== 'paid').reduce((s,i) => s + Number(i.ttc_amount ?? 0), 0),
   }), [filtered])
   const hasFilters = search || statusFilter !== 'all' || period !== 'all' || clientFilter || amountMin || amountMax || paymentFilter !== 'all'
   const hasMultiCurrency = invoices.some(i => i.currency && i.currency !== 'TND')
@@ -466,11 +467,17 @@ export default function InvoicesPage() {
 
       {/* Summary */}
       {filtered.length > 0 && (
-        <div className="text-xs text-gray-500 flex flex-wrap gap-3">
-          <span className="font-medium text-gray-400">{filtered.length} facture{filtered.length!==1?'s':''}</span>
-          <span> HT: <span className="text-gray-300 font-mono">{fmtTND(summary.ht)} TND</span></span>
-          <span> TVA: <span className="text-gray-300 font-mono">{fmtTND(summary.tva)} TND</span></span>
-          <span> TTC: <span className="text-gray-200 font-mono font-bold">{fmtTND(summary.ttc)} TND</span></span>
+        <div className="sticky top-0 z-10 bg-[#080a0e]/90 backdrop-blur-sm border border-[#1a1b22] rounded-xl px-4 py-2.5 text-xs text-gray-500 flex flex-wrap gap-x-4 gap-y-1 items-center shadow-lg">
+          <span className="font-bold text-gray-300">{filtered.length} facture{filtered.length!==1?'s':''}</span>
+          <span className="text-gray-600">·</span>
+          <span>HT <span className="text-gray-300 font-mono font-semibold">{fmtTND(summary.ht)}</span></span>
+          <span>TVA <span className="text-gray-300 font-mono">{fmtTND(summary.tva)}</span></span>
+          <span>TTC <span className="text-[#d4a843] font-mono font-bold">{fmtTND(summary.ttc)}</span></span>
+          {summary.unpaid > 0 && (
+            <span className="ml-auto text-[#f59e0b] font-semibold">
+              Impayé: <span className="font-mono">{fmtTND(summary.unpaid)}</span>
+            </span>
+          )}
         </div>
       )}
 
