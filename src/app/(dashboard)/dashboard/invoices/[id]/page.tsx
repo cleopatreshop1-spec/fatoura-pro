@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { InvoiceDetailPanel } from '@/components/invoice/InvoiceDetailPanel'
 import { InvoiceStatusBadge } from '@/components/invoice/InvoiceStatusBadge'
 import { PrintButton } from '@/components/invoice/PrintButton'
+import { CopyLinkButton } from '@/components/invoice/CopyLinkButton'
 import { InvoiceTimeline } from '@/components/invoice/InvoiceTimeline'
 import { RecurringInvoiceSetup } from '@/components/invoice/RecurringInvoiceSetup'
 import { fmtTND, STAMP_DUTY } from '@/lib/utils/tva-calculator'
@@ -214,6 +215,10 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
 
         {/*  RIGHT: Status Panel (2/5)  */}
         <div className="xl:col-span-2 space-y-4">
+          {/* Quick actions */}
+          <div className="flex flex-wrap gap-2 print:hidden">
+            <CopyLinkButton invoiceId={i.id} />
+          </div>
           {/* Status timeline */}
           <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl px-4 py-4 print:hidden">
             <p className="text-[10px] text-gray-600 uppercase tracking-wider font-semibold mb-3">Progression</p>
