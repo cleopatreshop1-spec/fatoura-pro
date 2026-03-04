@@ -443,6 +443,12 @@ export default async function DashboardPage() {
 
   const firstName = user.user_metadata?.first_name ?? user.email?.split('@')[0] ?? 'vous'
 
+  // ── Top 3 urgent unpaid invoices ─────────────────────────────────────
+  const top3Pending = (allInvoices90 as any[])
+    .filter(i => i.payment_status !== 'paid' && ['valid', 'validated'].includes(i.status) && i.due_date)
+    .sort((a, b) => a.due_date.localeCompare(b.due_date))
+    .slice(0, 3)
+
   // ── Net Cash Position (this month) ───────────────────────────────────
   const cashCollectedMonth = (paidThisMonth as any[]).reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
   const netCash = cashCollectedMonth - expensesTotal
@@ -664,6 +670,47 @@ export default async function DashboardPage() {
             paid={paidCount}
             overdue={overdueCount90}
           />
+
+          {/* Top 3 urgent pending invoices */}
+          {top3Pending.length > 0 && (
+            <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-xs font-bold text-[#d4a843] uppercase tracking-wider">À encaisser en priorité</h2>
+                <a href="/dashboard/invoices?payment=unpaid" className="text-[10px] text-gray-600 hover:text-[#d4a843] transition-colors">Tout voir →</a>
+              </div>
+              <ul className="space-y-2">
+                {top3Pending.map((inv: any) => {
+                  const daysOverdue = inv.due_date
+                    ? Math.floor((new Date(todayStr).getTime() - new Date(inv.due_date).getTime()) / 86400000)
+                    : null
+                  const isOver = daysOverdue !== null && daysOverdue > 0
+                  return (
+                    <li key={inv.id}>
+                      <a href={`/dashboard/invoices/${inv.id}`}
+                        className="flex items-center gap-3 px-3 py-2 rounded-xl border border-[#1a1b22] hover:border-[#d4a843]/20 hover:bg-[#161b27] transition-all group">
+                        <div className={`w-1.5 h-8 rounded-full shrink-0 ${isOver ? 'bg-red-500' : 'bg-[#f59e0b]'}`} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-gray-200 truncate leading-tight">
+                            {inv.number ?? 'Sans numéro'}
+                          </p>
+                          <p className="text-[10px] text-gray-600 mt-0.5">
+                            {inv.due_date
+                              ? isOver
+                                ? <span className="text-red-400 font-bold">{daysOverdue}j de retard</span>
+                                : <span className="text-[#f59e0b]">Éch. {new Date(inv.due_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</span>
+                              : 'Pas d\'échéance'}
+                          </p>
+                        </div>
+                        <span className="text-xs font-mono font-bold text-gray-300 shrink-0">
+                          {new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Number(inv.ttc_amount ?? 0))}
+                        </span>
+                      </a>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          )}
 
           {/* Aging summary card */}
           {agingSummaryTotal > 0 && (() => {
