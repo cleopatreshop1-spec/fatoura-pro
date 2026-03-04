@@ -217,6 +217,24 @@ export default function InvoicesPage() {
     load()
   }
 
+  async function exportZIP() {
+    const ids = invoices.filter(i => selected.has(i.id)).map(i => i.id)
+    if (!ids.length) return
+    showToast(`Génération de ${ids.length} PDF...`)
+    const res = await fetch('/api/invoices/zip', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids }),
+    })
+    if (!res.ok) { showToast('Erreur export ZIP'); return }
+    const blob = await res.blob()
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `factures_${new Date().toISOString().slice(0,10)}.zip`
+    a.click()
+    showToast(`${ids.length} facture${ids.length>1?'s':''} exportée${ids.length>1?'s':''} en ZIP`)
+  }
+
   async function bulkDeleteDrafts() {
     const ids = invoices.filter(i => selected.has(i.id) && ['draft', 'validated'].includes(i.status)).map(i => i.id)
     if (!ids.length) return
@@ -336,7 +354,11 @@ export default function InvoicesPage() {
             </button>
             <button onClick={exportCSV}
               className="flex items-center gap-1.5 text-xs text-gray-300 hover:text-white border border-[#252830] px-3 py-1.5 rounded-lg transition-colors">
-              <Download size={12} />Exporter CSV
+              <Download size={12} />CSV
+            </button>
+            <button onClick={exportZIP}
+              className="flex items-center gap-1.5 text-xs text-gray-300 hover:text-white border border-[#252830] px-3 py-1.5 rounded-lg transition-colors">
+              <Download size={12} />ZIP PDF
             </button>
             {invoices.some(i => selected.has(i.id) && ['draft','validated'].includes(i.status)) && (
               <button onClick={bulkDeleteDrafts}
