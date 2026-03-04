@@ -172,18 +172,61 @@ export default function ClientsPage() {
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="py-16 flex flex-col items-center gap-3 text-center">
-            <Users size={40} className="text-gray-700" />
-            <p className="text-sm font-medium text-gray-400">
-              {search || filter !== 'all' ? 'Aucun client ne correspond a votre recherche' : 'Aucun client encore'}
-            </p>
-            {!search && filter === 'all' && (
-              <button onClick={openAdd}
-                className="text-xs text-[#d4a843] hover:underline">
-                Ajouter votre premier client 
+          search || filter !== 'all' ? (
+            <div className="py-16 flex flex-col items-center gap-3 text-center px-4">
+              <div className="w-12 h-12 rounded-2xl bg-[#161b27] border border-[#1a1b22] flex items-center justify-center">
+                <Search size={20} className="text-gray-600" />
+              </div>
+              <p className="text-sm font-medium text-gray-400">Aucun client ne correspond à votre recherche</p>
+              <button
+                onClick={() => { setSearch(''); setFilter('all') }}
+                className="text-xs text-[#d4a843] hover:text-[#f0c060] transition-colors">
+                Effacer les filtres
               </button>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="py-20 flex flex-col items-center gap-4 text-center px-4">
+              <div className="relative">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#4a9eff]/15 to-[#4a9eff]/5 border border-[#4a9eff]/20 flex items-center justify-center">
+                  <Users size={28} className="text-[#4a9eff]" />
+                </div>
+                <div className="absolute -top-1 -right-1 w-5 h-5 bg-[#d4a843] rounded-full flex items-center justify-center">
+                  <span className="text-black text-[10px] font-black">+</span>
+                </div>
+              </div>
+              <div>
+                <p className="text-base font-bold text-white mb-1">Aucun client encore</p>
+                <p className="text-xs text-gray-500 max-w-xs">Ajoutez vos clients pour créer des factures rapidement et suivre leurs paiements</p>
+              </div>
+              <div className="flex flex-col sm:flex-row items-center gap-2 mt-1">
+                <button
+                  onClick={openAdd}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-[#d4a843] hover:bg-[#f0c060] text-black text-sm font-bold rounded-xl transition-colors shadow-[0_0_16px_rgba(212,168,67,0.2)]"
+                >
+                  <Plus size={14} strokeWidth={2.5} />
+                  Ajouter mon premier client
+                </button>
+                <Link
+                  href="/dashboard/invoices/new"
+                  className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                >
+                  ou créer une facture directement →
+                </Link>
+              </div>
+              <div className="mt-4 flex items-center gap-6 text-center">
+                {[
+                  { icon: '📊', label: 'Suivi des paiements' },
+                  { icon: '⚡', label: 'Prédiction de retard' },
+                  { icon: '🔗', label: 'Liens de partage' },
+                ].map(f => (
+                  <div key={f.label} className="flex flex-col items-center gap-1">
+                    <span className="text-xl">{f.icon}</span>
+                    <span className="text-[10px] text-gray-600">{f.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
         ) : (
           <>
             <div className="overflow-x-auto">
@@ -238,8 +281,13 @@ export default function ClientsPage() {
                                 <div className="absolute right-0 top-8 z-20 w-48 bg-[#161b27] border border-[#252830] rounded-xl shadow-2xl overflow-hidden py-1">
                                   <Link href={`/dashboard/clients/${c.id}`} onClick={() => setDropdownOpen(null)}
                                     className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-300 hover:bg-[#252830] hover:text-white transition-colors">
-                                    Voir le detail
+                                    Voir le détail
                                   </Link>
+                                  <Link href={`/dashboard/invoices/new?client_id=${c.id}`} onClick={() => setDropdownOpen(null)}
+                                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#d4a843] hover:bg-[#d4a843]/10 transition-colors">
+                                    + Nouvelle facture
+                                  </Link>
+                                  <div className="my-1 border-t border-[#1a1b22]" />
                                   <button onClick={() => openEdit(c)}
                                     className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-300 hover:bg-[#252830] hover:text-white transition-colors text-left">
                                     Modifier

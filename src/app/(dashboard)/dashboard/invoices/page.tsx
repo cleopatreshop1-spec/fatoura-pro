@@ -354,17 +354,51 @@ export default function InvoicesPage() {
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="py-16 flex flex-col items-center gap-3 text-center">
-            <FileText size={40} className="text-gray-700" />
-            <p className="text-sm font-medium text-gray-400">
-              {hasFilters ? 'Aucune facture ne correspond a vos filtres' : 'Aucune facture encore'}
-            </p>
-            {!hasFilters && (
-              <Link href="/dashboard/invoices/new" className="text-xs text-[#d4a843] hover:underline">
-                Creer votre premiere facture 
-              </Link>
-            )}
-          </div>
+          hasFilters ? (
+            <div className="py-16 flex flex-col items-center gap-3 text-center px-4">
+              <div className="w-12 h-12 rounded-2xl bg-[#161b27] border border-[#1a1b22] flex items-center justify-center">
+                <Search size={20} className="text-gray-600" />
+              </div>
+              <p className="text-sm font-medium text-gray-400">Aucune facture ne correspond à vos filtres</p>
+              <p className="text-xs text-gray-600">Essayez de modifier le statut, la période ou le terme de recherche</p>
+              <button
+                onClick={() => { setSearch(''); setSearchInput(''); setStatusFilter('all'); setPeriod('all'); setClientFilter('') }}
+                className="mt-1 text-xs text-[#d4a843] hover:text-[#f0c060] transition-colors"
+              >
+                Effacer tous les filtres
+              </button>
+            </div>
+          ) : (
+            <div className="py-20 flex flex-col items-center gap-4 text-center px-4">
+              <div className="relative">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#d4a843]/15 to-[#d4a843]/5 border border-[#d4a843]/20 flex items-center justify-center">
+                  <FileText size={28} className="text-[#d4a843]" />
+                </div>
+                <div className="absolute -top-1 -right-1 w-5 h-5 bg-[#d4a843] rounded-full flex items-center justify-center">
+                  <span className="text-black text-[10px] font-black">+</span>
+                </div>
+              </div>
+              <div>
+                <p className="text-base font-bold text-white mb-1">Aucune facture encore</p>
+                <p className="text-xs text-gray-500 max-w-xs">Créez votre première facture électronique conforme TTN en moins de 2 minutes</p>
+              </div>
+              <div className="flex flex-col sm:flex-row items-center gap-2 mt-1">
+                <Link
+                  href="/dashboard/invoices/new"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-[#d4a843] hover:bg-[#f0c060] text-black text-sm font-bold rounded-xl transition-colors shadow-[0_0_16px_rgba(212,168,67,0.2)]"
+                >
+                  <Plus size={14} strokeWidth={2.5} />
+                  Créer ma première facture
+                </Link>
+                <Link
+                  href="/dashboard/clients"
+                  className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                >
+                  ou ajouter un client d&apos;abord →
+                </Link>
+              </div>
+            </div>
+          )
         ) : (
           <>
             <div className="overflow-x-auto">
