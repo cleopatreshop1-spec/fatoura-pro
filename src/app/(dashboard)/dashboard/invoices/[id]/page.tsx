@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { InvoiceDetailPanel } from '@/components/invoice/InvoiceDetailPanel'
 import { InvoiceStatusBadge } from '@/components/invoice/InvoiceStatusBadge'
+import { PrintButton } from '@/components/invoice/PrintButton'
 import { fmtTND, STAMP_DUTY } from '@/lib/utils/tva-calculator'
 import { amountToWords } from '@/lib/utils/amount-to-words'
 import Link from 'next/link'
@@ -40,12 +41,27 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="space-y-4">
+      <style>{`
+        @media print {
+          body > * { display: none !important; }
+          #invoice-print-root { display: block !important; position: fixed; inset: 0; z-index: 9999; background: white; overflow: auto; }
+          #invoice-print-root .print\\:hidden { display: none !important; }
+          #invoice-print-root .xl\\:col-span-2 { display: none !important; }
+          #invoice-print-root .xl\\:col-span-3 { grid-column: span 5 / span 5 !important; }
+          #invoice-print-root .grid { display: block !important; }
+          @page { margin: 15mm; size: A4 portrait; }
+        }
+      `}</style>
+
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm flex-wrap">
-        <Link href="/dashboard/invoices" className="text-gray-500 hover:text-gray-300 transition-colors">Factures</Link>
-        <span className="text-gray-700">/</span>
-        <span className="font-mono text-[#d4a843]">{i.number ?? 'Brouillon'}</span>
-        <InvoiceStatusBadge status={i.status ?? 'draft'} />
+      <div className="flex items-center justify-between gap-2 flex-wrap print:hidden">
+        <div className="flex items-center gap-2 text-sm">
+          <Link href="/dashboard/invoices" className="text-gray-500 hover:text-gray-300 transition-colors">Factures</Link>
+          <span className="text-gray-700">/</span>
+          <span className="font-mono text-[#d4a843]">{i.number ?? 'Brouillon'}</span>
+          <InvoiceStatusBadge status={i.status ?? 'draft'} />
+        </div>
+        <PrintButton />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-5 items-start">
