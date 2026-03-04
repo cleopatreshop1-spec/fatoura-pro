@@ -46,6 +46,7 @@ export default function NewInvoicePage() {
   const [exchangeRate, setExchangeRate] = useState<string>('1')
   const [lines, setLines] = useState<InvLine[]>([newLine()])
   const [notes, setNotes] = useState('')
+  const [deliveryDate, setDeliveryDate] = useState('')
   const [selectedClient, setSelectedClient] = useState<ComboClient | null>(null)
 
   const [clients, setClients] = useState<ComboClient[]>([])
@@ -733,6 +734,11 @@ export default function NewInvoicePage() {
                 <label className={LC}>Reference (optionnel)</label>
                 <input value={reference} onChange={e => setReference(e.target.value)}
                   placeholder="Bon de commande, projet..." className={IC} />
+              </div>
+              <div>
+                <label className={LC}>Date livraison estimee</label>
+                <input type="date" value={deliveryDate} onChange={e => setDeliveryDate(e.target.value)}
+                  className={IC} placeholder="Optionnel" />
               </div>
               <div>
                 <label className={LC}>Devise</label>
