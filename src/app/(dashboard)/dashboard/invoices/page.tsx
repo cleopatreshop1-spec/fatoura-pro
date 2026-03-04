@@ -849,6 +849,24 @@ export default function InvoicesPage() {
                 <Trash2 size={12} />Supprimer brouillons
               </button>
             )}
+            {(() => {
+              const overdueSelected = invoices.filter(i => selected.has(i.id) && isOverdue(i))
+              const emails = [...new Set(overdueSelected.map(i => i.clients?.name).filter(Boolean))]
+              return overdueSelected.length > 0 ? (
+                <button
+                  onClick={() => {
+                    const lines = overdueSelected.map(i =>
+                      `${i.clients?.name ?? ''} — Facture ${i.number ?? ''} — ${fmtTND(Number(i.ttc_amount ?? 0))} TND`
+                    ).join('\n')
+                    navigator.clipboard.writeText(lines)
+                    setToast(`${overdueSelected.length} relance(s) copiées`)
+                  }}
+                  title={`${overdueSelected.length} facture(s) en retard sélectionnée(s) : ${emails.join(', ')}`}
+                  className="flex items-center gap-1.5 text-xs text-amber-400 border border-amber-900/30 bg-amber-950/10 hover:bg-amber-950/20 px-3 py-1.5 rounded-lg transition-colors font-medium">
+                  ⚡ Relance ({overdueSelected.length})
+                </button>
+              ) : null
+            })()}
             <button onClick={() => setSelected(new Set())}
               className="text-xs text-gray-600 hover:text-white px-2 py-1.5 transition-colors">
               Annuler
