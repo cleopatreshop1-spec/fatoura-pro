@@ -454,6 +454,17 @@ export default async function DashboardPage() {
   const netCash = cashCollectedMonth - expensesTotal
   const netCashPct = cashCollectedMonth > 0 ? Math.round((netCash / cashCollectedMonth) * 100) : 0
 
+  // ── 7-day cash collected sparkline ───────────────────────────────────
+  const cashSparkline7d = Array.from({ length: 7 }, (_, i) => {
+    const d = format(subDays(now, 6 - i), 'yyyy-MM-dd')
+    const amt = (recentPaid30 as any[])
+      .filter((inv: any) => (inv.payment_date ?? '').slice(0, 10) === d)
+      .reduce((s: number, inv: any) => s + Number(inv.ttc_amount ?? 0), 0)
+    return { day: format(subDays(now, 6 - i), 'EEE', { locale: fr }), amount: amt }
+  })
+  const cashMax7d = Math.max(...cashSparkline7d.map(p => p.amount), 1)
+  const cashTotal7d = cashSparkline7d.reduce((s, p) => s + p.amount, 0)
+
   // ── Recent activity feed (last 14 days) ───────────────────────────
   const activityItems: ActivityItem[] = []
   for (const inv of (allInvoices90 as any[]).filter(i => (i.created_at ?? '') >= ago14).slice(0, 6)) {
@@ -757,6 +768,38 @@ export default async function DashboardPage() {
             </div>
             )
           })()}
+
+          {/* 7-day cash collected sparkline */}
+          {cashTotal7d > 0 && (
+            <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h2 className="text-xs font-bold text-[#d4a843] uppercase tracking-wider">Encaissé — 7 jours</h2>
+                  <p className="text-lg font-mono font-black text-[#2dd4a0] mt-0.5">
+                    {new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(cashTotal7d)}
+                    <span className="text-xs font-sans font-normal text-gray-600 ml-1">TND</span>
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-end gap-1 h-12">
+                {cashSparkline7d.map((pt, idx) => {
+                  const h = cashMax7d > 0 ? Math.max(4, Math.round((pt.amount / cashMax7d) * 44)) : 4
+                  const isToday = idx === 6
+                  return (
+                    <div key={pt.day} className="flex-1 flex flex-col items-center gap-1" title={`${pt.day}: ${new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 0 }).format(pt.amount)} TND`}>
+                      <div className="w-full flex items-end justify-center" style={{ height: 44 }}>
+                        <div
+                          className={`w-full rounded-t-sm transition-all duration-500 ${isToday ? 'bg-[#2dd4a0]' : pt.amount > 0 ? 'bg-[#2dd4a0]/40' : 'bg-[#1a1b22]'}`}
+                          style={{ height: h }}
+                        />
+                      </div>
+                      <span className="text-[9px] text-gray-600">{pt.day}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           <RecentActivityFeed items={recentActivity} />
           <RevenueGoalWidget
