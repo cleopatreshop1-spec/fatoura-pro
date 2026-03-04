@@ -196,6 +196,40 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
               </div>
             </div>
           </div>
+          {/* Credit limit card */}
+          {c.credit_limit && (
+            <div className={`bg-[#0f1118] border rounded-2xl p-5 ${unpaidTTC > Number(c.credit_limit) ? 'border-red-900/50' : 'border-[#1a1b22]'}`}>
+              <div className={`text-xs font-bold uppercase tracking-wider mb-4 ${unpaidTTC > Number(c.credit_limit) ? 'text-red-400' : 'text-[#d4a843]'}`}>
+                Plafond de crédit
+              </div>
+              <div className="space-y-2.5">
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-500">Encours actuel</span>
+                  <span className={`font-mono font-bold ${unpaidTTC > Number(c.credit_limit) ? 'text-red-400' : 'text-gray-200'}`}>{fmtTND(unpaidTTC)} TND</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-500">Plafond autorisé</span>
+                  <span className="font-mono text-gray-400">{fmtTND(Number(c.credit_limit))} TND</span>
+                </div>
+                <div className="h-2 bg-[#1a1b22] rounded-full overflow-hidden">
+                  {(() => {
+                    const pct = Math.min(100, Math.round((unpaidTTC / Number(c.credit_limit)) * 100))
+                    const col = pct >= 100 ? 'bg-red-500' : pct >= 80 ? 'bg-amber-400' : 'bg-[#2dd4a0]'
+                    return <div className={`h-full rounded-full transition-all duration-700 ${col}`} style={{ width: `${pct}%` }} />
+                  })()}
+                </div>
+                <div className="flex justify-between text-[10px] text-gray-600">
+                  <span>{Math.round((unpaidTTC / Number(c.credit_limit)) * 100)}% utilisé</span>
+                  {unpaidTTC > Number(c.credit_limit) ? (
+                    <span className="text-red-400 font-bold">⚠ Dépassement</span>
+                  ) : (
+                    <span>{fmtTND(Number(c.credit_limit) - unpaidTTC)} TND disponible</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Aging buckets card */}
           {agingBuckets.length > 0 && (
             <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-5">
