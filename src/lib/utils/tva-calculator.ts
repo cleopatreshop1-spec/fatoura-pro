@@ -7,6 +7,7 @@ export interface LineItem {
   quantity: number
   unit_price: number
   tva_rate: TvaRate | number
+  discount?: number
 }
 
 export interface LineTotals {
@@ -25,7 +26,9 @@ export interface InvoiceTotals {
 }
 
 export function calcLineTotals(item: LineItem): LineTotals {
-  const line_ht = round3(item.quantity * item.unit_price)
+  const gross = round3(item.quantity * item.unit_price)
+  const discountFactor = item.discount && item.discount > 0 ? 1 - item.discount / 100 : 1
+  const line_ht = round3(gross * discountFactor)
   const line_tva = round3(line_ht * item.tva_rate / 100)
   const line_ttc = round3(line_ht + line_tva)
   return { line_ht, line_tva, line_ttc }

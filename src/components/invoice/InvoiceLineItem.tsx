@@ -11,6 +11,7 @@ export type InvLine = {
   description: string
   quantity: number
   unit_price: number
+  discount?: number
   tva_rate: TvaRate
   line_ht: number
   line_ttc: number
@@ -78,7 +79,7 @@ export function InvoiceLineItem({ line, index, isOnly, onChange, onRemove, onDup
   return (
     <div className="border-b border-[#1a1b22] last:border-0 py-3 space-y-1.5">
       <div className="grid gap-2 items-start"
-        style={{ gridTemplateColumns: '1fr 80px 100px 130px 90px 90px 28px' }}>
+        style={{ gridTemplateColumns: '1fr 80px 100px 70px 130px 90px 90px 28px' }}>
 
       {/* Description + AI button + autocomplete */}
       <div className="relative" ref={descRef}>
@@ -139,6 +140,19 @@ export function InvoiceLineItem({ line, index, isOnly, onChange, onRemove, onDup
           className={`${NI} pr-9`}
         />
         <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-600 pointer-events-none">TND</span>
+      </div>
+
+      {/* Discount % */}
+      <div className="relative">
+        <input
+          type="number" min="0" max="100" step="1"
+          value={line.discount ?? ''}
+          onChange={e => onChange(line.id, 'discount', e.target.value === '' ? undefined : Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
+          placeholder="0"
+          title="Remise %"
+          className={`${NI} pr-5`}
+        />
+        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-600 pointer-events-none">%</span>
       </div>
 
       {/* TVA rate */}

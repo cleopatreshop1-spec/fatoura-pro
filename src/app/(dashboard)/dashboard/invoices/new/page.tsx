@@ -231,7 +231,9 @@ export default function NewInvoicePage() {
     setLines(prev => prev.map(l => {
       if (l.id !== id) return l
       const u = { ...l, [field]: value }
-      const ht = round3(Number(u.quantity) * Number(u.unit_price))
+      const gross = round3(Number(u.quantity) * Number(u.unit_price))
+      const discountFactor = u.discount && u.discount > 0 ? 1 - u.discount / 100 : 1
+      const ht = round3(gross * discountFactor)
       return { ...u, line_ht: ht, line_ttc: round3(ht + ht * Number(u.tva_rate) / 100) }
     }))
   }
@@ -252,7 +254,7 @@ export default function NewInvoicePage() {
   }
 
   const totals = useMemo(() =>
-    calcInvoiceTotals(lines.map(l => ({ quantity: l.quantity, unit_price: l.unit_price, tva_rate: l.tva_rate }))),
+    calcInvoiceTotals(lines.map(l => ({ quantity: l.quantity, unit_price: l.unit_price, tva_rate: l.tva_rate, discount: l.discount }))),
     [lines]
   )
 
