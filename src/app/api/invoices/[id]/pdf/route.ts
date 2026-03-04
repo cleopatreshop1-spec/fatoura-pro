@@ -69,6 +69,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
         total_in_words: inv.total_in_words ?? null,
         notes: inv.notes ?? null,
         ttn_id: inv.ttn_id ?? null,
+        payment_status: inv.payment_status ?? null,
       },
       company: {
         name:                  (company as any).name ?? '',

@@ -102,6 +102,7 @@ export interface InvoicePDFProps {
     ht_amount: number; tva_amount: number; ttc_amount: number
     total_in_words: string | null; notes: string | null
     ttn_id: string | null
+    payment_status?: string | null
   }
   company: {
     name: string; matricule_fiscal: string | null; address: string | null
@@ -132,9 +133,29 @@ export function InvoicePDFTemplate({ invoice: inv, company: co, client: cl, line
   const tvaRows = [19, 13, 7, 0].filter(r => (tvaGroups[r]?.base ?? 0) > 0)
   const stampDuty = STAMP_DUTY
 
+  const isPaid = inv.payment_status === 'paid'
+
   return (
     <Document title={`Facture ${inv.number ?? ''}`} author={co.name}>
       <Page size="A4" style={s.page}>
+
+        {/* PAYEE watermark */}
+        {isPaid && (
+          <View style={{
+            position: 'absolute',
+            top: 280,
+            left: 60,
+            transform: 'rotate(-35deg)',
+            opacity: 0.07,
+          }}>
+            <Text style={{
+              fontSize: 110,
+              fontFamily: 'Helvetica-Bold',
+              color: GREEN,
+              letterSpacing: 8,
+            }}>PAYÉE</Text>
+          </View>
+        )}
 
         {/*  HEADER  */}
         <View style={s.header}>
