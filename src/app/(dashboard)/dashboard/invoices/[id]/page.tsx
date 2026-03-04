@@ -181,7 +181,11 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
               payment_status: i.payment_status, paid_at: i.paid_at,
               created_at: i.created_at, submitted_at: i.submitted_at,
               validated_at: i.validated_at, company_id: i.company_id,
-              ttc_amount: i.ttc_amount, client_name: cl?.name ?? null,
+              ttc_amount: i.ttc_amount,
+              client_name:  cl?.name  ?? null,
+              client_email: cl?.email ?? null,
+              client_phone: cl?.phone ?? null,
+              share_token:  i.share_token ?? null,
             }}
             companyPrefix={companyPrefix}
           />

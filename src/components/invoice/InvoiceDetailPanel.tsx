@@ -20,6 +20,9 @@ type InvoiceData = {
   company_id: string
   ttc_amount?: number | null
   client_name?: string | null
+  client_email?: string | null
+  client_phone?: string | null
+  share_token?: string | null
 }
 
 interface Props {
@@ -326,6 +329,9 @@ export function InvoiceDetailPanel({ invoice: initial, companyPrefix }: Props) {
                 invoiceId={inv.id}
                 invoiceNumber={inv.number ?? ''}
                 clientName={inv.client_name ?? 'Client'}
+                clientEmail={inv.client_email}
+                clientPhone={inv.client_phone}
+                shareToken={inv.share_token}
                 amount={Number(inv.ttc_amount ?? 0)}
                 dueDate={inv.due_date}
               />
