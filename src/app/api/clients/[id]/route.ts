@@ -1,6 +1,7 @@
 ﻿import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { getAuthenticatedCompany, success, err, logActivity } from '@/lib/api-helpers'
+import { sanitizeString } from '@/lib/utils/sanitize'
 
 type Ctx = { params: Promise<{ id: string }> }
 
@@ -36,9 +37,22 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
       .from('clients').select('id, name').eq('id', id).eq('company_id', company.id).single()
     if (!existing) return err('Client introuvable ou acces refuse', 404)
 
+    const d = parsed.data
     const { error } = await (supabase as any)
       .from('clients')
-      .update({ ...parsed.data, email: parsed.data.email || null, updated_at: new Date().toISOString() })
+      .update({
+        ...(d.name             !== undefined && { name:             sanitizeString(d.name, 200) }),
+        ...(d.type             !== undefined && { type:             d.type }),
+        ...(d.matricule_fiscal !== undefined && { matricule_fiscal: d.matricule_fiscal ? sanitizeString(d.matricule_fiscal, 50) : null }),
+        ...(d.address          !== undefined && { address:          d.address ? sanitizeString(d.address, 300) : null }),
+        ...(d.gouvernorat      !== undefined && { gouvernorat:      d.gouvernorat ? sanitizeString(d.gouvernorat, 100) : null }),
+        ...(d.postal_code      !== undefined && { postal_code:      d.postal_code ? sanitizeString(d.postal_code, 20) : null }),
+        ...(d.phone            !== undefined && { phone:            d.phone ? sanitizeString(d.phone, 30) : null }),
+        ...(d.email            !== undefined && { email:            d.email ? sanitizeString(d.email, 200) : null }),
+        ...(d.bank_name        !== undefined && { bank_name:        d.bank_name ? sanitizeString(d.bank_name, 100) : null }),
+        ...(d.bank_rib         !== undefined && { bank_rib:         d.bank_rib ? sanitizeString(d.bank_rib, 50) : null }),
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', id)
 
     if (error) return err(error.message, 500)

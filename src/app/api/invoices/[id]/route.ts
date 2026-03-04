@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { getAuthenticatedCompany, success, err, logActivity } from '@/lib/api-helpers'
 import { calcInvoiceTotals } from '@/lib/utils/tva-calculator'
 import { amountToWords } from '@/lib/utils/amount-to-words'
+import { sanitizeString } from '@/lib/utils/sanitize'
 
 type Ctx = { params: Promise<{ id: string }> }
 
@@ -55,7 +56,7 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
       client_id: client_id ?? null,
       issue_date: invoice_date ?? invoice.issue_date,
       due_date: due_date ?? null,
-      notes: notes ?? null,
+      notes: notes ? sanitizeString(notes, 1000) : null,
       ht_amount: totals.total_ht, tva_amount: totals.total_tva,
       stamp_amount: totals.stamp_duty, ttc_amount: totals.total_ttc,
       total_in_words: totalInWords,
@@ -69,7 +70,7 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
     await (supabase as any).from('invoice_line_items').insert(
       parsed.data.map((l, idx) => ({
         invoice_id: id, sort_order: idx,
-        description: l.description, quantity: l.quantity,
+        description: sanitizeString(l.description, 500), quantity: l.quantity,
         unit_price: l.unit_price, tva_rate: l.tva_rate,
       }))
     )
