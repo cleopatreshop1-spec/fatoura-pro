@@ -483,6 +483,32 @@ export default function ExpensesPage() {
         )
       })()}
 
+      {/* Largest single expense badge */}
+      {expenses.length >= 3 && (() => {
+        const largest = [...expenses].sort((a, b) => Number(b.amount ?? 0) - Number(a.amount ?? 0))[0]
+        if (!largest) return null
+        const totalAll = expenses.reduce((s, e) => s + Number(e.amount ?? 0), 0)
+        const pct = totalAll > 0 ? Math.round((Number(largest.amount ?? 0) / totalAll) * 100) : 0
+        const CATS: Record<string, string> = { alimentation: '🛒', transport: '🚗', informatique: '💻', marketing: '📣', salaires: '👥', loyer: '🏠', fournitures: '🖊️', services: '🔧', autre: '📦' }
+        const icon = CATS[largest.category] ?? '📦'
+        return (
+          <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{icon}</span>
+              <div>
+                <p className="text-[10px] text-gray-600 uppercase tracking-wider">Dépense la + élevée</p>
+                <p className="text-xs font-bold text-white mt-0.5 truncate max-w-[160px]">{largest.description || largest.category}</p>
+                {largest.date && <p className="text-[9px] text-gray-700">{new Date(largest.date).toLocaleDateString('fr-FR')}</p>}
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-sm font-mono font-black text-red-400">{fmtTND(Number(largest.amount ?? 0))} TND</p>
+              <span className="text-[9px] font-bold text-gray-600">{pct}% du total</span>
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Monthly trend chart */}
       {expenses.length > 0 && (
         <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-5">
