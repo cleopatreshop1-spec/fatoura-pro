@@ -87,10 +87,10 @@ export default function ClientsPage() {
     const validInvs = c.invoices?.filter(i => i.status !== 'draft') ?? []
     const count = validInvs.length
     const ca = validInvs.reduce((s, i) => s + Number(i.ttc_amount ?? 0), 0)
-    const balance = validInvs
-      .filter(i => i.payment_status !== 'paid')
-      .reduce((s, i) => s + Number(i.ttc_amount ?? 0), 0)
-    return { count, ca, balance }
+    const unpaidInvs = validInvs.filter(i => i.payment_status !== 'paid')
+    const balance = unpaidInvs.reduce((s, i) => s + Number(i.ttc_amount ?? 0), 0)
+    const unpaid = unpaidInvs.length
+    return { count, ca, balance, unpaid }
   }
 
   // Filtered + searched + sorted clients
@@ -356,7 +356,7 @@ export default function ClientsPage() {
                 </thead>
                 <tbody className="divide-y divide-[#1a1b22]">
                   {paginated.map(c => {
-                    const { count, ca, balance } = getStats(c)
+                    const { count, ca, balance, unpaid } = getStats(c)
                     return (
                       <tr key={c.id} className={`hover:bg-[#161b27]/50 transition-colors ${selected.has(c.id) ? 'bg-red-950/10' : ''}`}>
                         <td className="px-4 py-3 w-8">
@@ -364,9 +364,17 @@ export default function ClientsPage() {
                             className="w-3.5 h-3.5 rounded accent-[#d4a843] cursor-pointer" />
                         </td>
                         <td className="px-4 py-3">
-                          <Link href={`/dashboard/clients/${c.id}`} className="font-medium text-gray-200 hover:text-[#d4a843] transition-colors">
-                            {c.name}
-                          </Link>
+                          <div className="flex items-center gap-2">
+                            <Link href={`/dashboard/clients/${c.id}`} className="font-medium text-gray-200 hover:text-[#d4a843] transition-colors">
+                              {c.name}
+                            </Link>
+                            {count > 0 && balance > 0 && (
+                              <span title={`${unpaid} facture${unpaid > 1 ? 's' : ''} impayée${unpaid > 1 ? 's' : ''}`}
+                                className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-950/40 text-amber-400 border border-amber-900/30">
+                                {unpaid}
+                              </span>
+                            )}
+                          </div>
                           {c.gouvernorat && <div className="text-[10px] text-gray-600">{c.gouvernorat}</div>}
                         </td>
                         <td className="px-4 py-3">
