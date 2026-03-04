@@ -239,6 +239,52 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
             </div>
           )}
 
+          {/* Payment history log */}
+          {(() => {
+            type LogEntry = { date: string; label: string; amount: string | null; color: string }
+            const log: LogEntry[] = []
+            if (i.created_at)
+              log.push({ date: i.created_at.slice(0,10), label: 'Facture créée', amount: null, color: 'bg-gray-600' })
+            if (i.issue_date && i.issue_date !== i.created_at?.slice(0,10))
+              log.push({ date: i.issue_date, label: 'Date d\'émission', amount: null, color: 'bg-[#d4a843]' })
+            if (i.validated_at || (i.status === 'validated' && i.created_at))
+              log.push({ date: (i.validated_at ?? i.created_at).slice(0,10), label: 'Facture finalisée', amount: null, color: 'bg-blue-400' })
+            if (i.ttn_id && i.submitted_at)
+              log.push({ date: i.submitted_at.slice(0,10), label: 'Soumise TTN', amount: null, color: 'bg-purple-400' })
+            if (i.status === 'valid' && i.ttn_id)
+              log.push({ date: (i.validated_at ?? i.submitted_at ?? i.created_at ?? '').slice(0,10), label: 'Validée TTN ✓', amount: null, color: 'bg-[#2dd4a0]' })
+            if (i.due_date)
+              log.push({ date: i.due_date, label: 'Échéance', amount: fmtTND(Number(i.ttc_amount ?? 0)) + ' TND', color: new Date(i.due_date) < new Date() && i.payment_status !== 'paid' ? 'bg-red-500' : 'bg-gray-500' })
+            if (i.payment_status === 'paid' && i.paid_at)
+              log.push({ date: i.paid_at.slice(0,10), label: 'Paiement reçu ✓', amount: fmtTND(Number(i.ttc_amount ?? 0)) + ' TND', color: 'bg-[#2dd4a0]' })
+            log.sort((a, b) => a.date.localeCompare(b.date))
+            if (log.length === 0) return null
+            return (
+              <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4 print:hidden">
+                <p className="text-[10px] text-gray-600 uppercase tracking-wider font-semibold mb-3">Historique paiement</p>
+                <div className="relative">
+                  <div className="absolute left-[5px] top-1 bottom-1 w-px bg-[#1a1b22]" />
+                  <ul className="space-y-3">
+                    {log.map((ev, idx) => (
+                      <li key={idx} className="flex gap-3 items-start">
+                        <span className={`shrink-0 w-2.5 h-2.5 rounded-full mt-0.5 ${ev.color}`} />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-baseline justify-between gap-2">
+                            <span className="text-[11px] text-gray-300 font-medium leading-tight">{ev.label}</span>
+                            {ev.amount && <span className="text-[10px] font-mono text-gray-500 shrink-0">{ev.amount}</span>}
+                          </div>
+                          <p className="text-[10px] text-gray-600 mt-0.5">
+                            {ev.date ? new Date(ev.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}
+                          </p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )
+          })()}
+
           <InvoiceDetailPanel
             invoice={{
               id: i.id, number: i.number, status: i.status ?? 'draft',
