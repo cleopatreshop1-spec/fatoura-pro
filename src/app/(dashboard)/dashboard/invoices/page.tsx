@@ -723,7 +723,13 @@ export default function InvoicesPage() {
                         )}
                       </td>
                       <td className="px-4 py-3 hidden xl:table-cell">
-                        {inv.ttn_id ? (
+                        {inv.ttn_rejection_reason ? (
+                          <span
+                            title={inv.ttn_rejection_reason}
+                            className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-red-950/40 text-red-400 border border-red-900/30 cursor-help max-w-[100px] truncate">
+                            ✕ {inv.ttn_rejection_reason.slice(0, 20)}{inv.ttn_rejection_reason.length > 20 ? '…' : ''}
+                          </span>
+                        ) : inv.ttn_id ? (
                           <button onClick={() => copyTTN(inv.ttn_id!)}
                             className="font-mono text-[10px] text-[#d4a843] hover:text-[#f0c060] truncate max-w-[80px] block transition-colors" title="Copier TTN_ID">
                             {inv.ttn_id.slice(0,12)}
