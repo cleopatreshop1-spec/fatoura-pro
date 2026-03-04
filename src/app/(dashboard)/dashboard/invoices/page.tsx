@@ -57,6 +57,7 @@ export default function InvoicesPage() {
   const [hiddenCols, setHiddenCols] = useState<Set<string>>(new Set())
   function toggleCol(col: string) { setHiddenCols(prev => { const s = new Set(prev); s.has(col) ? s.delete(col) : s.add(col); return s }) }
   const [paymentFilter, setPaymentFilter] = useState<'all'|'paid'|'unpaid'|'overdue'>('all')
+  const [typeFilter, setTypeFilter] = useState<'all'|'B2B'|'B2C'>('all')
   const [sort, setSort] = useState<{ field: SortField; dir: 'asc'|'desc' }>({ field: 'issue_date', dir: 'desc' })
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -145,6 +146,7 @@ export default function InvoicesPage() {
     if (paymentFilter === 'paid') list = list.filter(i => i.payment_status === 'paid')
     if (paymentFilter === 'unpaid') list = list.filter(i => i.payment_status !== 'paid')
     if (paymentFilter === 'overdue') list = list.filter(i => isOverdue(i))
+    if (typeFilter !== 'all') list = list.filter(i => i.clients?.type === typeFilter)
     // Sort
     list = [...list].sort((a, b) => {
       let av: any = a[sort.field as keyof InvRow] ?? ''
@@ -153,7 +155,7 @@ export default function InvoicesPage() {
       return sort.dir === 'asc' ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av))
     })
     return list
-  }, [invoices, search, statusFilter, clientFilter, period, customFrom, customTo, sort, amountMin, amountMax, paymentFilter])
+  }, [invoices, search, statusFilter, clientFilter, period, customFrom, customTo, sort, amountMin, amountMax, paymentFilter, typeFilter])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const paginated = filtered.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE)
@@ -163,7 +165,7 @@ export default function InvoicesPage() {
     ttc:    filtered.reduce((s,i) => s + Number(i.ttc_amount ?? 0), 0),
     unpaid: filtered.filter(i => i.payment_status !== 'paid').reduce((s,i) => s + Number(i.ttc_amount ?? 0), 0),
   }), [filtered])
-  const hasFilters = search || statusFilter !== 'all' || period !== 'all' || clientFilter || amountMin || amountMax || paymentFilter !== 'all'
+  const hasFilters = search || statusFilter !== 'all' || period !== 'all' || clientFilter || amountMin || amountMax || paymentFilter !== 'all' || typeFilter !== 'all'
 
   const agingHeatmap = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10)
@@ -559,6 +561,34 @@ export default function InvoicesPage() {
           )
         })}
       </div>
+
+      {/* Client type filter chips */}
+      {invoices.some(i => i.clients?.type) && (
+        <div className="flex gap-1.5">
+          {([
+            { value: 'all', label: 'Tous types' },
+            { value: 'B2B', label: 'B2B' },
+            { value: 'B2C', label: 'B2C' },
+          ] as { value: 'all'|'B2B'|'B2C'; label: string }[]).map(o => {
+            const cnt = o.value === 'all' ? invoices.length : invoices.filter(i => i.clients?.type === o.value).length
+            if (o.value !== 'all' && cnt === 0) return null
+            const active = typeFilter === o.value
+            const col = o.value === 'B2B'
+              ? (active ? 'bg-[#d4a843]/15 border-[#d4a843]/40 text-[#d4a843]' : 'border-[#1a1b22] text-gray-600 hover:text-gray-300')
+              : o.value === 'B2C'
+              ? (active ? 'bg-[#4a9eff]/15 border-[#4a9eff]/40 text-[#4a9eff]' : 'border-[#1a1b22] text-gray-600 hover:text-gray-300')
+              : (active ? 'bg-[#d4a843]/10 border-[#d4a843]/25 text-gray-300' : 'border-[#1a1b22] text-gray-500 hover:text-gray-300')
+            return (
+              <button key={o.value}
+                onClick={() => { setTypeFilter(o.value); setPage(1) }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-all ${col}`}>
+                {o.label}
+                <span className={`text-[10px] font-mono ${active ? 'opacity-80' : 'opacity-50'}`}>{cnt}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {/* Aging heatmap */}
       {agingHeatmap.some(b => b.count > 0) && (
