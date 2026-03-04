@@ -95,6 +95,7 @@ export default function ExpensesPage() {
   const [inlineEditId, setInlineEditId] = useState<string | null>(null)
   const [inlineEdit, setInlineEdit] = useState<{ amount: string; category: string; description: string }>({ amount: '', category: 'autre', description: '' })
   const [savingInline, setSavingInline] = useState(false)
+  const [chartYear, setChartYear] = useState(new Date().getFullYear())
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(''), 3000) }
 
@@ -209,17 +210,15 @@ export default function ExpensesPage() {
     const byCat   = Object.fromEntries(
       CATEGORIES.map(c => [c.value, expenses.filter(e => e.category === c.value).reduce((s, e) => s + Number(e.amount), 0)])
     )
-    // Last 6 months
-    const now = new Date()
-    const byMonth = Array.from({ length: 6 }, (_, i) => {
-      const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1)
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-      const label = d.toLocaleDateString('fr-FR', { month: 'short' })
+    // 12 months of selected year
+    const byMonth = Array.from({ length: 12 }, (_, i) => {
+      const key = `${chartYear}-${String(i + 1).padStart(2, '0')}`
+      const label = new Date(chartYear, i, 1).toLocaleDateString('fr-FR', { month: 'short' })
       const amount = expenses.filter(e => e.date.startsWith(key)).reduce((s, e) => s + Number(e.amount), 0)
       return { key, label, amount }
     })
     return { monthly, total, byCat, byMonth }
-  }, [expenses])
+  }, [expenses, chartYear])
 
   async function handleReceiptFile(file: File) {
     if (!activeCompany?.id) return
@@ -369,9 +368,23 @@ export default function ExpensesPage() {
       </div>
 
       {/* Monthly trend chart */}
-      {expenses.length > 0 && totals.byMonth.some(m => m.amount > 0) && (
+      {expenses.length > 0 && (
         <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-5">
-          <h3 className="text-xs font-bold text-[#d4a843] uppercase tracking-wider mb-4">Tendance mensuelle (6 mois)</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xs font-bold text-[#d4a843] uppercase tracking-wider">Dépenses mensuelles</h3>
+            <div className="flex items-center gap-1">
+              {[new Date().getFullYear() - 1, new Date().getFullYear()].map(y => (
+                <button key={y} onClick={() => setChartYear(y)}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors ${
+                    chartYear === y
+                      ? 'bg-[#d4a843]/15 border border-[#d4a843]/40 text-[#d4a843]'
+                      : 'border border-[#1a1b22] text-gray-600 hover:text-gray-400'
+                  }`}>
+                  {y}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="h-[160px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={totals.byMonth} margin={{ top: 0, right: 4, left: 0, bottom: 0 }}>
