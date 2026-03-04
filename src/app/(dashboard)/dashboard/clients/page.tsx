@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Plus, Search, MoreVertical, Users } from 'lucide-react'
+import { Plus, Search, MoreVertical, Users, ChevronUp, ChevronDown } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useCompany } from '@/contexts/CompanyContext'
 import { ClientModal } from '@/components/clients/ClientModal'
@@ -20,6 +20,7 @@ type ClientRow = {
   invoices: { id: string; ttc_amount: number | null; status: string; payment_status: string | null }[]
 }
 type FilterType = 'all' | 'B2B' | 'B2C'
+type SortField = 'name' | 'count' | 'ca' | 'balance'
 
 const PAGE_SIZE = 25
 
@@ -38,6 +39,12 @@ export default function ClientsPage() {
   const [deleting, setDeleting] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null)
   const [toast, setToast] = useState('')
+  const [sort, setSort] = useState<{ field: SortField; dir: 'asc' | 'desc' }>({ field: 'name', dir: 'asc' })
+
+  function toggleSort(field: SortField) {
+    setSort(s => s.field === field ? { field, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { field, dir: field === 'name' ? 'asc' : 'desc' })
+    setPage(1)
+  }
 
   const load = useCallback(async () => {
     if (!activeCompany?.id) return
@@ -58,7 +65,17 @@ export default function ClientsPage() {
     setTimeout(() => setToast(''), 3000)
   }
 
-  // Filtered + searched clients
+  function getStats(c: ClientRow) {
+    const validInvs = c.invoices?.filter(i => i.status !== 'draft') ?? []
+    const count = validInvs.length
+    const ca = validInvs.reduce((s, i) => s + Number(i.ttc_amount ?? 0), 0)
+    const balance = validInvs
+      .filter(i => i.payment_status !== 'paid')
+      .reduce((s, i) => s + Number(i.ttc_amount ?? 0), 0)
+    return { count, ca, balance }
+  }
+
+  // Filtered + searched + sorted clients
   const filtered = useMemo(() => {
     let list = clients
     if (filter !== 'all') list = list.filter(c => c.type === filter)
@@ -71,21 +88,21 @@ export default function ClientsPage() {
         (c.phone ?? '').includes(q)
       )
     }
+    list = [...list].sort((a, b) => {
+      const sa = getStats(a), sb = getStats(b)
+      let av: string | number = 0, bv: string | number = 0
+      if (sort.field === 'name')    { av = a.name.toLowerCase(); bv = b.name.toLowerCase() }
+      if (sort.field === 'count')   { av = sa.count;  bv = sb.count }
+      if (sort.field === 'ca')      { av = sa.ca;     bv = sb.ca }
+      if (sort.field === 'balance') { av = sa.balance; bv = sb.balance }
+      if (typeof av === 'string') return sort.dir === 'asc' ? av.localeCompare(bv as string) : (bv as string).localeCompare(av)
+      return sort.dir === 'asc' ? av - (bv as number) : (bv as number) - av
+    })
     return list
-  }, [clients, filter, search])
+  }, [clients, filter, search, sort])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-
-  function getStats(c: ClientRow) {
-    const validInvs = c.invoices?.filter(i => i.status !== 'draft') ?? []
-    const count = validInvs.length
-    const ca = validInvs.reduce((s, i) => s + Number(i.ttc_amount ?? 0), 0)
-    const balance = validInvs
-      .filter(i => i.payment_status !== 'paid')
-      .reduce((s, i) => s + Number(i.ttc_amount ?? 0), 0)
-    return { count, ca, balance }
-  }
 
   async function handleDelete() {
     if (!deleteId) return
@@ -240,9 +257,30 @@ export default function ClientsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-[#1a1b22]">
-                    {['Nom', 'Type', 'Matricule Fiscal', 'Telephone', 'Email', 'Factures', 'CA Total', 'Solde dû', ''].map(h => (
-                      <th key={h} className="px-4 py-3 text-left text-[10px] text-gray-600 uppercase tracking-wider font-semibold whitespace-nowrap">
-                        {h}
+                    {([
+                      ['name',    'Nom',             'name'],
+                      [null,      'Type',             null],
+                      [null,      'Matricule Fiscal', null],
+                      [null,      'Telephone',        null],
+                      [null,      'Email',            null],
+                      ['count',   'Factures',         'count'],
+                      ['ca',      'CA Total',         'ca'],
+                      ['balance', 'Solde dû',         'balance'],
+                      [null,      '',                 null],
+                    ] as [SortField | null, string, string | null][]).map(([field, label]) => (
+                      <th key={label}
+                        onClick={() => field && toggleSort(field)}
+                        className={`px-4 py-3 text-left text-[10px] text-gray-600 uppercase tracking-wider font-semibold whitespace-nowrap ${field ? 'cursor-pointer hover:text-gray-400 select-none' : ''}`}>
+                        <span className="flex items-center gap-0.5">
+                          {label}
+                          {field && (
+                            sort.field === field
+                              ? sort.dir === 'asc'
+                                ? <ChevronUp size={11} className="text-[#d4a843] ml-0.5" />
+                                : <ChevronDown size={11} className="text-[#d4a843] ml-0.5" />
+                              : <ChevronDown size={11} className="text-gray-700 ml-0.5" />
+                          )}
+                        </span>
                       </th>
                     ))}
                   </tr>
