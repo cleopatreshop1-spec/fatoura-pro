@@ -67,6 +67,7 @@ export default function NewInvoicePage() {
   const [duplicateWarning, setDuplicateWarning] = useState<{ number: string; id: string } | null>(null)
   const [duplicateDismissed, setDuplicateDismissed] = useState(false)
   const [pastDescriptions, setPastDescriptions] = useState<string[]>([])
+  const [pastNotes, setPastNotes] = useState<string[]>([])
   const [applyStamp, setApplyStamp] = useState(true)
 
   const autoSaveRef    = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -227,6 +228,23 @@ export default function NewInvoicePage() {
   }, [activeCompany?.id, supabase, searchParams])
 
   useEffect(() => { loadData() }, [loadData])
+
+  // Fetch past notes for quick-fill when client changes
+  useEffect(() => {
+    if (!selectedClient || !activeCompany?.id) { setPastNotes([]); return }
+    supabase.from('invoices')
+      .select('notes')
+      .eq('company_id', activeCompany.id)
+      .eq('client_id', selectedClient.id)
+      .not('notes', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(10)
+      .then(({ data }) => {
+        const unique = [...new Set((data ?? []).map((r: any) => (r.notes ?? '').trim()).filter(Boolean))]
+        setPastNotes(unique.slice(0, 5))
+      })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedClient?.id, activeCompany?.id])
 
   // Auto-fill due date and reference when client is selected
   useEffect(() => {
@@ -819,9 +837,27 @@ export default function NewInvoicePage() {
           <div className={SECTION}>
             <div className="flex items-center justify-between mb-3">
               <div className="text-xs font-bold text-[#d4a843] uppercase tracking-wider">Notes</div>
-              <span className={`text-[10px] font-mono ${notes.length > 400 ? 'text-red-400' : notes.length > 280 ? 'text-amber-400' : 'text-gray-600'}`}>
-                {notes.length}/500
-              </span>
+              <div className="flex items-center gap-2">
+                {pastNotes.length > 0 && (
+                  <div className="relative group">
+                    <button type="button"
+                      className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-[#d4a843] border border-[#1a1b22] hover:border-[#d4a843]/30 rounded-lg px-2 py-1 transition-colors">
+                      Réutiliser ▾
+                    </button>
+                    <div className="absolute right-0 top-full mt-1 z-20 hidden group-hover:block min-w-[260px] bg-[#0f1118] border border-[#252830] rounded-xl shadow-2xl overflow-hidden">
+                      {pastNotes.map((n, idx) => (
+                        <button key={idx} type="button" onClick={() => setNotes(n)}
+                          className="w-full text-left px-3 py-2 text-[10px] text-gray-300 hover:bg-[#161b27] hover:text-white transition-colors border-b border-[#1a1b22] last:border-0 truncate">
+                          {n.slice(0, 80)}{n.length > 80 ? '…' : ''}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <span className={`text-[10px] font-mono ${notes.length > 400 ? 'text-red-400' : notes.length > 280 ? 'text-amber-400' : 'text-gray-600'}`}>
+                  {notes.length}/500
+                </span>
+              </div>
             </div>
             <textarea value={notes} onChange={e => setNotes(e.target.value)}
               rows={3} maxLength={500} placeholder="Conditions de paiement, RIB, mentions legales..."
