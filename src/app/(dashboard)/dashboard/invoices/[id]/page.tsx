@@ -217,6 +217,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
               share_token:          i.share_token          ?? null,
               share_view_count:     i.share_view_count     ?? 0,
               share_last_viewed_at: i.share_last_viewed_at ?? null,
+              internal_memo:        i.internal_memo        ?? null,
             }}
             companyPrefix={companyPrefix}
           />

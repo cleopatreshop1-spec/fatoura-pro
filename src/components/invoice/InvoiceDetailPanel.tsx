@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Copy, Send, Trash2, AlertTriangle, CheckCircle, Clock, RefreshCw, FileDown, Share2, Link2, X } from 'lucide-react'
+import { Copy, Send, Trash2, AlertTriangle, CheckCircle, Clock, RefreshCw, FileDown, Share2, Link2, X, StickyNote, Save } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { InvoiceStatusBadge } from '@/components/invoice/InvoiceStatusBadge'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
@@ -26,6 +26,7 @@ type InvoiceData = {
   share_token?: string | null
   share_view_count?: number | null
   share_last_viewed_at?: string | null
+  internal_memo?: string | null
 }
 
 interface Props {
@@ -49,6 +50,9 @@ export function InvoiceDetailPanel({ invoice: initial, companyPrefix }: Props) {
   const [sharing, setSharing]     = useState(false)
   const [shareUrl, setShareUrl]   = useState<string | null>(null)
   const [shareCopied, setShareCopied] = useState(false)
+  const [memo, setMemo]               = useState(initial.internal_memo ?? '')
+  const [memoSaving, setMemoSaving]   = useState(false)
+  const [memoSaved, setMemoSaved]     = useState(false)
 
   // Realtime subscription
   useEffect(() => {
@@ -152,6 +156,14 @@ export function InvoiceDetailPanel({ invoice: initial, companyPrefix }: Props) {
     await navigator.clipboard.writeText(shareUrl)
     setShareCopied(true)
     setTimeout(() => setShareCopied(false), 2000)
+  }
+
+  async function saveMemo() {
+    setMemoSaving(true)
+    await supabase.from('invoices').update({ internal_memo: memo || null }).eq('id', inv.id)
+    setMemoSaving(false)
+    setMemoSaved(true)
+    setTimeout(() => setMemoSaved(false), 2000)
   }
 
   async function revokeShare() {
@@ -364,6 +376,36 @@ export function InvoiceDetailPanel({ invoice: initial, companyPrefix }: Props) {
             <Trash2 size={14} />Supprimer
           </button>
         )}
+      </div>
+
+      {/* Internal memo */}
+      <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <StickyNote size={12} className="text-[#d4a843]" />
+          <span className="text-xs font-bold text-[#d4a843] uppercase tracking-wider">Note interne</span>
+          <span className="text-[9px] text-gray-600 ml-1">(non visible sur le PDF)</span>
+        </div>
+        <textarea
+          value={memo}
+          onChange={e => setMemo(e.target.value)}
+          placeholder="Notes privées, suivi interne, contexte client..."
+          rows={3}
+          className="w-full bg-[#0a0b0f] border border-[#1a1b22] rounded-xl px-3 py-2.5 text-xs text-white placeholder-gray-600 outline-none focus:border-[#d4a843] transition-colors resize-none"
+        />
+        <div className="flex items-center justify-between mt-2">
+          <span className="text-[9px] text-gray-700">{memo.length}/500 caractères</span>
+          <button
+            onClick={saveMemo}
+            disabled={memoSaving || memo.length > 500}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-40 bg-[#161b27] border border-[#252830] text-gray-400 hover:text-white hover:border-[#d4a843]/40"
+          >
+            {memoSaving
+              ? <div className="w-3 h-3 border border-gray-600 border-t-gray-300 rounded-full animate-spin" />
+              : memoSaved
+              ? <><span className="text-[#2dd4a0]">✓</span> Sauvegardé</>
+              : <><Save size={11} />Sauvegarder</>}
+          </button>
+        </div>
       </div>
 
       <ConfirmDialog open={confirmDelete} title="Supprimer cette facture ?" description="Cette action est irreversible."
