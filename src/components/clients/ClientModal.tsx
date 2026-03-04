@@ -27,6 +27,7 @@ const schema = z.object({
   email:             z.string().email('Email invalide').optional().or(z.literal('')),
   bank_name:         z.string().optional(),
   bank_rib:          z.string().optional(),
+  credit_limit:      z.string().optional(),
 }).superRefine((data, ctx) => {
   const mf = data.matricule_fiscal?.trim()
   if (data.type === 'B2B' && mf && mf !== 'PARTICULIER' && !MF_REGEX.test(mf)) {
@@ -42,6 +43,7 @@ export type ClientRecord = {
   gouvernorat?: string | null; postal_code?: string | null
   phone?: string | null; email?: string | null
   bank_name?: string | null; bank_rib?: string | null
+  credit_limit?: number | null
 }
 
 interface Props {
@@ -62,7 +64,7 @@ export function ClientModal({ open, onClose, onSaved, companyId, initial }: Prop
 
   const { register, handleSubmit, watch, reset, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { type: 'B2B', name: '', matricule_fiscal: '', address: '', gouvernorat: '', postal_code: '', phone: '', email: '', bank_name: '', bank_rib: '' },
+    defaultValues: { type: 'B2B', name: '', matricule_fiscal: '', address: '', gouvernorat: '', postal_code: '', phone: '', email: '', bank_name: '', bank_rib: '', credit_limit: '' },
   })
 
   const clientType = watch('type')
@@ -80,6 +82,7 @@ export function ClientModal({ open, onClose, onSaved, companyId, initial }: Prop
       email:            initial?.email ?? '',
       bank_name:        initial?.bank_name ?? '',
       bank_rib:         initial?.bank_rib ?? '',
+      credit_limit:     initial?.credit_limit != null ? String(initial.credit_limit) : '',
     })
     setServerError('')
     setShowBank(!!(initial?.bank_name || initial?.bank_rib))
@@ -96,6 +99,7 @@ export function ClientModal({ open, onClose, onSaved, companyId, initial }: Prop
       postal_code: data.postal_code || null, phone: data.phone || null,
       email: data.email || null, bank_name: data.bank_name || null,
       bank_rib: data.bank_rib || null,
+      credit_limit: data.credit_limit ? parseFloat(data.credit_limit) : null,
     }
     const { error } = isEdit
       ? await supabase.from('clients').update(payload).eq('id', initial!.id!)
@@ -207,6 +211,16 @@ export function ClientModal({ open, onClose, onSaved, companyId, initial }: Prop
                   </div>
                 </div>
               )}
+            </section>
+
+            {/* Credit limit */}
+            <section>
+              <div className={SH}>Plafond de crédit <span className="normal-case text-gray-600 font-normal">(optionnel)</span></div>
+              <div>
+                <label className={LC}>Plafond TTC (TND)</label>
+                <input {...register('credit_limit')} type="number" step="0.001" min="0" placeholder="ex: 5000.000" className={`${IC} font-mono`} />
+                <p className="text-[10px] text-gray-600 mt-1">Un avertissement s&apos;affichera si l&apos;encours dépasse ce montant.</p>
+              </div>
             </section>
 
             {serverError && (

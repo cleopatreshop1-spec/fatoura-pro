@@ -7,6 +7,7 @@ export type ComboClient = {
   id: string; name: string; type: string
   matricule_fiscal: string | null; address: string | null
   gouvernorat: string | null; phone: string | null; email: string | null
+  credit_limit: number | null
 }
 
 interface Props {

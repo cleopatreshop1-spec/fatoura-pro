@@ -16,6 +16,7 @@ type ClientRow = {
   matricule_fiscal: string | null; phone: string | null; email: string | null
   gouvernorat: string | null; address: string | null
   postal_code: string | null; bank_name: string | null; bank_rib: string | null
+  credit_limit: number | null
   created_at: string
   invoices: { id: string; ttc_amount: number | null; status: string; payment_status: string | null }[]
 }

@@ -133,7 +133,7 @@ export default function NewInvoicePage() {
       { data: mdt },
       { data: pastLines },
     ] = await Promise.all([
-      supabase.from('clients').select('id,name,type,matricule_fiscal,address,gouvernorat,phone,email').eq('company_id', activeCompany.id).order('name'),
+      supabase.from('clients').select('id,name,type,matricule_fiscal,address,gouvernorat,phone,email,credit_limit').eq('company_id', activeCompany.id).order('name'),
       supabase.from('invoices').select('number').eq('company_id', activeCompany.id).order('created_at', { ascending: false }).limit(1).maybeSingle(),
       supabase.from('companies').select('invoice_prefix,own_cert_pem').eq('id', activeCompany.id).single(),
       supabase.from('mandates').select('id').eq('company_id', activeCompany.id).eq('is_active', true).limit(1).maybeSingle(),
@@ -699,6 +699,35 @@ export default function NewInvoicePage() {
               onAddNew={() => setAddClientOpen(true)}
             />
           </div>
+
+          {/* Credit limit warning */}
+          {selectedClient?.credit_limit && totals.total_ttc > 0 && (() => {
+            const limit = Number(selectedClient.credit_limit)
+            if (totals.total_ttc > limit) {
+              return (
+                <div className="flex items-start gap-3 bg-amber-950/30 border border-amber-900/40 rounded-xl px-4 py-3">
+                  <AlertTriangle size={15} className="text-amber-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-bold text-amber-400">Plafond de crédit dépassé</p>
+                    <p className="text-[11px] text-amber-600 mt-0.5">
+                      Cette facture ({fmtTND(totals.total_ttc)} TND) dépasse le plafond configuré de {fmtTND(limit)} TND pour ce client.
+                    </p>
+                  </div>
+                </div>
+              )
+            }
+            if (totals.total_ttc > limit * 0.9) {
+              return (
+                <div className="flex items-start gap-3 bg-yellow-950/20 border border-yellow-900/30 rounded-xl px-4 py-3">
+                  <AlertTriangle size={15} className="text-yellow-500 shrink-0 mt-0.5" />
+                  <p className="text-[11px] text-yellow-600">
+                    Proche du plafond de crédit — {fmtTND(totals.total_ttc)} TND / {fmtTND(limit)} TND ({Math.round(totals.total_ttc / limit * 100)}%)
+                  </p>
+                </div>
+              )
+            }
+            return null
+          })()}
 
           {/* SECTION 3: Line items */}
           <div className={SECTION}>
