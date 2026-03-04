@@ -820,17 +820,30 @@ export default function NewInvoicePage() {
             </div>
 
             <div className="space-y-0">
-              {lines.map((l, i) => (
-                <InvoiceLineItem
-                  key={l.id} line={l} index={i}
-                  isOnly={lines.length === 1}
-                  onChange={updateLine}
-                  onRemove={removeLine}
-                  onDuplicate={duplicateLine}
-                  onReorder={reorderLine}
-                  suggestions={pastDescriptions}
-                />
-              ))}
+              {lines.map((l, i) => {
+                const runningHT = lines.slice(0, i + 1).reduce((s, ln) => {
+                  const disc = ln.discount ?? 0
+                  return s + ln.quantity * ln.unit_price * (1 - disc / 100)
+                }, 0)
+                return (
+                  <div key={l.id}>
+                    <InvoiceLineItem
+                      line={l} index={i}
+                      isOnly={lines.length === 1}
+                      onChange={updateLine}
+                      onRemove={removeLine}
+                      onDuplicate={duplicateLine}
+                      onReorder={reorderLine}
+                      suggestions={pastDescriptions}
+                    />
+                    {lines.length > 1 && i < lines.length - 1 && (
+                      <div className="flex justify-end pr-1 pb-0.5">
+                        <span className="text-[8px] text-gray-700 font-mono">∑ HT = {new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(runningHT)}</span>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
 
             {(() => {
