@@ -214,6 +214,26 @@ export default function ClientsPage() {
         </div>
       </div>
 
+      {/* Summary bar */}
+      {filtered.length > 0 && (() => {
+        const totalCA      = filtered.reduce((s, c) => s + getStats(c).ca, 0)
+        const totalUnpaid  = filtered.reduce((s, c) => s + getStats(c).balance, 0)
+        const unpaidCount  = filtered.reduce((s, c) => s + getStats(c).unpaid, 0)
+        return (
+          <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-gray-500 bg-[#0f1118] border border-[#1a1b22] rounded-xl px-4 py-2.5 items-center">
+            <span className="font-bold text-gray-300">{filtered.length} client{filtered.length > 1 ? 's' : ''}</span>
+            <span className="text-gray-700">·</span>
+            <span>CA total <span className="font-mono font-semibold text-gray-300">{fmtTND(totalCA)} TND</span></span>
+            {totalUnpaid > 0 && <>
+              <span className="text-gray-700">·</span>
+              <span>Impayé <span className="font-mono font-bold text-[#f59e0b]">{fmtTND(totalUnpaid)} TND</span>
+                <span className="ml-1 text-gray-600">({unpaidCount} fact.)</span>
+              </span>
+            </>}
+          </div>
+        )
+      })()}
+
       {/* Filters row */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
