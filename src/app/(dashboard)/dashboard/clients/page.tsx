@@ -565,6 +565,9 @@ export default function ClientsPage() {
                         <td className="px-4 py-3 text-sm font-mono text-gray-300 text-center">{count}</td>
                         <td className="px-4 py-3 font-mono text-xs text-gray-300 whitespace-nowrap">
                           {ca > 0 ? fmtTND(ca) + ' TND' : ''}
+                          {ca > 0 && count > 1 && (
+                            <div className="text-[9px] text-gray-600 mt-0.5 font-mono">moy. {fmtTND(ca / count)} TND</div>
+                          )}
                         </td>
                         <td className="px-4 py-3 font-mono text-xs whitespace-nowrap">
                           {balance > 0
