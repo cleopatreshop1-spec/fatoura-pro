@@ -926,7 +926,7 @@ export default function InvoicesPage() {
                 </thead>
                 <tbody className="divide-y divide-[#1a1b22]">
                   {paginated.map(inv => (
-                    <tr key={inv.id} className={`hover:bg-[#161b27]/50 transition-colors ${selected.has(inv.id)?'bg-[#d4a843]/5':''}`}>
+                    <tr key={inv.id} className={`hover:bg-[#161b27]/50 transition-colors ${selected.has(inv.id)?'bg-[#d4a843]/5':''} ${isOverdue(inv)?'border-l-2 border-l-red-500/60 bg-red-950/10':''}`}>
                       <td className="px-4 py-3">
                         <input type="checkbox" checked={selected.has(inv.id)} onChange={() => toggleRow(inv.id)}
                           className="w-3.5 h-3.5 rounded accent-[#d4a843] cursor-pointer" />
