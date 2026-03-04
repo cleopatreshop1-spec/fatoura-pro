@@ -10,6 +10,7 @@ import { WhatsAppShareButton } from '@/components/invoice/WhatsAppShareButton'
 import { PaymentReminderButton } from '@/components/invoice/PaymentReminderButton'
 import { InvoiceTimeline } from '@/components/invoice/InvoiceTimeline'
 import { RecurringInvoiceSetup } from '@/components/invoice/RecurringInvoiceSetup'
+import { CopyNumberButton } from '@/components/invoice/CopyNumberButton'
 import { fmtTND, STAMP_DUTY } from '@/lib/utils/tva-calculator'
 import { amountToWords } from '@/lib/utils/amount-to-words'
 import Link from 'next/link'
@@ -64,6 +65,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
           <Link href="/dashboard/invoices" className="text-gray-500 hover:text-gray-300 transition-colors">Factures</Link>
           <span className="text-gray-700">/</span>
           <span className="font-mono text-[#d4a843]">{i.number ?? 'Brouillon'}</span>
+          {i.number && <CopyNumberButton number={i.number} />}
           <InvoiceStatusBadge status={i.status ?? 'draft'} />
         </div>
         <div className="flex items-center gap-2">
