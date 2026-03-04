@@ -199,9 +199,16 @@ export default function ClientsPage() {
   ]
 
   function exportCSV() {
-    const header = 'Nom,Type,Matricule Fiscal,Telephone,Email,Gouvernorat,Factures,CA Total (TTC),Solde du,Plafond credit'
+    const today = new Date().toISOString().slice(0, 10)
+    const header = 'Nom,Type,Matricule Fiscal,Telephone,Email,Gouvernorat,Factures,CA Total (TTC),Solde du,Plafond credit,Montant en retard (TTC),Retard max (jours)'
     const rows = filtered.map(c => {
       const { count, ca, balance } = getStats(c)
+      const overdueInvs = (c.invoices ?? []).filter(i => i.payment_status !== 'paid' && i.due_date && i.due_date < today && i.status !== 'draft')
+      const overdueAmt = overdueInvs.reduce((s, i) => s + Number((i as any).ttc_amount ?? 0), 0)
+      const maxDays = overdueInvs.reduce((max, i) => {
+        const d = Math.floor((new Date(today).getTime() - new Date(i.due_date!).getTime()) / 86400000)
+        return d > max ? d : max
+      }, 0)
       return [
         `"${c.name.replace(/"/g,'""')}"`,
         c.type ?? 'B2B',
@@ -213,6 +220,8 @@ export default function ClientsPage() {
         ca.toFixed(3),
         balance.toFixed(3),
         c.credit_limit != null ? Number(c.credit_limit).toFixed(3) : '',
+        overdueAmt > 0 ? overdueAmt.toFixed(3) : '',
+        maxDays > 0 ? maxDays : '',
       ].join(',')
     })
     const csv = [header, ...rows].join('\n')
