@@ -412,6 +412,15 @@ export default function ClientsPage() {
                                 {unpaid}
                               </span>
                             )}
+                            {count > 0 && lastInvDate && (() => {
+                              const daysSince = Math.floor((Date.now() - new Date(lastInvDate).getTime()) / 86400000)
+                              return daysSince > 90 ? (
+                                <span title={`Aucune facture depuis ${daysSince} jours`}
+                                  className="shrink-0 text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-gray-800/60 text-gray-500 border border-gray-700/40">
+                                  inactif
+                                </span>
+                              ) : null
+                            })()}
                           </div>
                           {c.gouvernorat && <div className="text-[10px] text-gray-600">{c.gouvernorat}</div>}
                         </td>
