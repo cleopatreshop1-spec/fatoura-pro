@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Plus, Search, Trash2, Receipt, TrendingDown, Download, Paperclip, X as XIcon } from 'lucide-react'
+import { Plus, Search, Trash2, Receipt, TrendingDown, Download, Paperclip, X as XIcon, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { createClient } from '@/lib/supabase/client'
 import { useCompany } from '@/contexts/CompanyContext'
@@ -52,6 +52,13 @@ type FormState = {
   description: string; amount: string; category: string; date: string; notes: string
 }
 
+type RecurringExpense = {
+  id: string; description: string; amount: number; category: string
+  notes: string | null; active: boolean; day_of_month: number; last_logged: string | null
+}
+
+const emptyRecurring = () => ({ description: '', amount: '', category: 'autre', notes: '', day_of_month: '1' })
+
 const emptyForm = (): FormState => ({
   description: '', amount: '', category: 'autre',
   date: new Date().toISOString().slice(0, 10), notes: '',
@@ -73,7 +80,53 @@ export default function ExpensesPage() {
   const [uploading, setUploading]   = useState(false)
   const receiptRef = useRef<HTMLInputElement>(null)
 
+  const [recurringList, setRecurringList]   = useState<RecurringExpense[]>([])
+  const [recurringOpen, setRecurringOpen]   = useState(false)
+  const [recurringForm, setRecurringForm]   = useState(emptyRecurring())
+  const [addingRecurring, setAddingRecurring] = useState(false)
+  const [savingRecurring, setSavingRecurring] = useState(false)
+
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(''), 3000) }
+
+  const loadRecurring = useCallback(async () => {
+    if (!activeCompany?.id) return
+    const { data } = await (supabase as any)
+      .from('recurring_expenses')
+      .select('*')
+      .eq('company_id', activeCompany.id)
+      .order('created_at', { ascending: false })
+    setRecurringList((data ?? []) as RecurringExpense[])
+  }, [activeCompany?.id, supabase])
+
+  async function saveRecurring() {
+    if (!activeCompany?.id || !recurringForm.description || !recurringForm.amount) return
+    setSavingRecurring(true)
+    const { error } = await (supabase as any).from('recurring_expenses').insert({
+      company_id:   activeCompany.id,
+      description:  recurringForm.description,
+      amount:       parseFloat(recurringForm.amount),
+      category:     recurringForm.category,
+      notes:        recurringForm.notes || null,
+      day_of_month: parseInt(recurringForm.day_of_month) || 1,
+    })
+    setSavingRecurring(false)
+    if (error) { showToast('Erreur sauvegarde'); return }
+    setRecurringForm(emptyRecurring())
+    setAddingRecurring(false)
+    loadRecurring()
+    showToast('Dépense récurrente ajoutée')
+  }
+
+  async function toggleRecurring(id: string, active: boolean) {
+    await (supabase as any).from('recurring_expenses').update({ active }).eq('id', id)
+    loadRecurring()
+  }
+
+  async function deleteRecurring(id: string) {
+    await (supabase as any).from('recurring_expenses').delete().eq('id', id)
+    loadRecurring()
+    showToast('Supprimé')
+  }
 
   const load = useCallback(async () => {
     if (!activeCompany?.id) return
@@ -88,6 +141,7 @@ export default function ExpensesPage() {
   }, [activeCompany?.id, supabase])
 
   useEffect(() => { load() }, [load])
+  useEffect(() => { loadRecurring() }, [loadRecurring])
 
   const filtered = useMemo(() => {
     let list = expenses
@@ -243,6 +297,104 @@ export default function ExpensesPage() {
           </div>
         </div>
       )}
+
+      {/* Recurring Expenses Panel */}
+      <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl overflow-hidden">
+        <button
+          onClick={() => setRecurringOpen(o => !o)}
+          className="w-full flex items-center justify-between px-5 py-4 hover:bg-[#161b27]/50 transition-colors"
+        >
+          <div className="flex items-center gap-2.5">
+            <RefreshCw size={14} className="text-[#2dd4a0]" />
+            <span className="text-sm font-bold text-white">Dépenses récurrentes</span>
+            {recurringList.length > 0 && (
+              <span className="text-[10px] px-2 py-0.5 bg-[#2dd4a0]/10 text-[#2dd4a0] border border-[#2dd4a0]/20 rounded-full font-bold">
+                {recurringList.filter(r => r.active).length} actives
+              </span>
+            )}
+          </div>
+          {recurringOpen ? <ChevronUp size={14} className="text-gray-500" /> : <ChevronDown size={14} className="text-gray-500" />}
+        </button>
+
+        {recurringOpen && (
+          <div className="px-5 pb-5 space-y-3 border-t border-[#1a1b22]">
+            <p className="text-xs text-gray-600 pt-4">
+              Les dépenses récurrentes sont enregistrées automatiquement chaque mois au jour configuré.
+            </p>
+
+            {/* List */}
+            {recurringList.length > 0 && (
+              <div className="space-y-2">
+                {recurringList.map(r => (
+                  <div key={r.id} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border ${r.active ? 'bg-[#161b27] border-[#252830]' : 'bg-[#0a0b0f] border-[#1a1b22] opacity-60'}`}>
+                    <button
+                      onClick={() => toggleRecurring(r.id, !r.active)}
+                      className={`shrink-0 w-8 h-4 rounded-full transition-colors relative ${r.active ? 'bg-[#2dd4a0]' : 'bg-[#252830]'}`}
+                    >
+                      <span className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${r.active ? 'left-4' : 'left-0.5'}`} />
+                    </button>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-gray-200 truncate">{r.description}</p>
+                      <p className="text-[10px] text-gray-600">
+                        {CATEGORIES.find(c => c.value === r.category)?.label} · le {r.day_of_month} du mois
+                        {r.last_logged && ` · dernier: ${new Date(r.last_logged).toLocaleDateString('fr-FR')}`}
+                      </p>
+                    </div>
+                    <span className="font-mono text-xs font-bold text-[#d4a843] shrink-0">{fmtTND(r.amount)} TND</span>
+                    <button onClick={() => deleteRecurring(r.id)} className="text-gray-700 hover:text-red-400 transition-colors shrink-0">
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add form */}
+            {addingRecurring ? (
+              <div className="bg-[#161b27] border border-[#252830] rounded-xl p-4 space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="col-span-2">
+                    <label className={LC}>Description *</label>
+                    <input value={recurringForm.description} onChange={e => setRecurringForm(f => ({ ...f, description: e.target.value }))}
+                      placeholder="Loyer, abonnement logiciel..." className={IC} />
+                  </div>
+                  <div>
+                    <label className={LC}>Montant (TND) *</label>
+                    <input type="number" step="0.001" min="0" value={recurringForm.amount} onChange={e => setRecurringForm(f => ({ ...f, amount: e.target.value }))}
+                      placeholder="0.000" className={IC} />
+                  </div>
+                  <div>
+                    <label className={LC}>Jour du mois (1–28)</label>
+                    <input type="number" min="1" max="28" value={recurringForm.day_of_month} onChange={e => setRecurringForm(f => ({ ...f, day_of_month: e.target.value }))}
+                      className={IC} />
+                  </div>
+                  <div className="col-span-2">
+                    <label className={LC}>Catégorie</label>
+                    <select value={recurringForm.category} onChange={e => setRecurringForm(f => ({ ...f, category: e.target.value }))} className={IC}>
+                      {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={saveRecurring} disabled={savingRecurring}
+                    className="flex-1 py-2 bg-[#2dd4a0] hover:bg-[#34d8a8] disabled:opacity-50 text-black font-bold text-sm rounded-xl transition-colors">
+                    {savingRecurring ? 'Sauvegarde...' : 'Ajouter'}
+                  </button>
+                  <button onClick={() => { setAddingRecurring(false); setRecurringForm(emptyRecurring()) }}
+                    className="px-4 py-2 border border-[#252830] text-gray-400 hover:text-white text-sm rounded-xl transition-colors">
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button onClick={() => setAddingRecurring(true)}
+                className="flex items-center gap-2 text-xs text-[#2dd4a0] hover:text-white border border-[#2dd4a0]/20 hover:border-[#2dd4a0]/40 px-3 py-2 rounded-xl transition-colors">
+                <Plus size={12} />Ajouter une récurrence
+              </button>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Category bar chart */}
       {expenses.length > 0 && (() => {
