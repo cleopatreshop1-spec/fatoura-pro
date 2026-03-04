@@ -12,6 +12,7 @@ import { RemindersPanel } from '@/components/dashboard/RemindersPanel'
 import { AIInsightsPanel } from '@/components/dashboard/AIInsightsPanel'
 import { RecentInvoicesTable } from '@/components/dashboard/RecentInvoicesTable'
 import type { InvoiceTableRow } from '@/components/dashboard/RecentInvoicesTable'
+import { InvoiceAgingReport } from '@/components/dashboard/InvoiceAgingReport'
 import { format, subDays, addDays, parseISO, endOfWeek, eachWeekOfInterval } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
@@ -108,6 +109,49 @@ export default async function DashboardPage() {
   const unpaidTotal = (unpaidValid ?? []).reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
   const unpaidCount = (unpaidValid ?? []).length
   const overdueInvs = (unpaidValid ?? []).filter((i: any) => i.due_date && i.due_date < todayStr)
+
+  // ── Invoice Aging Buckets ──────────────────────────────────────────────
+  const ago60 = format(subDays(now, 60), 'yyyy-MM-dd')
+  const aging = {
+    current: (unpaidValid ?? []).filter((i: any) => !i.due_date || i.due_date >= todayStr),
+    late30:  (unpaidValid ?? []).filter((i: any) => i.due_date && i.due_date < todayStr && i.due_date >= ago30),
+    late60:  (unpaidValid ?? []).filter((i: any) => i.due_date && i.due_date < ago30  && i.due_date >= ago60),
+    late90p: (unpaidValid ?? []).filter((i: any) => i.due_date && i.due_date < ago60),
+  }
+  const agingBuckets = [
+    {
+      label: 'Non échu',
+      count: aging.current.length,
+      amount: aging.current.reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0),
+      color: 'text-[#2dd4a0]', bg: 'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20',
+      bar: 'bg-[#2dd4a0]',
+      href: '/dashboard/invoices',
+    },
+    {
+      label: '0–30 jours',
+      count: aging.late30.length,
+      amount: aging.late30.reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0),
+      color: 'text-[#f59e0b]', bg: 'text-[#f59e0b] bg-[#f59e0b]/10 border-[#f59e0b]/20',
+      bar: 'bg-[#f59e0b]',
+      href: '/dashboard/invoices',
+    },
+    {
+      label: '31–60 jours',
+      count: aging.late60.length,
+      amount: aging.late60.reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0),
+      color: 'text-orange-400', bg: 'text-orange-400 bg-orange-500/10 border-orange-500/20',
+      bar: 'bg-orange-500',
+      href: '/dashboard/invoices',
+    },
+    {
+      label: '+60 jours',
+      count: aging.late90p.length,
+      amount: aging.late90p.reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0),
+      color: 'text-red-400', bg: 'text-red-400 bg-red-950/30 border-red-900/40',
+      bar: 'bg-red-500',
+      href: '/dashboard/invoices',
+    },
+  ].filter(b => b.count > 0)
   const avgOverdue  = overdueInvs.length > 0
     ? Math.round(overdueInvs.reduce((s: number, i: any) =>
         s + Math.max(0, Math.floor((now.getTime() - new Date(i.due_date).getTime()) / 86400000)), 0)
@@ -249,6 +293,11 @@ export default async function DashboardPage() {
             unpaidTotal={unpaidTotal}
             avgOverdueDays={avgOverdue}
           />
+
+          {/* WIDGET: Aging Report */}
+          {agingBuckets.length > 0 && (
+            <InvoiceAgingReport buckets={agingBuckets} totalUnpaid={unpaidTotal} />
+          )}
 
           {/* WIDGET 2 — Cash Flow Chart */}
           <CashFlowChart
