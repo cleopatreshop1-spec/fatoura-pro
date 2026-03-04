@@ -394,8 +394,24 @@ export default function ExpensesPage() {
 
       {/* KPI row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl px-4 py-3">
+          <p className="text-[10px] text-gray-600 uppercase tracking-wider mb-1">Ce mois</p>
+          <p className="text-lg font-mono font-bold text-red-400">{fmtTND(totals.monthly)} TND</p>
+          {(() => {
+            const prevTotal = Object.values(totals.byCatPrev).reduce((s, v) => s + v, 0)
+            if (prevTotal <= 0) return null
+            const delta = totals.monthly - prevTotal
+            const pct = Math.round((delta / prevTotal) * 100)
+            return (
+              <span className={`mt-1 inline-block text-[9px] font-bold px-1.5 py-0.5 rounded border ${
+                pct > 10  ? 'text-red-400 bg-red-950/30 border-red-900/30' :
+                pct < -10 ? 'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20' :
+                'text-gray-500 bg-[#1a1b22] border-[#252830]'
+              }`}>{pct > 0 ? '+' : ''}{pct}% vs mois préc.</span>
+            )
+          })()}
+        </div>
         {[
-          { label: 'Ce mois', value: fmtTND(totals.monthly) + ' TND', color: 'text-red-400' },
           { label: 'Total', value: fmtTND(totals.total) + ' TND', color: 'text-white' },
           { label: 'Catégorie max', value: (() => {
               const top = Object.entries(totals.byCat).sort((a,b) => b[1]-a[1])[0]
