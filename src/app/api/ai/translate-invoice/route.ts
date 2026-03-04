@@ -54,7 +54,6 @@ Réponds UNIQUEMENT avec le JSON traduit valide, sans markdown, sans explication
     return Response.json({ success: true, data: translated, language: targetLanguage })
 
   } catch (e: any) {
-    console.error('[translate-invoice]', e)
     return err(e.message ?? 'Erreur IA', 500)
   }
 }
