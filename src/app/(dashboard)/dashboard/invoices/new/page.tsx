@@ -60,6 +60,8 @@ export default function NewInvoicePage() {
   const [submitSuccess, setSubmitSuccess] = useState(false)
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
   const [scannerOpen, setScannerOpen] = useState(false)
+  const [duplicateWarning, setDuplicateWarning] = useState<{ number: string; id: string } | null>(null)
+  const [duplicateDismissed, setDuplicateDismissed] = useState(false)
 
   const autoSaveRef    = useRef<ReturnType<typeof setTimeout> | null>(null)
   const buildAndSaveRef = useRef<((status: string) => Promise<string | null>) | null>(null)
@@ -231,6 +233,31 @@ export default function NewInvoicePage() {
     calcInvoiceTotals(lines.map(l => ({ quantity: l.quantity, unit_price: l.unit_price, tva_rate: l.tva_rate }))),
     [lines]
   )
+
+  // Duplicate detection: check same client + same date + amount within 5 TND
+  useEffect(() => {
+    if (!selectedClient || !invoiceDate || savedId || duplicateDismissed) {
+      setDuplicateWarning(null)
+      return
+    }
+    const ttc = totals.total_ttc
+    if (ttc <= 0) return
+    const timer = setTimeout(async () => {
+      const { data } = await supabase
+        .from('invoices')
+        .select('id, number, ttc_amount')
+        .eq('company_id', activeCompany!.id)
+        .eq('client_id', selectedClient.id)
+        .eq('issue_date', invoiceDate)
+        .neq('status', 'draft')
+        .limit(5)
+      const match = (data ?? []).find((inv: any) =>
+        Math.abs(Number(inv.ttc_amount) - ttc) < 5
+      ) as { id: string; number: string } | undefined
+      setDuplicateWarning(match ?? null)
+    }, 800)
+    return () => clearTimeout(timer)
+  }, [selectedClient?.id, invoiceDate, totals.total_ttc, savedId, duplicateDismissed, supabase, activeCompany])
 
   function validate(forSubmit = false): string[] {
     const e: string[] = []
@@ -559,6 +586,29 @@ export default function NewInvoicePage() {
               <li key={i} className="text-xs text-red-300"> {e}</li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {/* Duplicate detection warning */}
+      {duplicateWarning && !duplicateDismissed && (
+        <div className="flex items-center gap-3 bg-yellow-950/30 border border-yellow-900/40 rounded-xl px-4 py-3">
+          <span className="text-lg shrink-0">⚠️</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-yellow-400">Possible doublon détecté</p>
+            <p className="text-xs text-yellow-300/70 mt-0.5">
+              La facture <span className="font-mono font-bold">{duplicateWarning.number}</span> existe déjà pour ce client, cette date et un montant similaire.
+            </p>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <a href={`/dashboard/invoices/${duplicateWarning.id}`} target="_blank" rel="noreferrer"
+              className="text-xs text-yellow-400 hover:text-yellow-200 underline transition-colors">
+              Voir →
+            </a>
+            <button onClick={() => setDuplicateDismissed(true)}
+              className="text-xs text-yellow-600 hover:text-yellow-400 transition-colors px-2 py-0.5 rounded-lg hover:bg-yellow-900/20">
+              Ignorer
+            </button>
+          </div>
         </div>
       )}
 
