@@ -7,6 +7,7 @@ import { InvoiceStatusBadge } from '@/components/invoice/InvoiceStatusBadge'
 import { PrintButton } from '@/components/invoice/PrintButton'
 import { CopyLinkButton } from '@/components/invoice/CopyLinkButton'
 import { WhatsAppShareButton } from '@/components/invoice/WhatsAppShareButton'
+import { PaymentReminderButton } from '@/components/invoice/PaymentReminderButton'
 import { InvoiceTimeline } from '@/components/invoice/InvoiceTimeline'
 import { RecurringInvoiceSetup } from '@/components/invoice/RecurringInvoiceSetup'
 import { fmtTND, STAMP_DUTY } from '@/lib/utils/tva-calculator'
@@ -219,6 +220,18 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
           {/* Quick actions */}
           <div className="flex flex-wrap gap-2 print:hidden">
             <CopyLinkButton invoiceId={i.id} />
+            {i.payment_status !== 'paid' && (
+              <PaymentReminderButton
+                invoiceId={i.id}
+                invoiceNumber={i.number ?? 'Facture'}
+                clientName={cl?.name ?? ''}
+                clientEmail={cl?.email ?? null}
+                clientPhone={cl?.phone ?? null}
+                amount={Number(i.ttc_amount ?? 0)}
+                dueDate={i.due_date ?? null}
+                daysOverdue={i.due_date && i.due_date < new Date().toISOString().slice(0,10) ? Math.floor((Date.now() - new Date(i.due_date).getTime()) / 86400000) : 0}
+              />
+            )}
             <WhatsAppShareButton
               invoiceId={i.id}
               invoiceNumber={i.number ?? null}
