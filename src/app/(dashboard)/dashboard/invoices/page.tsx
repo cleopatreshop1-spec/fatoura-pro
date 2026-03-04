@@ -189,12 +189,21 @@ export default function InvoicesPage() {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const paginated = filtered.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE)
-  const summary = useMemo(() => ({
-    ht:     filtered.reduce((s,i) => s + Number(i.ht_amount ?? 0), 0),
-    tva:    filtered.reduce((s,i) => s + Number(i.tva_amount ?? 0), 0),
-    ttc:    filtered.reduce((s,i) => s + Number(i.ttc_amount ?? 0), 0),
-    unpaid: filtered.filter(i => i.payment_status !== 'paid').reduce((s,i) => s + Number(i.ttc_amount ?? 0), 0),
-  }), [filtered])
+  const summary = useMemo(() => {
+    const ttc    = filtered.reduce((s,i) => s + Number(i.ttc_amount ?? 0), 0)
+    const avgTTC = filtered.length > 0 ? ttc / filtered.length : 0
+    // Compare to the overall invoice avg (all invoices)
+    const allAvg = invoices.length > 0 ? invoices.reduce((s,i) => s + Number(i.ttc_amount ?? 0), 0) / invoices.length : 0
+    const avgDelta = allAvg > 0 ? Math.round(((avgTTC - allAvg) / allAvg) * 100) : null
+    return {
+      ht:     filtered.reduce((s,i) => s + Number(i.ht_amount ?? 0), 0),
+      tva:    filtered.reduce((s,i) => s + Number(i.tva_amount ?? 0), 0),
+      ttc,
+      unpaid: filtered.filter(i => i.payment_status !== 'paid').reduce((s,i) => s + Number(i.ttc_amount ?? 0), 0),
+      avgTTC,
+      avgDelta,
+    }
+  }, [filtered, invoices])
   const hasFilters = search || statusFilter !== 'all' || period !== 'all' || clientFilter || amountMin || amountMax || paymentFilter !== 'all' || typeFilter !== 'all'
 
   const agingHeatmap = useMemo(() => {
@@ -706,6 +715,19 @@ export default function InvoicesPage() {
           <span>HT <span className="text-gray-300 font-mono font-semibold">{fmtTND(summary.ht)}</span></span>
           <span>TVA <span className="text-gray-300 font-mono">{fmtTND(summary.tva)}</span></span>
           <span>TTC <span className="text-[#d4a843] font-mono font-bold">{fmtTND(summary.ttc)}</span></span>
+          {summary.avgTTC > 0 && filtered.length > 1 && (
+            <>
+              <span className="text-gray-600">·</span>
+              <span className="flex items-center gap-1">
+                Moy. <span className="font-mono text-gray-300">{fmtTND(summary.avgTTC)} TND</span>
+                {summary.avgDelta !== null && summary.avgDelta !== 0 && (
+                  <span className={`text-[9px] font-bold px-1 py-0.5 rounded border ${
+                    summary.avgDelta > 0 ? 'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20' : 'text-red-400 bg-red-950/30 border-red-900/30'
+                  }`}>{summary.avgDelta > 0 ? '+' : ''}{summary.avgDelta}%</span>
+                )}
+              </span>
+            </>
+          )}
           {summary.unpaid > 0 && (
             <span className="ml-auto text-[#f59e0b] font-semibold">
               Impayé: <span className="font-mono">{fmtTND(summary.unpaid)}</span>
