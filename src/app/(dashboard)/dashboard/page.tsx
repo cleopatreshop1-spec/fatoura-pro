@@ -15,6 +15,7 @@ import type { InvoiceTableRow } from '@/components/dashboard/RecentInvoicesTable
 import { InvoiceAgingReport } from '@/components/dashboard/InvoiceAgingReport'
 import { ProfitLossWidget } from '@/components/dashboard/ProfitLossWidget'
 import { TopClientsWidget } from '@/components/dashboard/TopClientsWidget'
+import { RevenueComparisonChart } from '@/components/dashboard/RevenueComparisonChart'
 import { format, subDays, addDays, parseISO, endOfWeek, eachWeekOfInterval } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
@@ -286,6 +287,48 @@ export default async function DashboardPage() {
 
   const monthLabel = new Date(monthStart).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
 
+  // ── Monthly Revenue Comparison (current vs prev, daily cumulative HT) ─────────
+  const daysInCurrentMonth = new Date(y, m + 1, 0).getDate()
+  const daysInPrevMonth    = new Date(prevY, prevM + 1, 0).getDate()
+  const maxDays = Math.max(daysInCurrentMonth, daysInPrevMonth)
+
+  // Build day-level HT for current and prev month from all validated/valid invoices
+  const allValidated = [...(r_thisMonthV.data ?? []), ...(r_thisMonthVld.data ?? [])]
+  const prevValidated = [...(r_prevMonthV.data ?? []), ...(r_prevMonthVld.data ?? [])]
+
+  const currentDayHT: number[] = Array(maxDays + 1).fill(0)
+  for (const inv of allValidated) {
+    const d = invDate(inv)
+    if (d >= `${y}-${String(m+1).padStart(2,'0')}-01` && d <= todayStr) {
+      const day = parseInt(d.slice(8, 10))
+      if (day >= 1 && day <= maxDays) currentDayHT[day] += Number(inv.ht_amount ?? 0)
+    }
+  }
+  const prevDayHT: number[] = Array(maxDays + 1).fill(0)
+  for (const inv of prevValidated) {
+    const d = invDate(inv)
+    const pm = String(prevM + 1).padStart(2, '0')
+    if (d >= `${prevY}-${pm}-01` && d < prevEnd) {
+      const day = parseInt(d.slice(8, 10))
+      if (day >= 1 && day <= maxDays) prevDayHT[day] += Number(inv.ht_amount ?? 0)
+    }
+  }
+
+  const todayDay = now.getDate()
+  let cumCurrent = 0, cumPrev = 0
+  const revenueComparisonData = Array.from({ length: maxDays }, (_, i) => {
+    const day = i + 1
+    cumCurrent += currentDayHT[day]
+    cumPrev    += prevDayHT[day]
+    return {
+      day,
+      current: day <= todayDay ? cumCurrent : null,
+      prev:    cumPrev > 0 || day <= daysInPrevMonth ? cumPrev : null,
+    }
+  })
+  const currentMonthLabel = new Date(y, m, 1).toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' })
+  const prevMonthLabel    = new Date(prevY, prevM, 1).toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' })
+
   // ── 7-day Revenue Sparkline ──────────────────────────────────────────
   const sparkline7d = Array.from({ length: 7 }, (_, i) => {
     const d = format(subDays(now, 6 - i), 'yyyy-MM-dd')
@@ -357,6 +400,13 @@ export default async function DashboardPage() {
             expensesTotal={expensesTotal}
             expensesByCategory={expByCat}
             month={monthLabel}
+          />
+
+          {/* WIDGET: Monthly Revenue Comparison */}
+          <RevenueComparisonChart
+            data={revenueComparisonData}
+            currentLabel={currentMonthLabel}
+            prevLabel={prevMonthLabel}
           />
 
           {/* WIDGET: Aging Report */}
