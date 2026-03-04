@@ -802,9 +802,14 @@ export default function NewInvoicePage() {
 
           {/* SECTION 4: Notes */}
           <div className={SECTION}>
-            <div className="text-xs font-bold text-[#d4a843] uppercase tracking-wider mb-3">Notes</div>
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-xs font-bold text-[#d4a843] uppercase tracking-wider">Notes</div>
+              <span className={`text-[10px] font-mono ${notes.length > 400 ? 'text-red-400' : notes.length > 280 ? 'text-amber-400' : 'text-gray-600'}`}>
+                {notes.length}/500
+              </span>
+            </div>
             <textarea value={notes} onChange={e => setNotes(e.target.value)}
-              rows={3} placeholder="Conditions de paiement, RIB, mentions legales..."
+              rows={3} maxLength={500} placeholder="Conditions de paiement, RIB, mentions legales..."
               className={`${IC} resize-none`} />
           </div>
         </div>
