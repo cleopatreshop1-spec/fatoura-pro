@@ -563,6 +563,28 @@ export default function ExpensesPage() {
         )
       })()}
 
+      {/* Largest single expense badge */}
+      {expenses.length > 0 && (() => {
+        const largest = expenses.reduce((best, e) => Number(e.amount) > Number(best.amount) ? e : best, expenses[0])
+        const total = expenses.reduce((s, e) => s + Number(e.amount), 0)
+        const pct = total > 0 ? Math.round((Number(largest.amount) / total) * 100) : 0
+        return Number(largest.amount) > 0 ? (
+          <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl px-4 py-3 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] text-gray-600 uppercase tracking-wider mb-0.5">Plus grosse dépense</p>
+              <p className="text-sm font-mono font-black text-white truncate max-w-[160px]">{largest.description}</p>
+              <p className="text-[9px] text-gray-600 mt-0.5">
+                {largest.date} · {CATEGORIES.find(c => c.value === largest.category)?.label?.split(' ')[0] ?? largest.category}
+              </p>
+            </div>
+            <div className="text-right shrink-0">
+              <p className="text-sm font-mono font-bold text-red-400">{fmtTND(largest.amount)} TND</p>
+              <p className="text-[9px] text-gray-600">{pct}% du total</p>
+            </div>
+          </div>
+        ) : null
+      })()}
+
       {/* Top expense day of week */}
       {expenses.length >= 5 && (() => {
         const DOW = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
