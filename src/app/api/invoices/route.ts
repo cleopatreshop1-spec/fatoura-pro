@@ -12,6 +12,9 @@ const lineSchema = z.object({
   quantity:    z.number().positive(),
   unit_price:  z.number().nonnegative(),
   tva_rate:    z.union([z.literal(0), z.literal(7), z.literal(13), z.literal(19)]),
+  discount:    z.number().min(0).max(100).optional().nullable(),
+  notes:       z.string().optional().nullable(),
+  sort_order:  z.number().int().optional(),
 })
 
 const createSchema = z.object({
@@ -138,7 +141,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Server-side totals calculation — never trust client
-    const totals = calcInvoiceTotals(lines)
+    const totals = calcInvoiceTotals(lines.map(l => ({ ...l, discount: l.discount ?? undefined })))
 
     // Atomic invoice number generation — no race condition under concurrency (FIX 1)
     const { data: invoiceNumber, error: counterErr } = await (supabase as any)
@@ -157,6 +160,7 @@ export async function POST(request: NextRequest) {
         due_date:      due_date ?? null,
         notes:         notes ? sanitizeString(notes, 1000) : null,
         status,
+        source,
         currency,
         exchange_rate,
         ht_amount:     totals.total_ht,
@@ -170,14 +174,23 @@ export async function POST(request: NextRequest) {
 
     if (invErr) return err(invErr.message, 500)
 
-    const lineItems = lines.map((l, idx) => ({
-      invoice_id:  (invoice as any).id,
-      sort_order:  idx,
-      description: sanitizeString(l.description, 500),
-      quantity:    l.quantity,
-      unit_price:  l.unit_price,
-      tva_rate:    l.tva_rate,
-    }))
+    const lineItems = lines.map((l, idx) => {
+      const lineHT  = l.quantity * l.unit_price * (1 - (l.discount ?? 0) / 100)
+      const lineTTC = lineHT * (1 + l.tva_rate / 100)
+      return {
+        invoice_id:  (invoice as any).id,
+        company_id:  company.id,
+        sort_order:  l.sort_order ?? idx,
+        description: sanitizeString(l.description, 500),
+        quantity:    l.quantity,
+        unit_price:  l.unit_price,
+        tva_rate:    l.tva_rate,
+        discount:    l.discount ?? null,
+        notes:       l.notes ? sanitizeString(l.notes, 500) : null,
+        line_ht:     lineHT,
+        line_ttc:    lineTTC,
+      }
+    })
 
     const { error: lineErr } = await (supabase as any)
       .from('invoice_line_items').insert(lineItems)
