@@ -858,6 +858,27 @@ export default function InvoicesPage() {
         </>
       )}
 
+      {/* Payment status progress bar */}
+      {filtered.length > 1 && (() => {
+        const nonDraft = filtered.filter(i => i.status !== 'draft')
+        if (nonDraft.length < 2) return null
+        const paid   = nonDraft.filter(i => i.payment_status === 'paid').length
+        const unpaid = nonDraft.filter(i => i.payment_status !== 'paid').length
+        const paidPct = Math.round((paid / nonDraft.length) * 100)
+        return (
+          <div className="bg-[#0f1118] border border-[#1a1b22] rounded-xl px-4 py-2.5">
+            <div className="flex items-center justify-between text-[10px] text-gray-600 mb-1.5">
+              <span className="font-semibold text-gray-500">Statut paiement</span>
+              <span>{paid} payé{paid>1?'s':''} · {unpaid} en attente · {paidPct}%</span>
+            </div>
+            <div className="h-2 bg-[#1a1b22] rounded-full overflow-hidden flex">
+              <div className="h-full bg-[#2dd4a0] rounded-l-full transition-all" style={{ width: `${paidPct}%` }} />
+              <div className="h-full bg-[#f59e0b]" style={{ width: `${100 - paidPct}%` }} />
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Per-client revenue summary (top 5) */}
       {filtered.length > 1 && (() => {
         const byClient: Record<string, { name: string; ttc: number; count: number; unpaid: number }> = {}
