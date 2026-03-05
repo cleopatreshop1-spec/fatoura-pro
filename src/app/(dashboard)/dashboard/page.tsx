@@ -1236,6 +1236,20 @@ export default async function DashboardPage() {
             </div>
           )}
 
+          {/* WIDGET: Best month of year */}
+          {bestMonthEntry && Object.keys(monthlyHT).length >= 2 && (
+            <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Meilleur mois {y}</p>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-2xl font-mono font-black text-[#d4a843] capitalize">{bestMonthLabel}</span>
+                </div>
+                <p className="text-[9px] text-gray-600 mt-0.5">{new Intl.NumberFormat('fr-TN').format(Math.round(bestMonthEntry[1]))} TND HT</p>
+              </div>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border text-[#d4a843] bg-[#d4a843]/10 border-[#d4a843]/20 shrink-0">🏆 Record</span>
+            </div>
+          )}
+
           {/* WIDGET: Invoice velocity (avg/week 90d) */}
           {validatedInvs90.length >= 4 && (
             <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4">
