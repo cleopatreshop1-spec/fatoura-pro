@@ -97,6 +97,18 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
     return { score: Math.round((paidOnTime / total) * 100), paidOnTime, total }
   })()
 
+  // ── Avg invoice size trend (last 3 vs previous 3) ───────────────────
+  const avgSizeTrend = (() => {
+    const sorted = [...validInvs]
+      .filter((i: any) => Number(i.ttc_amount) > 0)
+      .sort((a: any, b: any) => (a.issue_date ?? '').localeCompare(b.issue_date ?? ''))
+    if (sorted.length < 6) return null
+    const last3   = sorted.slice(-3).reduce((s: number, i: any) => s + Number(i.ttc_amount), 0) / 3
+    const prev3   = sorted.slice(-6, -3).reduce((s: number, i: any) => s + Number(i.ttc_amount), 0) / 3
+    const delta   = prev3 > 0 ? Math.round(((last3 - prev3) / prev3) * 100) : null
+    return { last3, prev3, delta }
+  })()
+
   // ── Aging buckets (unpaid invoices by days overdue) ────────────────────
   const agingBuckets = (() => {
     const buckets = [
@@ -354,6 +366,29 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
           }`}>
             {reliabilityScore.score >= 80 ? 'Excellent' : reliabilityScore.score >= 50 ? 'Moyen' : 'Faible'}
           </span>
+        </div>
+      )}
+
+      {/* Avg invoice size trend badge */}
+      {avgSizeTrend && (
+        <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl px-4 py-3 flex items-center justify-between">
+          <div>
+            <p className="text-[10px] text-gray-600 uppercase tracking-wider mb-0.5">Taille moy. facture (3 dernières)</p>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-lg font-mono font-black text-white">{fmtTND(avgSizeTrend.last3)}</span>
+              <span className="text-xs text-gray-600">TND</span>
+            </div>
+            {avgSizeTrend.delta !== null && (
+              <p className="text-[9px] text-gray-600 mt-0.5">vs {fmtTND(avgSizeTrend.prev3)} TND (3 précédentes)</p>
+            )}
+          </div>
+          {avgSizeTrend.delta !== null && (
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
+              avgSizeTrend.delta > 0 ? 'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20' :
+              avgSizeTrend.delta < 0 ? 'text-red-400 bg-red-950/30 border-red-900/30' :
+              'text-gray-500 bg-[#1a1b22] border-[#252830]'
+            }`}>{avgSizeTrend.delta > 0 ? '+' : ''}{avgSizeTrend.delta}%</span>
+          )}
         </div>
       )}
 
