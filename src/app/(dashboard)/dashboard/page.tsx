@@ -541,6 +541,19 @@ export default async function DashboardPage() {
   const tva90 = (allInvoices90 as any[]).filter(i => i.status !== 'draft').reduce((s: number, i: any) => s + Number(i.tva_amount ?? 0), 0)
   const taxBurdenRate = ht90 > 0 ? Math.round((tva90 / ht90) * 100) : null
 
+  // ── Top expense category this month ──────────────────────────────────
+  const expCatTotals: Record<string, number> = {}
+  for (const e of expensesMonth as any[]) {
+    const cat = (e.category as string) ?? 'autre'
+    expCatTotals[cat] = (expCatTotals[cat] ?? 0) + Number(e.amount ?? 0)
+  }
+  const topExpCatEntry = Object.entries(expCatTotals).sort((a, b) => b[1] - a[1])[0] ?? null
+  const expCatLabels: Record<string, string> = {
+    loyer: 'Loyer / Bureau', salaires: 'Salaires', materiel: 'Matériel', transport: 'Transport',
+    telecom: 'Télécom', fournitures: 'Fournitures', marketing: 'Marketing', comptabilite: 'Comptabilité',
+    impots: 'Impôts', autre: 'Autre',
+  }
+
   // ── Avg invoice size trend (this month vs prev month) ────────────────
   const thisMonthPrefix = todayStr.slice(0, 7)
   const prevMonthDate   = new Date(now.getFullYear(), now.getMonth() - 1, 1)
@@ -1063,6 +1076,29 @@ export default async function DashboardPage() {
                 taxBurdenRate >= 13 ? 'text-amber-400 bg-amber-950/20 border-amber-900/30' :
                 'text-gray-500 bg-[#1a1b22] border-[#252830]'
               }`}>TVA {taxBurdenRate >= 19 ? '19%' : taxBurdenRate >= 13 ? '13%' : '< 13%'}</span>
+            </div>
+          )}
+
+          {/* WIDGET: Top expense category this month */}
+          {topExpCatEntry && topExpCatEntry[1] > 0 && (expensesMonth as any[]).length > 0 && (
+            <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4">
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Dépense top catégorie — ce mois</p>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-sm font-bold text-white">{expCatLabels[topExpCatEntry[0]] ?? topExpCatEntry[0]}</span>
+                <span className="text-sm font-mono font-black text-red-400">{new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 0 }).format(Math.round(topExpCatEntry[1]))} TND</span>
+              </div>
+              {(() => {
+                const totalExp = Object.values(expCatTotals).reduce((s, v) => s + v, 0)
+                const pct = totalExp > 0 ? Math.round((topExpCatEntry[1] / totalExp) * 100) : 0
+                return (
+                  <>
+                    <div className="h-1.5 bg-[#1a1b22] rounded-full overflow-hidden">
+                      <div className="h-full bg-red-500/70 rounded-full" style={{ width: `${pct}%` }} />
+                    </div>
+                    <p className="text-[9px] text-gray-600 mt-1">{pct}% du total dépenses ce mois</p>
+                  </>
+                )
+              })()}
             </div>
           )}
 

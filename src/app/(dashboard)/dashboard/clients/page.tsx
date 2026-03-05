@@ -122,7 +122,8 @@ export default function ClientsPage() {
           return s + (new Date(i.paid_at!).getTime() - new Date(i.due_date!).getTime()) / 86400000
         }, 0) / paidWithDue.length)
       : null
-    return { count, ca, balance, unpaid, maxOverdueDays, avgPayDelay }
+    const avgInvSize = count > 0 ? Math.round((ca / count) * 1000) / 1000 : null
+    return { count, ca, balance, unpaid, maxOverdueDays, avgPayDelay, avgInvSize }
   }
 
   function getRisk(c: ClientRow): { label: string; color: string; bg: string } | null {
