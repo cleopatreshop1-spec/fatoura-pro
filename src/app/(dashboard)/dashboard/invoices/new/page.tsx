@@ -1031,6 +1031,19 @@ export default function NewInvoicePage() {
             {/* Totals card */}
             <div className={SECTION}>
               <div className="text-xs font-bold text-[#d4a843] uppercase tracking-wider mb-4">Recapitulatif</div>
+              {(() => {
+                const rates = Object.entries(totals.tva_by_rate).filter(([, v]) => v.base > 0)
+                if (rates.length < 2) return null
+                return (
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    {rates.map(([rate, v]) => (
+                      <span key={rate} className="text-[9px] font-bold px-1.5 py-0.5 rounded border text-gray-500 bg-[#1a1b22] border-[#252830]">
+                        TVA {rate}% · {fmtTND(v.tva)} TND
+                      </span>
+                    ))}
+                  </div>
+                )
+              })()}
               <div className="space-y-2.5">
 
                 <div className="flex justify-between text-sm">
