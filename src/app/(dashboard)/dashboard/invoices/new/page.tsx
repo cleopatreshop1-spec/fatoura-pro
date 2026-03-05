@@ -71,6 +71,7 @@ export default function NewInvoicePage() {
   const [pastNotes, setPastNotes] = useState<string[]>([])
   const [applyStamp, setApplyStamp] = useState(true)
   const [prefillLoading, setPrefillLoading] = useState(false)
+  const [clientBalance, setClientBalance] = useState<number | null>(null)
 
   const autoSaveRef    = useRef<ReturnType<typeof setTimeout> | null>(null)
   const buildAndSaveRef = useRef<((status: string) => Promise<string | null>) | null>(null)
@@ -285,6 +286,22 @@ export default function NewInvoicePage() {
       })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedClient?.id, activeCompany?.id])
+
+  // Fetch outstanding balance for selected client
+  useEffect(() => {
+    if (!selectedClient || !activeCompany?.id) { setClientBalance(null); return }
+    supabase.from('invoices')
+      .select('ttc_amount')
+      .eq('company_id', activeCompany.id)
+      .eq('client_id', selectedClient.id)
+      .neq('status', 'draft')
+      .neq('payment_status', 'paid')
+      .is('deleted_at', null)
+      .then(({ data }) => {
+        setClientBalance((data ?? []).reduce((s, i) => s + Number((i as any).ttc_amount ?? 0), 0))
+      })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedClient?.id])
 
   // Auto-fill due date and reference when client is selected
   useEffect(() => {
@@ -822,28 +839,41 @@ export default function NewInvoicePage() {
           </div>
 
           {/* Credit limit warning */}
-          {selectedClient?.credit_limit && totals.total_ttc > 0 && (() => {
+          {selectedClient?.credit_limit && (() => {
             const limit = Number(selectedClient.credit_limit)
-            if (totals.total_ttc > limit) {
+            const outstanding = clientBalance ?? 0
+            const projected = outstanding + totals.total_ttc
+            const pct = limit > 0 ? Math.round((projected / limit) * 100) : 0
+            if (projected > limit) {
               return (
                 <div className="flex items-start gap-3 bg-amber-950/30 border border-amber-900/40 rounded-xl px-4 py-3">
                   <AlertTriangle size={15} className="text-amber-400 shrink-0 mt-0.5" />
                   <div>
                     <p className="text-xs font-bold text-amber-400">Plafond de crédit dépassé</p>
                     <p className="text-[11px] text-amber-600 mt-0.5">
-                      Cette facture ({fmtTND(totals.total_ttc)} TND) dépasse le plafond configuré de {fmtTND(limit)} TND pour ce client.
+                      Encours + cette facture : {fmtTND(projected)} TND · Plafond : {fmtTND(limit)} TND ({pct}%)
+                      {outstanding > 0 && <span className="block text-[10px] text-amber-700 mt-0.5">Dont {fmtTND(outstanding)} TND déjà impayé</span>}
                     </p>
                   </div>
                 </div>
               )
             }
-            if (totals.total_ttc > limit * 0.9) {
+            if (projected > limit * 0.8) {
               return (
-                <div className="flex items-start gap-3 bg-yellow-950/20 border border-yellow-900/30 rounded-xl px-4 py-3">
-                  <AlertTriangle size={15} className="text-yellow-500 shrink-0 mt-0.5" />
+                <div className="flex items-start gap-3 bg-yellow-950/20 border border-yellow-900/30 rounded-xl px-4 py-2.5">
+                  <AlertTriangle size={14} className="text-yellow-500 shrink-0 mt-0.5" />
                   <p className="text-[11px] text-yellow-600">
-                    Proche du plafond de crédit — {fmtTND(totals.total_ttc)} TND / {fmtTND(limit)} TND ({Math.round(totals.total_ttc / limit * 100)}%)
+                    Encours projeté {fmtTND(projected)} TND / {fmtTND(limit)} TND ({pct}%) — proche du plafond
                   </p>
+                </div>
+              )
+            }
+            if (outstanding > 0) {
+              return (
+                <div className="flex items-center gap-2 bg-[#0a0f1a] border border-[#1e2535] rounded-xl px-3 py-2">
+                  <span className="text-[9px] text-gray-600">Encours client</span>
+                  <span className="text-[10px] font-mono font-bold text-[#f59e0b]">{fmtTND(outstanding)} TND</span>
+                  <span className="text-[9px] text-gray-700">/ {fmtTND(limit)} TND plafond</span>
                 </div>
               )
             }
