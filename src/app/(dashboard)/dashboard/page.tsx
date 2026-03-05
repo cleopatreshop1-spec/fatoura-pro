@@ -94,7 +94,7 @@ export default async function DashboardPage() {
     db.from('invoices').select('tva_amount, issue_date, created_at').eq('company_id', companyId).eq('status', 'valid').is('deleted_at', null),
     db.from('invoices').select('tva_amount, issue_date, created_at').eq('company_id', companyId).eq('status', 'validated').is('deleted_at', null),
     db.from('invoices').select('id, number, status, issue_date, ttc_amount, payment_status, clients(name)').eq('company_id', companyId).is('deleted_at', null).order('created_at', { ascending: false }).limit(5),
-    db.from('invoices').select('id, status, payment_status, issue_date, created_at, validated_at, due_date, payment_date, ttc_amount, ht_amount').eq('company_id', companyId).gte('created_at', ago90).is('deleted_at', null),
+    db.from('invoices').select('id, number, status, payment_status, issue_date, created_at, validated_at, due_date, payment_date, ttc_amount, ht_amount, tva_amount, client_id, ttn_rejection_reason, clients(name)').eq('company_id', companyId).gte('created_at', ago90).is('deleted_at', null),
     db.from('invoices').select('id, ttc_amount, due_date').eq('company_id', companyId).in('status', ['valid', 'validated']).neq('payment_status', 'paid').gte('due_date', todayStr).lte('due_date', in90).is('deleted_at', null),
     db.from('invoices').select('id, ttc_amount, payment_date').eq('company_id', companyId).eq('payment_status', 'paid').gte('payment_date', ago90).lte('payment_date', todayStr).is('deleted_at', null),
     db.from('expenses').select('amount, category, date').eq('company_id', companyId).gte('date', monthStart).lte('date', todayStr),
