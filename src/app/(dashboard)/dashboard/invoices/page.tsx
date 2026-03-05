@@ -964,6 +964,42 @@ export default function InvoicesPage() {
         )
       })()}
 
+      {/* Invoice size histogram */}
+      {filtered.length >= 5 && (() => {
+        const amounts = filtered.filter(i => i.status !== 'draft' && Number(i.ttc_amount) > 0).map(i => Number(i.ttc_amount))
+        if (amounts.length < 5) return null
+        const max = Math.max(...amounts)
+        const bucketCount = 5
+        const step = max / bucketCount || 1
+        const buckets = Array.from({ length: bucketCount }, (_, b) => {
+          const lo = b * step, hi = (b + 1) * step
+          const cnt = amounts.filter(a => b === bucketCount - 1 ? a >= lo : a >= lo && a < hi).length
+          return { lo, hi, cnt, label: `${Math.round(lo / 1000)}k–${Math.round(hi / 1000)}k` }
+        })
+        const maxCnt = Math.max(...buckets.map(b => b.cnt), 1)
+        return (
+          <div className="bg-[#0f1118] border border-[#1a1b22] rounded-xl px-4 py-3">
+            <p className="text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-2.5">Distribution montants TTC</p>
+            <div className="flex items-end gap-1.5 h-12">
+              {buckets.map((b, idx) => (
+                <div key={idx} className="flex-1 flex flex-col items-center gap-0.5">
+                  <span className="text-[8px] text-gray-600">{b.cnt > 0 ? b.cnt : ''}</span>
+                  <div className="w-full rounded-t-sm bg-[#d4a843]/50 transition-all"
+                    style={{ height: `${Math.round((b.cnt / maxCnt) * 36)}px`, minHeight: b.cnt > 0 ? '2px' : '0' }} />
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-1.5 mt-1">
+              {buckets.map((b, idx) => (
+                <div key={idx} className="flex-1 text-center">
+                  <span className="text-[7px] text-gray-700">{b.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Per-client revenue summary (top 5) */}
       {filtered.length > 1 && (() => {
         const byClient: Record<string, { name: string; ttc: number; count: number; unpaid: number }> = {}
