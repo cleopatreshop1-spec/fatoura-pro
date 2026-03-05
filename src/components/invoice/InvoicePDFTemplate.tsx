@@ -357,8 +357,18 @@ export function InvoicePDFTemplate({ invoice: inv, company: co, client: cl, line
           {/* Page number */}
           <Text style={s.pageNum} render={({ pageNumber, totalPages }) => `Page ${pageNumber}/${totalPages}`} fixed />
 
-          {/* Generator note */}
-          <Text style={s.generator}>Document généré par Fatoura Pro  www.fatoura.pro</Text>
+          {/* Viral branded footer */}
+          <View style={{ borderTopWidth: 0.5, borderTopColor: '#e5e7eb', paddingTop: 6, marginTop: 4, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={{ fontSize: 6.5, color: LGRAY }}>
+              {co.name}  ·  Facture {inv.number ?? ''}  ·  Conforme TTN / DGI 2024
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <View style={{ backgroundColor: GOLD, borderRadius: 2, paddingHorizontal: 4, paddingVertical: 1.5 }}>
+                <Text style={{ fontSize: 5.5, fontFamily: 'Helvetica-Bold', color: '#000000', letterSpacing: 0.5 }}>FATOURA PRO</Text>
+              </View>
+              <Text style={{ fontSize: 6, color: LGRAY }}>fatoura.pro</Text>
+            </View>
+          </View>
         </View>
       </Page>
     </Document>
