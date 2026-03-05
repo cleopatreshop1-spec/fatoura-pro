@@ -218,6 +218,18 @@ export default async function DashboardPage() {
     ? Math.floor((now.getTime() - new Date(oldestDraft.created_at).getTime()) / 86400000)
     : null
 
+  // ── Invoice count this week ───────────────────────────────────────────
+  const weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay())
+  const weekStartStr = weekStart.toISOString().slice(0, 10)
+  const thisWeekInvs = (allInvoices90 as any[]).filter(i => i.status !== 'draft' && (i.issue_date ?? '') >= weekStartStr)
+  const thisWeekCount = thisWeekInvs.length
+  const thisWeekTTC = thisWeekInvs.reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
+  const lastWeekStart = new Date(weekStart); lastWeekStart.setDate(weekStart.getDate() - 7)
+  const lastWeekStartStr = lastWeekStart.toISOString().slice(0, 10)
+  const lastWeekInvs = (allInvoices90 as any[]).filter(i => i.status !== 'draft' && (i.issue_date ?? '') >= lastWeekStartStr && (i.issue_date ?? '') < weekStartStr)
+  const lastWeekCount = lastWeekInvs.length
+  const weekCountDelta = lastWeekCount > 0 ? Math.round(((thisWeekCount - lastWeekCount) / lastWeekCount) * 100) : null
+
   // ── Pending TTN alert ─────────────────────────────────────────────────
   const stalePending = (allInvoices90 ?? []).filter((i: any) =>
     i.status === 'pending' && i.issue_date && i.issue_date < ago14
@@ -1002,6 +1014,31 @@ export default async function DashboardPage() {
               <p className="text-[9px] text-gray-600 mt-0.5">
                 Le plus ancien brouillon date de {oldestDraftAgeDays} jours — pensez à finaliser
               </p>
+            </div>
+          )}
+
+          {/* WIDGET: Invoice count this week */}
+          {thisWeekCount > 0 && (
+            <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Factures cette semaine</p>
+                {weekCountDelta !== null && (
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                    weekCountDelta > 0 ? 'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20' :
+                    weekCountDelta < 0 ? 'text-red-400 bg-red-950/30 border-red-900/30' :
+                    'text-gray-500 bg-[#1a1b22] border-[#252830]'
+                  }`}>{weekCountDelta > 0 ? '+' : ''}{weekCountDelta}% vs sem. préc.</span>
+                )}
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-mono font-black text-white">{thisWeekCount}</span>
+                <span className="text-xs text-gray-500">facture{thisWeekCount > 1 ? 's' : ''}</span>
+              </div>
+              {thisWeekTTC > 0 && (
+                <p className="text-[9px] text-[#d4a843] font-mono mt-0.5">
+                  {new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 0 }).format(Math.round(thisWeekTTC))} TND TTC
+                </p>
+              )}
             </div>
           )}
 
