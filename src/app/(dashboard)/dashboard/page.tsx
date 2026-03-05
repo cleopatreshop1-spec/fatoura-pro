@@ -99,7 +99,7 @@ export default async function DashboardPage() {
     db.from('invoices').select('id, ttc_amount, payment_date').eq('company_id', companyId).eq('payment_status', 'paid').gte('payment_date', ago90).lte('payment_date', todayStr).is('deleted_at', null),
     db.from('expenses').select('amount, category, date').eq('company_id', companyId).gte('date', monthStart).lte('date', todayStr),
     db.from('expenses').select('amount, date').eq('company_id', companyId).gte('date', format(subDays(now, 180), 'yyyy-MM-dd')).lte('date', todayStr),
-    db.from('invoices').select('client_id, ttc_amount, payment_status, clients(id, name)').eq('company_id', companyId).in('status', ['valid','validated']).is('deleted_at', null),
+    db.from('invoices').select('client_id, ttc_amount, payment_status, status, issue_date, due_date, paid_at, clients(id, name)').eq('company_id', companyId).is('deleted_at', null),
     db.from('expenses').select('amount').eq('company_id', companyId).gte('date', prevStart).lt('date', prevEnd),
     db.from('invoice_line_items').select('description, line_ht').eq('company_id', companyId).gte('created_at', ago90).limit(500),
   ])
