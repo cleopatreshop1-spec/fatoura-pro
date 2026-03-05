@@ -1034,6 +1034,12 @@ export default function NewInvoicePage() {
                   </div>
                   <span className={`font-mono ${applyStamp ? 'text-gray-400' : 'text-gray-600 line-through'}`}>{fmtTND(STAMP_DUTY)} TND</span>
                 </div>
+                <p className="text-[8px] text-gray-700 mt-1 leading-relaxed">
+                  {applyStamp
+                    ? `Taxe obligatoire de ${fmtTND(STAMP_DUTY)} TND appliquée aux factures B2B en Tunisie (Art. 41, Code Timbre). Exempte : exportations, B2C, associations.`
+                    : 'Droit de timbre exclu. Applicable uniquement aux transactions B2B locales soumises au Code du Timbre.'
+                  }
+                </p>
 
                 <div className="border-t-2 border-[#252830] pt-3 mt-2">
                   <div className="flex justify-between items-baseline">
