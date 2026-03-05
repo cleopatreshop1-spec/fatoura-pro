@@ -562,7 +562,14 @@ export default function ClientsPage() {
                               ) : null
                             })()}
                           </div>
-                          {c.gouvernorat && <div className="text-[10px] text-gray-600">{c.gouvernorat}</div>}
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {c.gouvernorat && <span className="text-[10px] text-gray-600">{c.gouvernorat}</span>}
+                            {c.created_at && (
+                              <span className="text-[9px] text-gray-700">
+                                depuis {new Date(c.created_at).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-3">
                           <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${
