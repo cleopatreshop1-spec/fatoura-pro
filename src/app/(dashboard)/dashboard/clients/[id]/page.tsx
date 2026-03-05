@@ -63,6 +63,22 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
       }, 0) / paidWithIssue.length)
     : null
 
+  // ── Next invoice prediction (avg gap between issue dates) ────────────
+  const nextInvoicePrediction = (() => {
+    const dates = validInvs.map((i: any) => i.issue_date).filter(Boolean).sort()
+    if (dates.length < 3) return null
+    const gaps: number[] = []
+    for (let i = 1; i < dates.length; i++) {
+      gaps.push(Math.round((new Date(dates[i]).getTime() - new Date(dates[i-1]).getTime()) / 86400000))
+    }
+    const avgGap = Math.round(gaps.reduce((s, g) => s + g, 0) / gaps.length)
+    if (avgGap <= 0) return null
+    const lastDate = new Date(dates[dates.length - 1])
+    const predictedDate = new Date(lastDate.getTime() + avgGap * 86400000)
+    const daysUntil = Math.round((predictedDate.getTime() - now.getTime()) / 86400000)
+    return { predictedDate, avgGap, daysUntil }
+  })()
+
   // ── Aging buckets (unpaid invoices by days overdue) ────────────────────
   const agingBuckets = (() => {
     const buckets = [
@@ -260,6 +276,26 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
             'text-red-400 bg-red-950/30 border-red-900/30'
           }`}>
             {avgPayVelocity <= 30 ? 'Rapide' : avgPayVelocity <= 60 ? 'Correct' : 'Lent'}
+          </span>
+        </div>
+      )}
+
+      {/* Next invoice prediction badge */}
+      {nextInvoicePrediction && (
+        <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl px-4 py-3 flex items-center justify-between">
+          <div>
+            <p className="text-[10px] text-gray-600 uppercase tracking-wider mb-0.5">Prochaine facture estimée</p>
+            <p className="text-sm font-mono font-bold text-[#4a9eff]">
+              {nextInvoicePrediction.predictedDate.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+            </p>
+            <p className="text-[9px] text-gray-600 mt-0.5">Intervalle moyen : {nextInvoicePrediction.avgGap}j</p>
+          </div>
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
+            nextInvoicePrediction.daysUntil < 0 ? 'text-red-400 bg-red-950/30 border-red-900/30' :
+            nextInvoicePrediction.daysUntil <= 7 ? 'text-amber-400 bg-amber-950/20 border-amber-900/30' :
+            'text-[#4a9eff] bg-blue-950/20 border-blue-900/30'
+          }`}>
+            {nextInvoicePrediction.daysUntil < 0 ? `${Math.abs(nextInvoicePrediction.daysUntil)}j dépassé` : `dans ${nextInvoicePrediction.daysUntil}j`}
           </span>
         </div>
       )}
