@@ -1007,16 +1007,24 @@ export default function NewInvoicePage() {
 
                 {totals.total_ttc > 0 && (() => {
                   const totalTva = Object.values(totals.tva_by_rate).reduce((s, v) => s + v.tva, 0)
-                  const tvaPct = totals.total_ht > 0 ? Math.round((totalTva / totals.total_ht) * 100) : 0
-                  return totalTva > 0 ? (
-                    <div className="flex items-center justify-between bg-[#0a0f1a] border border-[#1e2535] rounded-lg px-3 py-2 mt-1">
-                      <span className="text-[10px] text-gray-600">TVA totale</span>
-                      <span className="text-[10px] font-mono font-bold text-[#4a9eff]">
-                        {fmtTND(totalTva)} TND
-                        <span className="text-gray-600 font-normal ml-1">({tvaPct}%)</span>
-                      </span>
+                  if (totalTva <= 0) return null
+                  const rates = Object.entries(totals.tva_by_rate).filter(([, v]) => v.tva > 0).sort((a, b) => Number(a[0]) - Number(b[0]))
+                  return (
+                    <div className="bg-[#0a0f1a] border border-[#1e2535] rounded-lg px-3 py-2 mt-1 space-y-1">
+                      {rates.map(([rate, v]) => (
+                        <div key={rate} className="flex items-center justify-between">
+                          <span className="text-[9px] text-gray-600 font-mono">TVA {rate}% · HT {fmtTND(v.base)} TND</span>
+                          <span className="text-[9px] font-mono font-bold text-[#4a9eff]">+{fmtTND(v.tva)} TND</span>
+                        </div>
+                      ))}
+                      {rates.length > 1 && (
+                        <div className="flex items-center justify-between border-t border-[#1e2535] pt-1 mt-1">
+                          <span className="text-[10px] text-gray-500 font-semibold">TVA totale</span>
+                          <span className="text-[10px] font-mono font-bold text-[#4a9eff]">{fmtTND(totalTva)} TND</span>
+                        </div>
+                      )}
                     </div>
-                  ) : null
+                  )
                 })()}
                 {totals.total_ttc > 0 && currency !== 'TND' && (() => {
                   const rate = parseFloat(exchangeRate) || 1
