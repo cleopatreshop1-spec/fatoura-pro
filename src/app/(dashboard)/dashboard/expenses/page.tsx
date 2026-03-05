@@ -614,6 +614,46 @@ export default function ExpensesPage() {
         )
       })()}
 
+      {/* Weekly expense trend sparkline */}
+      {expenses.length >= 5 && (() => {
+        const now0 = new Date()
+        const weeks: number[] = []
+        for (let w = 7; w >= 0; w--) {
+          const wStart = new Date(now0); wStart.setDate(now0.getDate() - w * 7 - 6)
+          const wEnd   = new Date(now0); wEnd.setDate(now0.getDate() - w * 7)
+          const wStartStr = wStart.toISOString().slice(0, 10)
+          const wEndStr   = wEnd.toISOString().slice(0, 10)
+          weeks.push(expenses.filter(e => e.date >= wStartStr && e.date <= wEndStr).reduce((s, e) => s + Number(e.amount), 0))
+        }
+        if (weeks.every(v => v === 0)) return null
+        const minW = Math.min(...weeks), maxW = Math.max(...weeks, 1), range = maxW - minW || 1
+        const W = 140, H = 30, pad = 3
+        const pts = weeks.map((v, i) => {
+          const x = pad + (i / (weeks.length - 1)) * (W - pad * 2)
+          const y = H - pad - ((v - minW) / range) * (H - pad * 2)
+          return `${x.toFixed(1)},${y.toFixed(1)}`
+        }).join(' ')
+        const lastPt = pts.split(' ').pop()!.split(',')
+        const trend = weeks[7] > weeks[6] * 1.05 ? 'up' : weeks[7] < weeks[6] * 0.95 ? 'down' : 'flat'
+        return (
+          <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl px-4 py-3 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] text-gray-600 uppercase tracking-wider mb-0.5">Tendance hebdo dépenses</p>
+              <p className="text-[9px] text-gray-700">8 dernières semaines</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <svg width={W} height={H} className="shrink-0">
+                <polyline points={pts} fill="none" stroke="#f97316" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" opacity="0.7" />
+                <circle cx={lastPt[0]} cy={lastPt[1]} r="2.5" fill="#f97316" />
+              </svg>
+              <span className={`text-sm font-bold ${trend === 'up' ? 'text-red-400' : trend === 'down' ? 'text-[#2dd4a0]' : 'text-gray-500'}`}>
+                {trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→'}
+              </span>
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Top expense day of week */}
       {expenses.length >= 5 && (() => {
         const DOW = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
