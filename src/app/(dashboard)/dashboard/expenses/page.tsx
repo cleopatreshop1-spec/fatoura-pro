@@ -654,6 +654,47 @@ export default function ExpensesPage() {
         )
       })()}
 
+      {/* Monthly spend forecast vs actual */}
+      {totals.nextMonthForecast > 0 && expenses.length >= 5 && (() => {
+        const pct = Math.round((totals.monthly / totals.nextMonthForecast) * 100)
+        const delta = totals.monthly - totals.nextMonthForecast
+        const now0 = new Date()
+        const daysInMonth = new Date(now0.getFullYear(), now0.getMonth() + 1, 0).getDate()
+        const dayOfMonth  = now0.getDate()
+        const expectedPct = Math.round((dayOfMonth / daysInMonth) * 100)
+        return (
+          <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl px-4 py-3">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Prévision vs Réel — ce mois</p>
+              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${
+                pct > 110 ? 'text-red-400 bg-red-950/30 border-red-900/30' :
+                pct > 90  ? 'text-amber-400 bg-amber-950/20 border-amber-900/30' :
+                'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20'
+              }`}>{pct > 100 ? '+' : ''}{pct - 100}%</span>
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-[9px]">
+                <span className="text-gray-600">Réel</span>
+                <span className="font-mono text-gray-300">{fmtTND(totals.monthly)} TND</span>
+              </div>
+              <div className="h-1.5 bg-[#1a1b22] rounded-full overflow-hidden relative">
+                <div className="h-full bg-[#f97316]/70 rounded-full transition-all" style={{ width: `${Math.min(pct, 100)}%` }} />
+                <div className="absolute top-0 h-full w-0.5 bg-gray-500/60" style={{ left: `${expectedPct}%` }} />
+              </div>
+              <div className="flex items-center justify-between text-[9px]">
+                <span className="text-gray-700">Prévision</span>
+                <span className="font-mono text-gray-600">{fmtTND(totals.nextMonthForecast)} TND</span>
+              </div>
+              {delta !== 0 && (
+                <p className="text-[9px] text-gray-700 italic">
+                  {delta > 0 ? `+${fmtTND(delta)} au-dessus` : `${fmtTND(Math.abs(delta))} en dessous`} · jour {dayOfMonth}/{daysInMonth}
+                </p>
+              )}
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Category budget overspend alerts */}
       {Object.keys(budgets).length > 0 && (() => {
         const overspent = CATEGORIES
