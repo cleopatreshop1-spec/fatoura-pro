@@ -582,6 +582,13 @@ export default async function DashboardPage() {
   const overdueCount = overdueInvs90.length
   const overdueTTC   = overdueInvs90.reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
 
+  // ── Unpaid invoice ratio (90d) ───────────────────────────────────────
+  const unpaidRatio90 = validatedInvs90.length > 0
+    ? Math.round(((validatedInvs90.filter((i: any) => i.payment_status !== 'paid').length) / validatedInvs90.length) * 100)
+    : null
+  const unpaidAmt90 = validatedInvs90.filter((i: any) => i.payment_status !== 'paid')
+    .reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
+
   // ── Avg invoice size trend (this month vs prev month) ────────────────
   const thisMonthPrefix = todayStr.slice(0, 7)
   const prevMonthDate   = new Date(now.getFullYear(), now.getMonth() - 1, 1)
@@ -1207,6 +1214,25 @@ export default async function DashboardPage() {
                 <p className="text-[9px] text-[#f59e0b] font-mono mt-0.5">{new Intl.NumberFormat('fr-TN').format(Math.round(overdueTTC))} TND impayé</p>
               </div>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border text-red-400 bg-red-950/30 border-red-900/30 shrink-0">⚠ En retard</span>
+            </div>
+          )}
+
+          {/* WIDGET: Unpaid invoice ratio 90d */}
+          {unpaidRatio90 !== null && validatedInvs90.length >= 3 && (
+            <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Factures impayées — 90j</p>
+                <div className="flex items-baseline gap-1.5">
+                  <span className={`text-2xl font-mono font-black ${unpaidRatio90 > 40 ? 'text-red-400' : unpaidRatio90 > 20 ? 'text-amber-400' : 'text-[#2dd4a0]'}`}>{unpaidRatio90}%</span>
+                  <span className="text-xs text-gray-500">impayé</span>
+                </div>
+                <p className="text-[9px] text-[#f59e0b] font-mono mt-0.5">{new Intl.NumberFormat('fr-TN').format(Math.round(unpaidAmt90))} TND en attente</p>
+              </div>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
+                unpaidRatio90 > 40 ? 'text-red-400 bg-red-950/30 border-red-900/30' :
+                unpaidRatio90 > 20 ? 'text-amber-400 bg-amber-950/20 border-amber-900/30' :
+                'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20'
+              }`}>{unpaidRatio90 > 40 ? 'Critique' : unpaidRatio90 > 20 ? 'Attention' : 'Bon'}</span>
             </div>
           )}
 
