@@ -585,6 +585,35 @@ export default function ExpensesPage() {
         ) : null
       })()}
 
+      {/* Expense per active client estimate */}
+      {expenses.length > 0 && (() => {
+        const monthlyTotal = totals.monthly
+        if (monthlyTotal <= 0) return null
+        const clientIds = new Set(
+          (expenses as any[])
+            .filter(e => e.date?.startsWith(new Date().toISOString().slice(0, 7)) && e.client_id)
+            .map((e: any) => e.client_id)
+        )
+        const invoiceClientIds = new Set(
+          (expenses as any[]).filter(e => e.client_id).map((e: any) => e.client_id)
+        )
+        const clientCount = invoiceClientIds.size || 1
+        const perClient = Math.round(monthlyTotal / clientCount)
+        if (clientCount < 2) return null
+        return (
+          <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl px-4 py-3 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] text-gray-600 uppercase tracking-wider mb-0.5">Coût moyen par client</p>
+              <p className="text-lg font-mono font-black text-white">{fmtTND(perClient)} TND<span className="text-xs text-gray-600 font-normal ml-1">/client</span></p>
+              <p className="text-[9px] text-gray-600 mt-0.5">{fmtTND(monthlyTotal)} TND ÷ {clientCount} clients actifs ce mois</p>
+            </div>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border text-[#4a9eff] bg-blue-950/20 border-blue-900/30 shrink-0">
+              {clientCount} clients
+            </span>
+          </div>
+        )
+      })()}
+
       {/* Top expense day of week */}
       {expenses.length >= 5 && (() => {
         const DOW = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
