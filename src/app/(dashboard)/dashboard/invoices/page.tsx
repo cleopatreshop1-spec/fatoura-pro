@@ -19,7 +19,7 @@ type InvRow = {
   issue_date: string | null; due_date: string | null
   ht_amount: number; tva_amount: number; ttc_amount: number
   ttn_id: string | null; ttn_rejection_reason: string | null
-  payment_status: string | null; paid_at: string | null; created_at: string; currency: string | null
+  payment_status: string | null; paid_at: string | null; payment_date: string | null; created_at: string; currency: string | null
   reference: string | null; notes: string | null
   clients: { id: string; name: string; type: string; matricule_fiscal: string | null } | null
 }
@@ -112,7 +112,7 @@ export default function InvoicesPage() {
     setClients((cls ?? []) as ClientRow[])
     const { data } = await supabase
       .from('invoices')
-      .select('id, number, status, issue_date, due_date, ht_amount, tva_amount, ttc_amount, ttn_id, ttn_rejection_reason, payment_status, paid_at, created_at, reference, notes, clients(id, name, type, matricule_fiscal)')
+      .select('id, number, status, issue_date, due_date, ht_amount, tva_amount, ttc_amount, ttn_id, ttn_rejection_reason, payment_status, paid_at, payment_date, created_at, currency, reference, notes, clients(id,name,type,matricule_fiscal)')
       .eq('company_id', activeCompany.id)
       .order('created_at', { ascending: false })
     setInvoices((data ?? []) as unknown as InvRow[])
@@ -809,6 +809,26 @@ export default function InvoicesPage() {
               </span>
             </>
           )}
+          {(() => {
+            const paidWithBoth = filtered.filter(i => i.payment_status === 'paid' && i.payment_date && i.issue_date)
+            if (paidWithBoth.length < 2) return null
+            const avgDays = Math.round(paidWithBoth.reduce((s, i) => {
+              return s + (new Date(i.payment_date!).getTime() - new Date(i.issue_date!).getTime()) / 86400000
+            }, 0) / paidWithBoth.length)
+            return (
+              <>
+                <span className="text-gray-600">·</span>
+                <span title={`Délai moyen émission → paiement (${paidWithBoth.length} factures)`}
+                  className={`flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded border ${
+                    avgDays <= 30 ? 'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20' :
+                    avgDays <= 60 ? 'text-[#d4a843] bg-[#d4a843]/10 border-[#d4a843]/20' :
+                    'text-red-400 bg-red-950/30 border-red-900/30'
+                  }`}>
+                  ⏱ ø {avgDays}j
+                </span>
+              </>
+            )
+          })()}
           {summary.unpaid > 0 && (
             <span className="ml-auto text-[#f59e0b] font-semibold">
               Impayé: <span className="font-mono">{fmtTND(summary.unpaid)}</span>
