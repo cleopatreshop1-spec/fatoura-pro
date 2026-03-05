@@ -355,9 +355,17 @@ export function InvoicePdfDocument({ data }: { data: InvoicePdfData }) {
 
         {/* Footer */}
         <View style={s.footer}>
-          <Text style={s.footerText}>
-            {data.companyName}  •  Facture {data.invoiceNumber}  •  Généré par Fatoura Pro
-          </Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={s.footerText}>
+              {data.companyName}  •  Facture {data.invoiceNumber}  •  Conforme TTN / DGI 2024
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <View style={{ backgroundColor: GOLD, borderRadius: 2, paddingHorizontal: 5, paddingVertical: 2 }}>
+                <Text style={{ fontSize: 6, fontFamily: 'Helvetica-Bold', color: '#000', letterSpacing: 0.5 }}>FATOURA PRO</Text>
+              </View>
+              <Text style={{ fontSize: 6, color: GRAY }}>fatoura.pro</Text>
+            </View>
+          </View>
         </View>
       </Page>
     </Document>
