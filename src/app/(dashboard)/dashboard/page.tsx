@@ -554,6 +554,10 @@ export default async function DashboardPage() {
     impots: 'Impôts', autre: 'Autre',
   }
 
+  // ── Expense ratio (expenses / revenue HT this month) ────────────────
+  const expenseMonthTotal = (expensesMonth as any[]).reduce((s: number, e: any) => s + Number(e.amount ?? 0), 0)
+  const expenseRatio = caHT > 0 ? Math.round((expenseMonthTotal / caHT) * 100) : null
+
   // ── Avg invoice size trend (this month vs prev month) ────────────────
   const thisMonthPrefix = todayStr.slice(0, 7)
   const prevMonthDate   = new Date(now.getFullYear(), now.getMonth() - 1, 1)
@@ -1099,6 +1103,27 @@ export default async function DashboardPage() {
                   </>
                 )
               })()}
+            </div>
+          )}
+
+          {/* WIDGET: Expense ratio (expenses / revenue HT this month) */}
+          {expenseRatio !== null && expenseMonthTotal > 0 && (
+            <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Ratio dépenses / CA HT — ce mois</p>
+                <div className="flex items-baseline gap-1.5">
+                  <span className={`text-2xl font-mono font-black ${expenseRatio > 80 ? 'text-red-400' : expenseRatio > 50 ? 'text-amber-400' : 'text-[#2dd4a0]'}`}>{expenseRatio}%</span>
+                  <span className="text-xs text-gray-500">des revenus</span>
+                </div>
+                <p className="text-[9px] text-gray-600 mt-0.5">
+                  {new Intl.NumberFormat('fr-TN').format(Math.round(expenseMonthTotal))} TND dépenses · {new Intl.NumberFormat('fr-TN').format(Math.round(caHT))} TND CA HT
+                </p>
+              </div>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
+                expenseRatio > 80 ? 'text-red-400 bg-red-950/30 border-red-900/30' :
+                expenseRatio > 50 ? 'text-amber-400 bg-amber-950/20 border-amber-900/30' :
+                'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20'
+              }`}>{expenseRatio > 80 ? 'Élevé' : expenseRatio > 50 ? 'Modéré' : 'Sain'}</span>
             </div>
           )}
 
