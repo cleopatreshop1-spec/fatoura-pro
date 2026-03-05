@@ -455,6 +455,35 @@ export default function ExpensesPage() {
         )
       })()}
 
+      {/* Year-over-year comparison badge */}
+      {(() => {
+        const thisYearTotal = totals.byMonth.reduce((s, m) => s + m.amount, 0)
+        const lastYearTotal = totals.byMonth.reduce((s, m) => s + m.amountPrev, 0)
+        if (thisYearTotal <= 0 || lastYearTotal <= 0) return null
+        const delta = Math.round(((thisYearTotal - lastYearTotal) / lastYearTotal) * 100)
+        return (
+          <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl px-4 py-3 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] text-gray-600 uppercase tracking-wider mb-1">Comparaison annuelle</p>
+              <div className="flex items-baseline gap-1.5">
+                <span className={`text-lg font-mono font-black ${delta > 0 ? 'text-red-400' : 'text-[#2dd4a0]'}`}>
+                  {delta > 0 ? '+' : ''}{delta}%
+                </span>
+                <span className="text-xs text-gray-600">vs {chartYear - 1}</span>
+              </div>
+              <p className="text-[9px] text-gray-600 mt-0.5">
+                {chartYear} : {fmtTND(thisYearTotal)} TND · {chartYear - 1} : {fmtTND(lastYearTotal)} TND
+              </p>
+            </div>
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
+              delta > 10 ? 'text-red-400 bg-red-950/30 border-red-900/30' :
+              delta < -10 ? 'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20' :
+              'text-gray-500 bg-[#1a1b22] border-[#252830]'
+            }`}>{delta > 10 ? '↑ Hausse' : delta < -10 ? '↓ Baisse' : '≈ Stable'}</span>
+          </div>
+        )
+      })()}
+
       {/* Monthly budget progress bar */}
       {(() => {
         const spent = totals.monthly
