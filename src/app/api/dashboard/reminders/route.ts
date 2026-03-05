@@ -49,9 +49,9 @@ export async function GET(request: NextRequest) {
         .lte('created_at', ago7).limit(5),
 
       // Rejected invoices not corrected > 3 days
-      (supabase as any).from('invoices').select('id, number, updated_at, ttn_rejection_reason')
+      (supabase as any).from('invoices').select('id, number, submitted_at, ttn_rejection_reason')
         .eq('company_id', cid).eq('status', 'rejected').is('deleted_at', null)
-        .lte('updated_at', ago3).limit(5),
+        .lte('submitted_at', ago3).limit(5),
 
       // Due dates today or tomorrow, unpaid
       (supabase as any).from('invoices').select('id, number, due_date, ttc_amount')
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
         icon: '🔴',
         title: `Facture ${inv.number} rejetée à corriger`,
         subtitle: inv.ttn_rejection_reason ?? 'Voir les détails',
-        relativeTime: relTime(inv.updated_at),
+        relativeTime: relTime(inv.submitted_at ?? inv.ttn_rejection_reason ?? ''),
         actionLabel: 'Corriger →',
         actionHref: `/dashboard/invoices/${inv.id}`,
       })

@@ -1,4 +1,7 @@
-﻿import Link from 'next/link'
+﻿'use client'
+
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { InvoiceStatusBadge } from '@/components/invoice/InvoiceStatusBadge'
 import { fmtTND } from '@/lib/utils/tva-calculator'
 
@@ -20,6 +23,7 @@ function PaymentBadge({ status }: { status?: string }) {
 }
 
 export function RecentInvoicesTable({ invoices }: { invoices: InvoiceTableRow[] }) {
+  const router = useRouter()
   return (
     <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl overflow-hidden flex flex-col h-full">
       <div className="flex items-center justify-between px-5 py-4 border-b border-[#1a1b22] shrink-0">
@@ -46,8 +50,7 @@ export function RecentInvoicesTable({ invoices }: { invoices: InvoiceTableRow[] 
               </thead>
               <tbody className="divide-y divide-[#1a1b22]">
                 {invoices.map(inv => (
-                  <Link key={inv.id} href={`/dashboard/invoices/${inv.id}`} legacyBehavior>
-                    <tr className="hover:bg-[#161b27] transition-colors cursor-pointer group">
+                    <tr key={inv.id} onClick={() => router.push(`/dashboard/invoices/${inv.id}`)} className="hover:bg-[#161b27] transition-colors cursor-pointer group">
                       <td className="px-4 py-3 font-mono text-xs text-[#d4a843] group-hover:text-[#f0c060] whitespace-nowrap">
                         {inv.number ?? ''}
                       </td>
@@ -67,7 +70,6 @@ export function RecentInvoicesTable({ invoices }: { invoices: InvoiceTableRow[] 
                         <PaymentBadge status={inv.paymentStatus} />
                       </td>
                     </tr>
-                  </Link>
                 ))}
               </tbody>
             </table>
