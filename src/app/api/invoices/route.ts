@@ -175,23 +175,17 @@ export async function POST(request: NextRequest) {
 
     if (invErr) return err(invErr.message, 500)
 
-    const lineItems = lines.map((l, idx) => {
-      const lineHT  = l.quantity * l.unit_price * (1 - (l.discount ?? 0) / 100)
-      const lineTTC = lineHT * (1 + l.tva_rate / 100)
-      return {
-        invoice_id:  (invoice as any).id,
-        company_id:  company.id,
-        sort_order:  l.sort_order ?? idx,
-        description: sanitizeString(l.description, 500),
-        quantity:    l.quantity,
-        unit_price:  l.unit_price,
-        tva_rate:    l.tva_rate,
-        discount:    l.discount ?? null,
-        notes:       l.notes ? sanitizeString(l.notes, 500) : null,
-        line_ht:     lineHT,
-        line_ttc:    lineTTC,
-      }
-    })
+    const lineItems = lines.map((l, idx) => ({
+      invoice_id:  (invoice as any).id,
+      company_id:  company.id,
+      sort_order:  l.sort_order ?? idx,
+      description: sanitizeString(l.description, 500),
+      quantity:    l.quantity,
+      unit_price:  l.unit_price,
+      tva_rate:    l.tva_rate,
+      discount:    l.discount ?? null,
+      notes:       l.notes ? sanitizeString(l.notes, 500) : null,
+    }))
 
     const { error: lineErr } = await (supabase as any)
       .from('invoice_line_items').insert(lineItems)
