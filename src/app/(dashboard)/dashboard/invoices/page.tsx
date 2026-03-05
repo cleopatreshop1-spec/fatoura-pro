@@ -854,6 +854,23 @@ export default function InvoicesPage() {
               </>
             )
           })()}
+          {(() => {
+            const openInvs = filtered.filter(i => i.status !== 'draft' && i.payment_status !== 'paid' && i.issue_date)
+            if (openInvs.length < 2) return null
+            const today = Date.now()
+            const avgAge = Math.round(openInvs.reduce((s, i) => s + (today - new Date(i.issue_date!).getTime()) / 86400000, 0) / openInvs.length)
+            return (
+              <>
+                <span className="text-gray-600">·</span>
+                <span title={`Âge moyen des factures ouvertes (${openInvs.length})`}
+                  className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
+                    avgAge > 60 ? 'text-red-400 bg-red-950/30 border-red-900/30' :
+                    avgAge > 30 ? 'text-amber-400 bg-amber-950/20 border-amber-900/30' :
+                    'text-gray-500 bg-[#1a1b22] border-[#252830]'
+                  }`}>âge ø {avgAge}j</span>
+              </>
+            )
+          })()}
           {summary.unpaid > 0 && (
             <span className="ml-auto text-[#f59e0b] font-semibold">
               Impayé: <span className="font-mono">{fmtTND(summary.unpaid)}</span>
