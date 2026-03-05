@@ -85,8 +85,15 @@ function RegisterCompanyForm() {
   async function onSubmit(data: FormData) {
     setServerError('')
     const supabase = createClient()
-    const { data: { user }, error: authErr } = await supabase.auth.getUser()
-    if (authErr || !user) { setServerError('Session expirée. Reconnectez-vous.'); return }
+
+    // After email verification redirect, the session may not be immediately
+    // available via getUser(). Refresh first, then fall back to getSession().
+    await supabase.auth.refreshSession().catch(() => {})
+    let user = (await supabase.auth.getUser()).data.user
+    if (!user) {
+      user = (await supabase.auth.getSession()).data.session?.user ?? null
+    }
+    if (!user) { setServerError('Session expirée. Reconnectez-vous.'); return }
 
     const { error } = await supabase.from('companies').insert({
       owner_id: user.id,
