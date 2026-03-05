@@ -54,6 +54,15 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
       }, 0) / paidWithDue.length)
     : 0
 
+  // Avg days from issue_date to paid_at (payment velocity)
+  const paidWithIssue = paidInvs.filter(i => i.paid_at && i.issue_date)
+  const avgPayVelocity = paidWithIssue.length > 0
+    ? Math.round(paidWithIssue.reduce((s, i) => {
+        const diff = (new Date(i.paid_at).getTime() - new Date(i.issue_date).getTime()) / 86400000
+        return s + diff
+      }, 0) / paidWithIssue.length)
+    : null
+
   // ── Aging buckets (unpaid invoices by days overdue) ────────────────────
   const agingBuckets = (() => {
     const buckets = [
@@ -234,6 +243,26 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
           </div>
         )
       })()}
+
+      {/* Payment velocity badge */}
+      {avgPayVelocity !== null && paidWithIssue.length >= 2 && (
+        <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl px-4 py-3 flex items-center justify-between">
+          <div>
+            <p className="text-[10px] text-gray-600 uppercase tracking-wider mb-0.5">Vitesse de paiement</p>
+            <p className={`text-xl font-mono font-black ${
+              avgPayVelocity <= 30 ? 'text-[#2dd4a0]' : avgPayVelocity <= 60 ? 'text-[#d4a843]' : 'text-red-400'
+            }`}>{avgPayVelocity}j</p>
+            <p className="text-[9px] text-gray-600">moy. émission → paiement</p>
+          </div>
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
+            avgPayVelocity <= 30 ? 'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20' :
+            avgPayVelocity <= 60 ? 'text-[#d4a843] bg-[#d4a843]/10 border-[#d4a843]/20' :
+            'text-red-400 bg-red-950/30 border-red-900/30'
+          }`}>
+            {avgPayVelocity <= 30 ? 'Rapide' : avgPayVelocity <= 60 ? 'Correct' : 'Lent'}
+          </span>
+        </div>
+      )}
 
       {/* Lifetime value badge */}
       {totalTTC > 0 && validInvs.length >= 2 && (() => {
