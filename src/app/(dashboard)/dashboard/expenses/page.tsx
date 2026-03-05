@@ -654,6 +654,41 @@ export default function ExpensesPage() {
         )
       })()}
 
+      {/* Category budget overspend alerts */}
+      {Object.keys(budgets).length > 0 && (() => {
+        const overspent = CATEGORIES
+          .filter(c => budgets[c.value] > 0 && (totals.byCat[c.value] ?? 0) > budgets[c.value])
+          .map(c => ({
+            label: c.label,
+            value: c.value,
+            spent: totals.byCat[c.value] ?? 0,
+            budget: budgets[c.value],
+            pct: Math.round(((totals.byCat[c.value] ?? 0) / budgets[c.value]) * 100),
+          }))
+        if (overspent.length === 0) return null
+        return (
+          <div className="bg-[#0f1118] border border-red-900/30 rounded-2xl px-4 py-3">
+            <p className="text-[10px] font-bold text-red-400 uppercase tracking-wider mb-2">Budgets dépassés ce mois</p>
+            <div className="space-y-2">
+              {overspent.map(o => (
+                <div key={o.value}>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-[10px] text-gray-400">{o.label}</span>
+                    <span className="text-[10px] font-mono font-bold text-red-400">
+                      {fmtTND(o.spent)} / {fmtTND(o.budget)} TND
+                      <span className="ml-1 text-[9px] text-red-500">+{o.pct - 100}%</span>
+                    </span>
+                  </div>
+                  <div className="h-1.5 bg-[#1a1b22] rounded-full overflow-hidden">
+                    <div className="h-full bg-red-500/70 rounded-full" style={{ width: `${Math.min(o.pct, 100)}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Top expense day of week */}
       {expenses.length >= 5 && (() => {
         const DOW = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
