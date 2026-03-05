@@ -562,6 +562,19 @@ export default async function DashboardPage() {
   const netProfitEstimate = caHT > 0 || expenseMonthTotal > 0 ? caHT - expenseMonthTotal : null
   const netProfitMargin = caHT > 0 ? Math.round(((caHT - expenseMonthTotal) / caHT) * 100) : null
 
+  // ── Repeat client revenue share (clients with 2+ invoices in 90d) ───
+  const clientInvMap90: Record<string, { ttc: number; count: number }> = {}
+  for (const inv of allInvoices90 as any[]) {
+    if (inv.status === 'draft' || !inv.client_id) continue
+    if (!clientInvMap90[inv.client_id]) clientInvMap90[inv.client_id] = { ttc: 0, count: 0 }
+    clientInvMap90[inv.client_id].ttc   += Number(inv.ttc_amount ?? 0)
+    clientInvMap90[inv.client_id].count += 1
+  }
+  const total90TTC = Object.values(clientInvMap90).reduce((s, c) => s + c.ttc, 0)
+  const repeatRevenue90 = Object.values(clientInvMap90).filter(c => c.count >= 2).reduce((s, c) => s + c.ttc, 0)
+  const repeatClientShare = total90TTC > 0 ? Math.round((repeatRevenue90 / total90TTC) * 100) : null
+  const repeatClientCount = Object.values(clientInvMap90).filter(c => c.count >= 2).length
+
   // ── Avg invoice size trend (this month vs prev month) ────────────────
   const thisMonthPrefix = todayStr.slice(0, 7)
   const prevMonthDate   = new Date(now.getFullYear(), now.getMonth() - 1, 1)
@@ -1151,6 +1164,27 @@ export default async function DashboardPage() {
                 <span className="text-xs text-gray-500">TND</span>
               </div>
               <p className="text-[9px] text-gray-600 mt-0.5">CA HT {new Intl.NumberFormat('fr-TN').format(Math.round(caHT))} − Dépenses {new Intl.NumberFormat('fr-TN').format(Math.round(expenseMonthTotal))} TND</p>
+            </div>
+          )}
+
+          {/* WIDGET: Repeat client revenue share */}
+          {repeatClientShare !== null && repeatClientCount > 0 && (
+            <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">CA clients fidèles — 90j</p>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                  repeatClientShare >= 60 ? 'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20' :
+                  repeatClientShare >= 30 ? 'text-[#d4a843] bg-[#d4a843]/10 border-[#d4a843]/20' :
+                  'text-gray-500 bg-[#1a1b22] border-[#252830]'
+                }`}>{repeatClientCount} client{repeatClientCount > 1 ? 's' : ''} récurrents</span>
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl font-mono font-black text-white">{repeatClientShare}%</span>
+                <span className="text-xs text-gray-500">du CA 90j</span>
+              </div>
+              <div className="h-1.5 bg-[#1a1b22] rounded-full overflow-hidden mt-2">
+                <div className="h-full bg-[#2dd4a0]/60 rounded-full" style={{ width: `${repeatClientShare}%` }} />
+              </div>
             </div>
           )}
 
