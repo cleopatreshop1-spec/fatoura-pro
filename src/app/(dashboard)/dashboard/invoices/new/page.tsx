@@ -69,6 +69,7 @@ export default function NewInvoicePage() {
   const [duplicateDismissed, setDuplicateDismissed] = useState(false)
   const [pastDescriptions, setPastDescriptions] = useState<string[]>([])
   const [pastNotes, setPastNotes] = useState<string[]>([])
+  const [priceHistory, setPriceHistory] = useState<Record<string, number>>({})
   const [applyStamp, setApplyStamp] = useState(true)
   const [prefillLoading, setPrefillLoading] = useState(false)
   const [clientBalance, setClientBalance] = useState<number | null>(null)
@@ -182,7 +183,7 @@ export default function NewInvoicePage() {
       supabase.from('invoices').select('number').eq('company_id', activeCompany.id).order('created_at', { ascending: false }).limit(1).maybeSingle(),
       supabase.from('companies').select('invoice_prefix,own_cert_pem').eq('id', activeCompany.id).single(),
       supabase.from('mandates').select('id').eq('company_id', activeCompany.id).eq('is_active', true).limit(1).maybeSingle(),
-      (supabase as any).from('invoice_line_items').select('description').eq('company_id', activeCompany.id).order('created_at', { ascending: false }).limit(200),
+      (supabase as any).from('invoice_line_items').select('description,unit_price').eq('company_id', activeCompany.id).order('created_at', { ascending: false }).limit(200),
     ])
     setClients((cls ?? []) as ComboClient[])
     const prefix = (co as any)?.invoice_prefix ?? 'FP'
@@ -191,6 +192,12 @@ export default function NewInvoicePage() {
     if (pastLines) {
       const unique = [...new Set((pastLines as any[]).map((l: any) => (l.description ?? '').trim()).filter(Boolean))]
       setPastDescriptions(unique.slice(0, 80))
+      const ph: Record<string, number> = {}
+      for (const l of pastLines as any[]) {
+        const desc = (l.description ?? '').trim()
+        if (desc && !ph[desc]) ph[desc] = Number(l.unit_price ?? 0)
+      }
+      setPriceHistory(ph)
     }
 
     if (editId) {
@@ -927,6 +934,9 @@ export default function NewInvoicePage() {
                   const disc = ln.discount ?? 0
                   return s + ln.quantity * ln.unit_price * (1 - disc / 100)
                 }, 0)
+                const priceHint = l.description.trim() && priceHistory[l.description.trim()]
+                  ? priceHistory[l.description.trim()]
+                  : null
                 return (
                   <div key={l.id}>
                     <InvoiceLineItem
@@ -938,6 +948,17 @@ export default function NewInvoicePage() {
                       onReorder={reorderLine}
                       suggestions={pastDescriptions}
                     />
+                    {priceHint !== null && priceHint !== l.unit_price && (
+                      <div className="flex items-center gap-1.5 px-1 pb-1 -mt-1">
+                        <span className="text-[9px] text-gray-600">Dernier prix utilisé :</span>
+                        <button type="button"
+                          onClick={() => updateLine(l.id, 'unit_price', priceHint)}
+                          className="text-[9px] font-mono font-bold text-[#d4a843] hover:text-[#f0c060] transition-colors">
+                          {fmtTND(priceHint)} TND
+                        </button>
+                        <span className="text-[8px] text-gray-700">← appliquer</span>
+                      </div>
+                    )}
                     {lines.length > 1 && i < lines.length - 1 && (
                       <div className="flex justify-end pr-1 pb-0.5">
                         <span className="text-[8px] text-gray-700 font-mono">∑ HT = {new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(runningHT)}</span>
