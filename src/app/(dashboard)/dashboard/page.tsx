@@ -575,6 +575,13 @@ export default async function DashboardPage() {
   const repeatClientShare = total90TTC > 0 ? Math.round((repeatRevenue90 / total90TTC) * 100) : null
   const repeatClientCount = Object.values(clientInvMap90).filter(c => c.count >= 2).length
 
+  // ── Overdue invoice count and total ──────────────────────────────────
+  const overdueInvs90 = (allInvoices90 as any[]).filter(i =>
+    i.status !== 'draft' && i.payment_status !== 'paid' && i.due_date && i.due_date < todayStr
+  )
+  const overdueCount = overdueInvs90.length
+  const overdueTTC   = overdueInvs90.reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
+
   // ── Avg invoice size trend (this month vs prev month) ────────────────
   const thisMonthPrefix = todayStr.slice(0, 7)
   const prevMonthDate   = new Date(now.getFullYear(), now.getMonth() - 1, 1)
@@ -1185,6 +1192,21 @@ export default async function DashboardPage() {
               <div className="h-1.5 bg-[#1a1b22] rounded-full overflow-hidden mt-2">
                 <div className="h-full bg-[#2dd4a0]/60 rounded-full" style={{ width: `${repeatClientShare}%` }} />
               </div>
+            </div>
+          )}
+
+          {/* WIDGET: Overdue invoice count */}
+          {overdueCount > 0 && (
+            <div className="bg-[#0f1118] border border-red-900/30 rounded-2xl p-4 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Factures en retard</p>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-2xl font-mono font-black text-red-400">{overdueCount}</span>
+                  <span className="text-xs text-gray-500">facture{overdueCount > 1 ? 's' : ''}</span>
+                </div>
+                <p className="text-[9px] text-[#f59e0b] font-mono mt-0.5">{new Intl.NumberFormat('fr-TN').format(Math.round(overdueTTC))} TND impayé</p>
+              </div>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border text-red-400 bg-red-950/30 border-red-900/30 shrink-0">⚠ En retard</span>
             </div>
           )}
 
