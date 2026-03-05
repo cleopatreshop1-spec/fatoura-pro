@@ -616,6 +616,28 @@ export default function ClientsPage() {
                           {ca > 0 && count > 1 && (
                             <div className="text-[9px] text-gray-600 mt-0.5 font-mono">moy. {fmtTND(ca / count)} TND</div>
                           )}
+                          {count >= 4 && (() => {
+                            const now0 = new Date()
+                            const months: number[] = Array.from({ length: 6 }, (_, i) => {
+                              const d = new Date(now0.getFullYear(), now0.getMonth() - (5 - i), 1)
+                              const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+                              return c.invoices.filter(inv => inv.status !== 'draft' && (inv.issue_date ?? '').startsWith(key))
+                                .reduce((s, inv) => s + Number((inv as any).ttc_amount ?? 0), 0)
+                            })
+                            if (months.every(v => v === 0)) return null
+                            const maxM = Math.max(...months, 1)
+                            const W = 48, H = 14, pad = 1
+                            const pts = months.map((v, i) => {
+                              const x = pad + (i / (months.length - 1)) * (W - pad * 2)
+                              const y = H - pad - (v / maxM) * (H - pad * 2)
+                              return `${x.toFixed(1)},${y.toFixed(1)}`
+                            }).join(' ')
+                            return (
+                              <svg width={W} height={H} className="mt-1 opacity-60">
+                                <polyline points={pts} fill="none" stroke="#d4a843" strokeWidth="1.2" strokeLinejoin="round" strokeLinecap="round" />
+                              </svg>
+                            )
+                          })()}
                         </td>
                         <td className="px-4 py-3 font-mono text-xs whitespace-nowrap">
                           {balance > 0
