@@ -1,27 +1,29 @@
 ﻿export const dynamic = 'force-dynamic'
 
 import { Suspense } from 'react'
+import dynamic from 'next/dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { RealtimeProvider } from '@/components/dashboard/RealtimeProvider'
 import { PaymentSuccessToast } from '@/components/billing/PaymentSuccessToast'
 import { HeroWidget } from '@/components/dashboard/HeroWidget'
 import { KpiCards } from '@/components/dashboard/KpiCards'
-import { CashFlowChart } from '@/components/dashboard/CashFlowChart'
-import { FiscalHealthScore } from '@/components/dashboard/FiscalHealthScore'
-import { RemindersPanel } from '@/components/dashboard/RemindersPanel'
-import { AIInsightsPanel } from '@/components/dashboard/AIInsightsPanel'
-import { RecentInvoicesTable } from '@/components/dashboard/RecentInvoicesTable'
 import type { InvoiceTableRow } from '@/components/dashboard/RecentInvoicesTable'
-import { InvoiceAgingReport } from '@/components/dashboard/InvoiceAgingReport'
-import { ProfitLossWidget } from '@/components/dashboard/ProfitLossWidget'
-import { TopClientsWidget } from '@/components/dashboard/TopClientsWidget'
-import { RevenueComparisonChart } from '@/components/dashboard/RevenueComparisonChart'
-import { ExpenseCategoryDonut } from '@/components/dashboard/ExpenseCategoryDonut'
-import { RevenueGoalWidget } from '@/components/dashboard/RevenueGoalWidget'
-import { PendingActionsWidget } from '@/components/dashboard/PendingActionsWidget'
-import { InvoiceStatusDonut } from '@/components/dashboard/InvoiceStatusDonut'
-import { RecentActivityFeed } from '@/components/dashboard/RecentActivityFeed'
 import type { ActivityItem } from '@/components/dashboard/RecentActivityFeed'
+
+const CashFlowChart        = dynamic(() => import('@/components/dashboard/CashFlowChart').then(m => ({ default: m.CashFlowChart })), { ssr: false })
+const FiscalHealthScore    = dynamic(() => import('@/components/dashboard/FiscalHealthScore').then(m => ({ default: m.FiscalHealthScore })), { ssr: false })
+const RemindersPanel       = dynamic(() => import('@/components/dashboard/RemindersPanel').then(m => ({ default: m.RemindersPanel })), { ssr: false })
+const AIInsightsPanel      = dynamic(() => import('@/components/dashboard/AIInsightsPanel').then(m => ({ default: m.AIInsightsPanel })), { ssr: false })
+const RecentInvoicesTable  = dynamic(() => import('@/components/dashboard/RecentInvoicesTable').then(m => ({ default: m.RecentInvoicesTable })), { ssr: false })
+const InvoiceAgingReport   = dynamic(() => import('@/components/dashboard/InvoiceAgingReport').then(m => ({ default: m.InvoiceAgingReport })), { ssr: false })
+const ProfitLossWidget     = dynamic(() => import('@/components/dashboard/ProfitLossWidget').then(m => ({ default: m.ProfitLossWidget })), { ssr: false })
+const TopClientsWidget     = dynamic(() => import('@/components/dashboard/TopClientsWidget').then(m => ({ default: m.TopClientsWidget })), { ssr: false })
+const RevenueComparisonChart = dynamic(() => import('@/components/dashboard/RevenueComparisonChart').then(m => ({ default: m.RevenueComparisonChart })), { ssr: false })
+const ExpenseCategoryDonut = dynamic(() => import('@/components/dashboard/ExpenseCategoryDonut').then(m => ({ default: m.ExpenseCategoryDonut })), { ssr: false })
+const RevenueGoalWidget    = dynamic(() => import('@/components/dashboard/RevenueGoalWidget').then(m => ({ default: m.RevenueGoalWidget })), { ssr: false })
+const PendingActionsWidget = dynamic(() => import('@/components/dashboard/PendingActionsWidget').then(m => ({ default: m.PendingActionsWidget })), { ssr: false })
+const InvoiceStatusDonut   = dynamic(() => import('@/components/dashboard/InvoiceStatusDonut').then(m => ({ default: m.InvoiceStatusDonut })), { ssr: false })
+const RecentActivityFeed   = dynamic(() => import('@/components/dashboard/RecentActivityFeed').then(m => ({ default: m.RecentActivityFeed })), { ssr: false })
 import { format, subDays, addDays, parseISO, endOfWeek, eachWeekOfInterval } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
