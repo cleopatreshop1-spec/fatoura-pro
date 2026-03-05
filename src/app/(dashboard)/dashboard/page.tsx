@@ -209,6 +209,15 @@ export default async function DashboardPage() {
   // ── Draft count ───────────────────────────────────────────────────────
   const draftCount = (allInvoices90 ?? []).filter((i: any) => i.status === 'draft').length
 
+  // ── Oldest draft invoice age warning ─────────────────────────────────
+  const draftInvs90 = (allInvoices90 as any[]).filter(i => i.status === 'draft' && i.created_at)
+  const oldestDraft = draftInvs90.length > 0
+    ? draftInvs90.reduce((oldest: any, i: any) => i.created_at < oldest.created_at ? i : oldest, draftInvs90[0])
+    : null
+  const oldestDraftAgeDays = oldestDraft
+    ? Math.floor((now.getTime() - new Date(oldestDraft.created_at).getTime()) / 86400000)
+    : null
+
   // ── Pending TTN alert ─────────────────────────────────────────────────
   const stalePending = (allInvoices90 ?? []).filter((i: any) =>
     i.status === 'pending' && i.issue_date && i.issue_date < ago14
@@ -975,6 +984,24 @@ export default async function DashboardPage() {
                 )}
               </div>
               <span className="text-3xl">🏆</span>
+            </div>
+          )}
+
+          {/* WIDGET: Oldest draft invoice age warning */}
+          {oldestDraftAgeDays !== null && oldestDraftAgeDays >= 7 && draftCount > 0 && (
+            <div className="bg-[#0f1118] border border-amber-900/30 rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Brouillons non soumis</p>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border text-amber-400 bg-amber-950/30 border-amber-900/30">
+                  {draftCount} brouillon{draftCount > 1 ? 's' : ''}
+                </span>
+              </div>
+              <p className="text-sm font-mono font-black text-amber-300">
+                {oldestDraftAgeDays}j sans soumission
+              </p>
+              <p className="text-[9px] text-gray-600 mt-0.5">
+                Le plus ancien brouillon date de {oldestDraftAgeDays} jours — pensez à finaliser
+              </p>
             </div>
           )}
 
