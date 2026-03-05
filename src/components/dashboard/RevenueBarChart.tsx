@@ -44,7 +44,7 @@ function CustomLegend() {
         <span className="w-2.5 h-2.5 rounded-sm bg-[#d4a843] inline-block" />CA HT
       </span>
       <span className="flex items-center gap-1.5">
-        <span className="w-2.5 h-2.5 rounded-sm bg-[#2dd4a0] inline-block" />TVA collectee
+        <span className="w-2.5 h-2.5 rounded-sm bg-[#2dd4a0] inline-block" />TVA collectée
       </span>
     </div>
   )
@@ -55,13 +55,13 @@ export function RevenueBarChart({ data }: { data: ChartMonth[] }) {
   return (
     <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-5">
       <div className="flex items-center justify-between mb-1">
-        <h2 className="text-sm font-bold text-gray-200">Evolution sur 6 mois</h2>
+        <h2 className="text-sm font-bold text-gray-200">Évolution sur 6 mois</h2>
       </div>
       <CustomLegend />
 
       {!hasData ? (
         <div className="h-[300px] flex items-center justify-center text-sm text-gray-600">
-          Aucune donnee pour la periode
+          Aucune donnée pour la période
         </div>
       ) : (
         <ResponsiveContainer width="100%" height={300}>

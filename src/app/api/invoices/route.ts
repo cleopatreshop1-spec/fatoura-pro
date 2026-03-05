@@ -198,7 +198,7 @@ export async function POST(request: NextRequest) {
     if (lineErr) return err(lineErr.message, 500)
 
     const actionLabel = source === 'ai' ? 'invoice.created_by_ai' : 'invoice_created'
-    await logActivity(supabase as any, company.id, user.id, actionLabel, 'invoice', (invoice as any).id, `Facture ${(invoice as any).number} creee`)
+    await logActivity(supabase as any, company.id, user.id, actionLabel, 'invoice', (invoice as any).id, `Facture ${(invoice as any).number} créée`)
 
     invalidateUserContext(company.id)
 

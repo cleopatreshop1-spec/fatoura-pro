@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { InvoiceStatusBadge } from '@/components/invoice/InvoiceStatusBadge'
 import { fmtTND } from '@/lib/utils/tva-calculator'
 import { ClientDetailActions } from '@/components/clients/ClientDetailActions'
-import { computeRisk } from '@/components/invoice/LatePaymentRisk'
+import { computeRisk } from '@/lib/utils/compute-risk'
 import { ClientStatementButton } from '@/components/clients/ClientStatementButton'
 import { PaymentReminderButton } from '@/components/invoice/PaymentReminderButton'
 
@@ -12,14 +12,36 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
   const { id } = await params
   const supabase = await createClient()
 
-  const [{ data: client }, { data: invoices }] = await Promise.all([
-    supabase.from('clients').select('*').eq('id', id).single(),
-    supabase.from('invoices')
-      .select('id, number, status, issue_date, due_date, ttc_amount, ht_amount, payment_status, paid_at')
-      .eq('client_id', id)
-      .is('deleted_at', null)
-      .order('issue_date', { ascending: false }),
-  ])
+  let client: any = null
+  let invoices: any[] = []
+  let fetchError: string | null = null
+
+  try {
+    const [{ data: c, error: ce }, { data: inv, error: ie }] = await Promise.all([
+      supabase.from('clients').select('*').eq('id', id).single(),
+      supabase.from('invoices')
+        .select('id, number, status, issue_date, due_date, ttc_amount, ht_amount, payment_status, paid_at, created_at')
+        .eq('client_id', id)
+        .is('deleted_at', null)
+        .order('issue_date', { ascending: false }),
+    ])
+    if (ce) fetchError = `clients: ${ce.message}`
+    if (ie) fetchError = (fetchError ? fetchError + ' | ' : '') + `invoices: ${ie.message}`
+    client = c
+    invoices = inv ?? []
+  } catch (e: any) {
+    fetchError = e?.message ?? 'Unknown error'
+  }
+
+  if (fetchError && !client) {
+    return (
+      <div className="p-8 bg-red-950/20 border border-red-900/40 rounded-2xl text-red-400 text-sm font-mono">
+        <p className="font-bold mb-2">Erreur chargement client</p>
+        <p>{fetchError}</p>
+        <p className="text-xs text-gray-500 mt-2">ID: {id}</p>
+      </div>
+    )
+  }
 
   if (!client) notFound()
 
@@ -115,7 +137,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
       { label: 'Courant (0–30j)',  min: 0,  max: 30,  color: '#f59e0b', bg: 'bg-[#f59e0b]' },
       { label: '31–60 jours',      min: 31, max: 60,  color: '#f97316', bg: 'bg-[#f97316]' },
       { label: '61–90 jours',      min: 61, max: 90,  color: '#ef4444', bg: 'bg-[#ef4444]' },
-      { label: '> 90 jours',       min: 91, max: Infinity, color: '#7f1d1d', bg: 'bg-red-900' },
+      { label: '> 90 jours',       min: 91, max: 999999,   color: '#7f1d1d', bg: 'bg-red-900' },
     ]
     return buckets.map(b => {
       const matching = unpaidInvs.filter(i => {

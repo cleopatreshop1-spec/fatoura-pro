@@ -44,8 +44,8 @@ export function AlertBanners({ rejectedCount, hasMandate, mandateExpiringDays, q
   if (rejectedCount > 0) {
     alerts.push(
       <Alert key="rejected" color="red" icon=""
-        text={`${rejectedCount} facture${rejectedCount > 1 ? 's' : ''} rejetee${rejectedCount > 1 ? 's' : ''} par TTN necessitent votre attention`}
-        action={{ label: 'Voir les factures rejetees', href: '/dashboard/invoices?status=rejected' }}
+        text={`${rejectedCount} facture${rejectedCount > 1 ? 's' : ''} rejetée${rejectedCount > 1 ? 's' : ''} par TTN nécessitent votre attention`}
+        action={{ label: 'Voir les factures rejetées', href: '/dashboard/invoices?status=rejected' }}
       />
     )
   }
@@ -53,7 +53,7 @@ export function AlertBanners({ rejectedCount, hasMandate, mandateExpiringDays, q
   if (!hasMandate) {
     alerts.push(
       <Alert key="no-mandate" color="yellow" icon=""
-        text="Aucune signature configuree  vos factures ne peuvent pas etre soumises a TTN"
+        text="Aucune signature configurée — vos factures ne peuvent pas être soumises à TTN"
         action={{ label: 'Configurer maintenant', href: '/dashboard/settings?tab=signature' }}
       />
     )

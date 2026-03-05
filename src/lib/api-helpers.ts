@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 export async function getAuthenticatedCompany(request?: NextRequest) {
   const supabase = await createClient()
   const { data: { user }, error } = await supabase.auth.getUser()
-  if (error || !user) throw Object.assign(new Error('Non authentifie'), { status: 401 })
+  if (error || !user) throw Object.assign(new Error('Non authentifié'), { status: 401 })
 
   const { data: company, error: coErr } = await supabase
     .from('companies')
@@ -14,7 +14,7 @@ export async function getAuthenticatedCompany(request?: NextRequest) {
     .limit(1)
     .single()
 
-  if (coErr || !company) throw Object.assign(new Error('Societe introuvable'), { status: 404 })
+  if (coErr || !company) throw Object.assign(new Error('Société introuvable'), { status: 404 })
 
   return { user, company: company as any, supabase }
 }

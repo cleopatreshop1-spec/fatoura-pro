@@ -183,8 +183,8 @@ export default function InvoicesPage() {
     if (typeFilter !== 'all') list = list.filter(i => i.clients?.type === typeFilter)
     // Sort
     list = [...list].sort((a, b) => {
-      let av: any = a[sort.field as keyof InvRow] ?? ''
-      let bv: any = b[sort.field as keyof InvRow] ?? ''
+      const av: any = a[sort.field as keyof InvRow] ?? ''
+      const bv: any = b[sort.field as keyof InvRow] ?? ''
       if (typeof av === 'number') return sort.dir === 'asc' ? av - bv : bv - av
       return sort.dir === 'asc' ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av))
     })
@@ -309,13 +309,13 @@ export default function InvoicesPage() {
     if (!deleteId) return
     setDeleting(true)
     await (supabase as any).from('invoices').update({ deleted_at: new Date().toISOString() }).eq('id', deleteId)
-    setDeleteId(null); setDeleting(false); showToast('Facture supprimee.')
+    setDeleteId(null); setDeleting(false); showToast('Facture supprimée.')
     load()
   }
 
   function exportCSV() {
     const toExport = selected.size > 0 ? selectedInvs : filtered
-    const headers = ['N Facture','Client','Date','Echeance','HT','TVA','TTC','Statut','Paiement','Date paiement','TTN_ID']
+    const headers = ['N° Facture','Client','Date','Échéance','HT','TVA','TTC','Statut','Paiement','Date paiement','TTN_ID']
     const rows = toExport.map(i => [
       i.number??'',
       i.clients?.name??'',
@@ -420,7 +420,7 @@ export default function InvoicesPage() {
   }
 
   async function copyTTN(id: string) {
-    await navigator.clipboard.writeText(id); showToast('TTN_ID copie !')
+    await navigator.clipboard.writeText(id); showToast('TTN_ID copié !')
   }
 
   function isOverdue(inv: InvRow) {
@@ -537,11 +537,11 @@ export default function InvoicesPage() {
           {STATUS_OPTS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
         <select value={period} onChange={e => { setPeriod(e.target.value); setPage(1) }} className={SEL}>
-          <option value="all">Toute periode</option>
+          <option value="all">Toute période</option>
           <option value="this_month">Ce mois</option>
           <option value="this_quarter">Ce trimestre</option>
-          <option value="this_year">Cette annee</option>
-          <option value="custom">Personnalise</option>
+          <option value="this_year">Cette année</option>
+          <option value="custom">Personnalisé</option>
         </select>
         {period === 'custom' && <>
           <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)} className={SEL} />
@@ -1625,7 +1625,7 @@ export default function InvoicesPage() {
       </div>
 
       <ConfirmDialog open={!!deleteId} title="Supprimer cette facture ?"
-        description="Cette action est irreversible." confirmLabel="Supprimer" dangerous
+        description="Cette action est irréversible." confirmLabel="Supprimer" dangerous
         loading={deleting} onConfirm={handleDelete} onCancel={() => setDeleteId(null)} />
     </div>
   )

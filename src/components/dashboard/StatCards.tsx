@@ -55,7 +55,7 @@ export function StatCards({ data }: { data: StatCardsData }) {
     {
       title: "Chiffre d'affaires HT",
       value: fmtTND(caHT.amount),
-      sub: `${caHT.validCount} facture${caHT.validCount !== 1 ? 's' : ''} validee${caHT.validCount !== 1 ? 's' : ''} TTN`,
+      sub: `${caHT.validCount} facture${caHT.validCount !== 1 ? 's' : ''} validée${caHT.validCount !== 1 ? 's' : ''} TTN`,
       trend: null,
       Icon: TrendingUp,
       accent: '#2dd4a0',

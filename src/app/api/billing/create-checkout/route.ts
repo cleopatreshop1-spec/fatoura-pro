@@ -30,6 +30,8 @@ export async function POST(req: NextRequest) {
       .from('companies')
       .select('id, name')
       .eq('owner_id', user.id)
+      .order('created_at', { ascending: true })
+      .limit(1)
       .single()
 
     if (!company) return NextResponse.json({ error: 'Entreprise introuvable' }, { status: 404 })

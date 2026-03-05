@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     if (error) return err(error.message, 500)
 
-    await logActivity(supabase as any, company.id, user.id, 'api_key_created', 'api_key', (data as any).id, `Cle API "${name}" creee`)
+    await logActivity(supabase as any, company.id, user.id, 'api_key_created', 'api_key', (data as any).id, `Clé API "${name}" créée`)
 
     // Return the raw key ONCE  it will never be shown again
     return success({ apiKey: data, rawKey }, 201)

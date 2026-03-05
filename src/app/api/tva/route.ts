@@ -2,7 +2,7 @@
 import { getAuthenticatedCompany, success, err } from '@/lib/api-helpers'
 import { STAMP_DUTY } from '@/lib/utils/tva-calculator'
 
-const MONTHS_FR = ['Jan','Fev','Mar','Avr','Mai','Jun','Jul','Aou','Sep','Oct','Nov','Dec']
+const MONTHS_FR = ['Jan','F\u00e9v','Mar','Avr','Mai','Jun','Jul','Ao\u00fb','Sep','Oct','Nov','D\u00e9c']
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     const from = sp.get('from')
     const to   = sp.get('to')
 
-    if (!from || !to) return err('Parametres from et to requis (ISO date)', 400)
+    if (!from || !to) return err('Param\u00e8tres from et to requis (ISO date)', 400)
 
     const { data: invoices, error } = await (supabase as any)
       .from('invoices')

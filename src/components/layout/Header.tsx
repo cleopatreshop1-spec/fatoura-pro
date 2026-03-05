@@ -14,11 +14,11 @@ const SEGMENTS: Record<string, string> = {
   invoices:      'Factures',
   new:           'Nouvelle facture',
   clients:       'Clients',
-  tva:           'TVA & Declarations',
+  tva:           'TVA & Déclarations',
   financing:     'Flash Financing',
-  settings:      'Parametres',
+  settings:      'Paramètres',
   mandate:       'Signature',
-  'api-keys':    'Cles API',
+  'api-keys':    'Clés API',
   notifications: 'Notifications',
   accountant:    'Comptable',
   invitations:   'Invitations',
@@ -152,7 +152,7 @@ export function Header({ userEmail, userName, userInitials, onMenuToggle }: Prop
                     className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-300 hover:bg-[#161b27] hover:text-white transition-colors"
                   >
                     <Settings size={14} className="text-gray-500" />
-                    Parametres
+                    Paramètres
                   </Link>
                   <button
                     onClick={handleSignOut}
@@ -160,7 +160,7 @@ export function Header({ userEmail, userName, userInitials, onMenuToggle }: Prop
                     className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-400 hover:bg-red-950/20 transition-colors disabled:opacity-50"
                   >
                     <LogOut size={14} />
-                    {signingOut ? 'Deconnexion...' : 'Se deconnecter'}
+                    {signingOut ? 'Déconnexion...' : 'Se déconnecter'}
                   </button>
                 </div>
               </div>

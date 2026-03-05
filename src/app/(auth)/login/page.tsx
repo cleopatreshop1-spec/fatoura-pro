@@ -32,7 +32,7 @@ function Logo() {
         <span className="text-[#d4a843] font-mono text-2xl font-bold tracking-wide">FATOURA</span>
         <span className="text-gray-500 font-mono text-2xl font-bold">PRO</span>
       </div>
-      <p className="text-gray-500 text-xs mt-1.5 tracking-wide">Facturation electronique conforme TTN</p>
+      <p className="text-gray-500 text-xs mt-1.5 tracking-wide">Facturation électronique conforme TTN</p>
     </div>
   )
 }
@@ -89,7 +89,7 @@ export default function LoginPage() {
         {view === 'login' && (
           <>
             <h1 className="text-base font-bold text-white text-center mb-6">
-              Connexion a votre espace
+              Connexion à votre espace
             </h1>
 
             <form onSubmit={hl(onLogin)} className="space-y-4">
@@ -104,7 +104,7 @@ export default function LoginPage() {
                   <label className={LC.replace('mb-1.5', '')}>Mot de passe</label>
                   <button type="button" onClick={() => setView('forgot')}
                     className="text-xs text-gray-500 hover:text-[#d4a843] transition-colors">
-                    Mot de passe oublie ?
+                    Mot de passe oublié ?
                   </button>
                 </div>
                 <div className="relative">
@@ -133,7 +133,7 @@ export default function LoginPage() {
             <p className="text-center text-gray-500 text-sm mt-6">
               Pas encore de compte ?{' '}
               <Link href="/register" className="text-[#d4a843] hover:underline font-medium">
-                Creer un espace gratuit
+                Créer un espace gratuit
               </Link>
             </p>
           </>
@@ -142,10 +142,10 @@ export default function LoginPage() {
         {view === 'forgot' && (
           <>
             <h1 className="text-base font-bold text-white text-center mb-2">
-              Reinitialiser le mot de passe
+              Réinitialiser le mot de passe
             </h1>
             <p className="text-xs text-gray-500 text-center mb-6">
-              Entrez votre email pour recevoir un lien de reinitialisation.
+              Entrez votre email pour recevoir un lien de réinitialisation.
             </p>
 
             <form onSubmit={hf(onForgot)} className="space-y-4">
@@ -169,7 +169,7 @@ export default function LoginPage() {
 
             <button onClick={() => { setView('login'); setServerError('') }}
               className="w-full text-center text-gray-500 hover:text-gray-300 text-sm mt-4 transition-colors">
-              Retour a la connexion
+              Retour à la connexion
             </button>
           </>
         )}
@@ -177,13 +177,13 @@ export default function LoginPage() {
         {view === 'sent' && (
           <div className="text-center space-y-4">
             <div className="text-4xl"></div>
-            <div className="text-base font-bold text-white">Email envoye !</div>
+            <div className="text-base font-bold text-white">Email envoyé !</div>
             <p className="text-sm text-gray-400">
-              Verifiez votre boite mail et cliquez sur le lien pour reinitialiser votre mot de passe.
+              Vérifiez votre boîte mail et cliquez sur le lien pour réinitialiser votre mot de passe.
             </p>
             <button onClick={() => { setView('login'); setServerError('') }}
               className="text-[#d4a843] hover:underline text-sm">
-              Retour a la connexion
+              Retour à la connexion
             </button>
           </div>
         )}

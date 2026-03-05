@@ -30,15 +30,15 @@ export async function POST(request: NextRequest) {
     if (error) return err(error.message, 500)
 
     await logActivity(supabase as any, company.id, user.id, 'mandate_accepted', 'mandate', (data as any).id,
-      `Mandat de signature accepte depuis ${ip ?? 'IP inconnue'}`)
+      `Mandat de signature accepté depuis ${ip ?? 'IP inconnue'}`)
     await insertNotification(supabase as any, company.id, 'mandate_accepted',
-      'Mandat de signature active', `Valide jusqu\'au ${new Date(sealExpiry).toLocaleDateString('fr-FR')}`)
+      'Mandat de signature activé', `Valide jusqu'au ${new Date(sealExpiry).toLocaleDateString('fr-FR')}`)
 
     captureMessage('Mandate accepted', 'info', {
       companyId: company.id,
       sealIdentifier: process.env.FATOURA_SEAL_SERIAL ?? 'FATOURA-PRO-SEAL-2026',
     })
-    return success({ message: 'Mandat accepte', mandateId: (data as any).id, sealValidUntil: sealExpiry }, 201)
+    return success({ message: 'Mandat accepté', mandateId: (data as any).id, sealValidUntil: sealExpiry }, 201)
   } catch (e: any) {
     captureError(e, { action: 'mandate_accept' })
     return err(e.message, e.status ?? 500)

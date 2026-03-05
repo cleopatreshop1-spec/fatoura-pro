@@ -8,9 +8,9 @@ import { UpgradeModal } from '@/components/billing/UpgradeModal'
 import { ChevronDown, ChevronUp, Zap, Lock } from 'lucide-react'
 
 const STEPS = [
-  { icon: '', title: 'Analyse automatique', desc: 'Vos factures TTN servent de garant. Notre algorithme analyse votre historique fiscal en temps reel.' },
-  { icon: '', title: 'Score en temps reel', desc: 'Attribution d\'un score de financement base sur votre CA valide, regularite et anciennete TTN.' },
-  { icon: '', title: 'Financement en 24h', desc: 'Acceptation de l\'offre et virement direct sur votre RIB bancaire sous 24 heures ouvrees.' },
+  { icon: '', title: 'Analyse automatique', desc: 'Vos factures TTN servent de garant. Notre algorithme analyse votre historique fiscal en temps réel.' },
+  { icon: '', title: 'Score en temps réel', desc: 'Attribution d\'un score de financement basé sur votre CA validé, régularité et ancienneté TTN.' },
+  { icon: '', title: 'Financement en 24h', desc: 'Acceptation de l\'offre et virement direct sur votre RIB bancaire sous 24 heures ouvrées.' },
 ]
 
 const PARTNERS = [
@@ -22,24 +22,24 @@ const PARTNERS = [
 
 const FAQ = [
   {
-    q: 'Quels documents sont necessaires ?',
-    a: 'Aucun document supplementaire n\'est requis. Vos factures validees par TTN/ElFatoora constituent automatiquement votre dossier. La connexion a Fatoura Pro suffit.',
+    q: 'Quels documents sont nécessaires ?',
+    a: 'Aucun document supplémentaire n\'est requis. Vos factures validées par TTN/ElFatoora constituent automatiquement votre dossier. La connexion à Fatoura Pro suffit.',
   },
   {
-    q: 'Quels taux d\'interet sont appliques ?',
-    a: 'Les taux sont negocies avec nos partenaires financiers. Estimation : a partir de 1,5% par mois pour les profils eligibles avec un historique TTN solide. Taux definitifs communiques lors de l\'offre.',
+    q: 'Quels taux d\'intérêt sont appliqués ?',
+    a: 'Les taux sont négociés avec nos partenaires financiers. Estimation : à partir de 1,5% par mois pour les profils éligibles avec un historique TTN solide. Taux définitifs communiqués lors de l\'offre.',
   },
   {
-    q: 'Mes factures sont-elles utilisees comme garantie ?',
-    a: 'Vos factures TTN validees servent de reference pour evaluer votre solvabilite. Elles ne sont pas cedees ni bloquees. Vous continuez a les utiliser normalement.',
+    q: 'Mes factures sont-elles utilisées comme garantie ?',
+    a: 'Vos factures TTN validées servent de référence pour évaluer votre solvabilité. Elles ne sont pas cédées ni bloquées. Vous continuez à les utiliser normalement.',
   },
   {
-    q: 'Quel est le montant minimum et maximum ?',
-    a: 'Entre 1 000 TND et 100 000 TND selon votre profil. Le montant eligible est calcule automatiquement a partir de votre CA des 3 derniers mois valide TTN.',
+    q: 'Quel est le montant minimum et maximum ?',
+    a: 'Entre 1 000 TND et 100 000 TND selon votre profil. Le montant éligible est calculé automatiquement à partir de votre CA des 3 derniers mois validé TTN.',
   },
   {
-    q: 'Quand sera disponible Flash Financing ?',
-    a: 'Nous sommes en phase de negociation avec les partenaires financiers tunisiens. Inscrivez-vous en liste d\'attente pour etre parmi les premiers a en beneficier.',
+    q: 'Quand sera disponible Flash Financing ?',
+    a: 'Nous sommes en phase de négociation avec les partenaires financiers tunisiens. Inscrivez-vous en liste d\'attente pour être parmi les premiers à en bénéficier.',
   },
 ]
 
@@ -137,11 +137,11 @@ export default function FinancingPage() {
       {/*  Header  */}
       <div className="flex flex-col items-start gap-3">
         <span className="text-[10px] font-black px-3 py-1.5 rounded-full bg-purple-500/15 text-purple-400 border border-purple-500/25 uppercase tracking-widest">
-          Bientot disponible
+          Bientôt disponible
         </span>
         <h1 className="text-2xl font-black text-white tracking-tight">Flash Financing</h1>
         <p className="text-gray-400 text-sm max-w-xl">
-          Obtenez un financement express base sur vos factures TTN validees. Rapide, transparent, sans paperasse.
+          Obtenez un financement express basé sur vos factures TTN validées. Rapide, transparent, sans paperasse.
         </p>
       </div>
 
@@ -158,11 +158,11 @@ export default function FinancingPage() {
             Transformez vos factures en cash en <span className="text-[#d4a843]">24h</span>
           </h2>
           <p className="text-gray-400 text-sm max-w-lg mx-auto leading-relaxed">
-            Fatoura Pro analyse vos 6 derniers mois de factures validees TTN et vous connecte avec des partenaires financiers
-            pour un financement instantane.
+            Fatoura Pro analyse vos 6 derniers mois de factures validées TTN et vous connecte avec des partenaires financiers
+            pour un financement instantané.
           </p>
           <div className="flex items-center justify-center gap-6 mt-6">
-            {['Sans documents', 'Reponse en 24h', 'Partenaires agrees'].map(tag => (
+            {['Sans documents', 'Réponse en 24h', 'Partenaires agréés'].map(tag => (
               <div key={tag} className="flex items-center gap-1.5 text-xs text-gray-400">
                 <span className="text-[#2dd4a0] font-bold"></span> {tag}
               </div>
@@ -173,7 +173,7 @@ export default function FinancingPage() {
 
       {/*  Comment ça marche  */}
       <div>
-        <h2 className="text-base font-bold text-white mb-5">Comment ca marche</h2>
+        <h2 className="text-base font-bold text-white mb-5">Comment ça marche</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {STEPS.map((step, i) => (
             <div key={i} className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-5 relative">
@@ -193,17 +193,17 @@ export default function FinancingPage() {
 
       {/*  Eligibility widget  */}
       <div>
-        <h2 className="text-base font-bold text-white mb-5">Votre eligibilite estimee</h2>
+        <h2 className="text-base font-bold text-white mb-5">Votre éligibilité estimée</h2>
         {loading ? (
           <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-8 text-center text-sm text-gray-600">Calcul en cours...</div>
         ) : isEligible ? (
           <div className="bg-[#2dd4a0]/5 border border-[#2dd4a0]/20 rounded-2xl p-6 space-y-4">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Eligibilite estimee</div>
+                <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Éligibilité estimée</div>
                 <div className="text-3xl font-black text-[#2dd4a0] font-mono">{fmtAmount(eligibilityAmount)} TND</div>
                 <div className="text-xs text-gray-500 mt-1">
-                  Base sur {validInvCount} factures validees TTN (3 derniers mois)
+                  Basé sur {validInvCount} factures validées TTN (3 derniers mois)
                 </div>
               </div>
               <div className="w-14 h-14 rounded-xl bg-[#2dd4a0]/10 border border-[#2dd4a0]/20 flex items-center justify-center text-2xl shrink-0">
@@ -212,25 +212,25 @@ export default function FinancingPage() {
             </div>
             <div>
               <div className="flex justify-between text-[10px] text-gray-600 mb-1">
-                <span>Eligibilite</span><span>100%</span>
+                <span>Éligibilité</span><span>100%</span>
               </div>
               <div className="h-2 bg-[#1a1b22] rounded-full overflow-hidden">
                 <div className="h-full bg-[#2dd4a0] rounded-full w-full transition-all" />
               </div>
             </div>
             <p className="text-[10px] text-gray-600">
-              Calcul indicatif : 30% du CA HT des 3 derniers mois valide TTN. Montant definitif determine par nos partenaires.
+              Calcul indicatif : 30% du CA HT des 3 derniers mois validé TTN. Montant définitif déterminé par nos partenaires.
             </p>
           </div>
         ) : (
           <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-6 space-y-4">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Progression vers l'eligibilite</div>
-                <div className="text-xl font-bold text-gray-300">{validInvCount} / 10 factures validees</div>
+                <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Progression vers l’éligibilité</div>
+                <div className="text-xl font-bold text-gray-300">{validInvCount} / 10 factures validées</div>
                 {invNeeded > 0 && (
                   <div className="text-xs text-gray-500 mt-1">
-                    Encore {invNeeded} facture{invNeeded > 1 ? 's' : ''} TTN validee{invNeeded > 1 ? 's' : ''} pour debloquer
+                    Encore {invNeeded} facture{invNeeded > 1 ? 's' : ''} TTN validée{invNeeded > 1 ? 's' : ''} pour débloquer
                   </div>
                 )}
               </div>
@@ -247,7 +247,7 @@ export default function FinancingPage() {
               </div>
             </div>
             <p className="text-xs text-gray-500">
-              Continuez a soumettre des factures a TTN pour debloquer votre acces au financement.
+              Continuez à soumettre des factures à TTN pour débloquer votre accès au financement.
             </p>
           </div>
         )}
@@ -378,7 +378,7 @@ export default function FinancingPage() {
       {/*  Partners  */}
       <div>
         <h2 className="text-base font-bold text-white mb-2">Partenaires financiers</h2>
-        <p className="text-xs text-gray-600 mb-4">En cours de negociation avec des etablissements agrees par la BCT.</p>
+        <p className="text-xs text-gray-600 mb-4">En cours de négociation avec des établissements agréés par la BCT.</p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {PARTNERS.map(p => (
             <div key={p.name} className="bg-[#0f1118] border border-[#1a1b22] rounded-xl px-4 py-4 flex flex-col items-center gap-2 opacity-60">
@@ -392,7 +392,7 @@ export default function FinancingPage() {
 
       {/*  FAQ  */}
       <div>
-        <h2 className="text-base font-bold text-white mb-4">Questions frequentes</h2>
+        <h2 className="text-base font-bold text-white mb-4">Questions fréquentes</h2>
         <div className="space-y-2">
           {FAQ.map((item, i) => (
             <div key={i} className="bg-[#0f1118] border border-[#1a1b22] rounded-xl overflow-hidden">
@@ -413,7 +413,7 @@ export default function FinancingPage() {
 
       {/*  Legal note  */}
       <div className="text-[10px] text-gray-700 leading-relaxed border-t border-[#1a1b22] pt-4">
-        Flash Financing est une fonctionnalite en cours de developpement. Les montants et taux affiches sont indicatifs et ne constituent pas une offre de credit. Toute offre de financement sera soumise a l'approbation de nos partenaires financiers agrees par la Banque Centrale de Tunisie.
+        Flash Financing est une fonctionnalité en cours de développement. Les montants et taux affichés sont indicatifs et ne constituent pas une offre de crédit. Toute offre de financement sera soumise à l’approbation de nos partenaires financiers agréés par la Banque Centrale de Tunisie.
       </div>
     </div>
   )

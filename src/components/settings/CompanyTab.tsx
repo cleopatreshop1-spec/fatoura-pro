@@ -46,21 +46,6 @@ export function CompanyTab() {
   const [accentColor, setAccentColor] = useState('#1a1a2e')
   const [logoPosition, setLogoPosition] = useState<'left' | 'right'>('left')
 
-  // Show create company card if no active company
-  if (!activeCompany) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h3 className="text-lg font-bold text-white mb-2">Créer votre entreprise</h3>
-          <p className="text-sm text-gray-400 mb-4">
-            Vous devez créer une entreprise pour commencer à utiliser Fatoura Pro.
-          </p>
-        </div>
-        <CreateCompanyCard />
-      </div>
-    )
-  }
-
   const { register, handleSubmit, reset, formState: { errors } } = useForm<F>({
     resolver: zodResolver(schema),
   })
@@ -85,6 +70,21 @@ export function CompanyTab() {
       annual_revenue_goal:  c.annual_revenue_goal  != null ? String(c.annual_revenue_goal)  : '',
     })
   }, [activeCompany, reset])
+
+  // Show create company card if no active company (AFTER all hooks)
+  if (!activeCompany) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-lg font-bold text-white mb-2">Créer votre entreprise</h3>
+          <p className="text-sm text-gray-400 mb-4">
+            Vous devez créer une entreprise pour commencer à utiliser Fatoura Pro.
+          </p>
+        </div>
+        <CreateCompanyCard />
+      </div>
+    )
+  }
 
   async function handleLogoFile(file: File) {
     if (!activeCompany?.id) return
@@ -144,7 +144,7 @@ export function CompanyTab() {
             <p>JPG, PNG ou SVG  max 2 Mo</p>
             <button type="button" onClick={() => fileRef.current?.click()}
               className="text-[#d4a843] hover:underline text-xs">
-              {logoUrl ? 'Remplacer' : 'Telecharger'}
+              {logoUrl ? 'Remplacer' : 'Télécharger'}
             </button>
           </div>
           <input ref={fileRef} type="file" accept=".jpg,.jpeg,.png,.svg" className="hidden"
@@ -154,7 +154,7 @@ export function CompanyTab() {
 
       {/* Identity */}
       <div>
-        <div className={SH}>Identite</div>
+        <div className={SH}>Identité</div>
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
             <label className={LC}>Raison sociale *</label>
@@ -166,11 +166,11 @@ export function CompanyTab() {
             <input {...register('matricule_fiscal')} placeholder="1234567A/A/M/000" className={`${IC} font-mono`} />
           </div>
           <div>
-            <label className={LC}>Regime TVA</label>
+            <label className={LC}>Régime TVA</label>
             <select {...register('tva_regime')} className={IC}>
-              <option value="reel">Regime reel</option>
+              <option value="reel">Régime réel</option>
               <option value="forfait">Forfait</option>
-              <option value="exonere">Exonere</option>
+              <option value="exonere">Exonéré</option>
             </select>
           </div>
         </div>
@@ -203,11 +203,11 @@ export function CompanyTab() {
         <div className={SH}>Contact</div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={LC}>Telephone principal</label>
+            <label className={LC}>Téléphone principal</label>
             <input {...register('phone')} placeholder="+216 XX XXX XXX" className={IC} />
           </div>
           <div>
-            <label className={LC}>Telephone secondaire</label>
+            <label className={LC}>Téléphone secondaire</label>
             <input {...register('phone2')} placeholder="Optionnel" className={IC} />
           </div>
           <div>
@@ -225,7 +225,7 @@ export function CompanyTab() {
       {/* Bank */}
       <div>
         <div className={SH}>Banque</div>
-        <p className="text-[10px] text-gray-600 mb-3">Apparaitra sur vos factures PDF</p>
+        <p className="text-[10px] text-gray-600 mb-3">Apparaîtra sur vos factures PDF</p>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className={LC}>Nom de la banque</label>
@@ -240,25 +240,25 @@ export function CompanyTab() {
 
       {/* Invoice preferences */}
       <div>
-        <div className={SH}>Preferences de facturation</div>
+        <div className={SH}>Préférences de facturation</div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={LC}>Prefixe facture (max 5 car.)</label>
+            <label className={LC}>Préfixe facture (max 5 car.)</label>
             <input {...register('invoice_prefix')} placeholder="FP" className={`${IC} font-mono uppercase`} />
           </div>
           <div className="col-span-2">
-            <label className={LC}>Conditions de paiement par defaut</label>
-            <input {...register('default_payment_terms')} placeholder="Paiement a 30 jours." className={IC} />
+            <label className={LC}>Conditions de paiement par défaut</label>
+            <input {...register('default_payment_terms')} placeholder="Paiement à 30 jours." className={IC} />
           </div>
           <div className="col-span-2">
             <label className={LC}>Pied de page facture <span className="normal-case text-gray-600 font-normal">(max 500 car.)</span></label>
             <textarea
               {...register('invoice_footer')}
               rows={3}
-              placeholder="Ex: Merci pour votre confiance. Tout retard de paiement entraine des penalites."
+              placeholder="Ex: Merci pour votre confiance. Tout retard de paiement entraîne des pénalités."
               className={`${IC} resize-none`}
             />
-            <p className="text-[10px] text-gray-600 mt-1">Apparaitra en bas de chaque facture PDF.</p>
+            <p className="text-[10px] text-gray-600 mt-1">Apparaîtra en bas de chaque facture PDF.</p>
           </div>
         </div>
       </div>
@@ -339,7 +339,7 @@ export function CompanyTab() {
         <p className="text-[11px] text-gray-600 mt-2">Ces objectifs s&apos;affichent sur le tableau de bord avec une barre de progression.</p>
       </div>
 
-      {saved && <div className="text-sm text-[#2dd4a0] bg-[#2dd4a0]/10 border border-[#2dd4a0]/20 rounded-xl px-4 py-3">Modifications enregistrees.</div>}
+      {saved && <div className="text-sm text-[#2dd4a0] bg-[#2dd4a0]/10 border border-[#2dd4a0]/20 rounded-xl px-4 py-3">Modifications enregistrées.</div>}
       <button type="submit" disabled={saving}
         className="w-full py-3 bg-[#d4a843] hover:bg-[#f0c060] text-black font-bold rounded-xl text-sm transition-colors disabled:opacity-50">
         {saving ? 'Enregistrement...' : 'Enregistrer les modifications'}

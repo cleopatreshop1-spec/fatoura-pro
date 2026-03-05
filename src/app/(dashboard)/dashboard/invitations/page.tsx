@@ -42,7 +42,7 @@ export default function InvitationsPage() {
       const allLinks = [...(pendingLinks ?? []), ...(activeLinks ?? [])]
       const companyIds = [...new Set(allLinks.map((l: any) => l.company_id).filter(Boolean))]
 
-      let companyNames: Record<string, string> = {}
+      const companyNames: Record<string, string> = {}
       if (companyIds.length > 0) {
         const { data: companies } = await supabase
           .from('companies')

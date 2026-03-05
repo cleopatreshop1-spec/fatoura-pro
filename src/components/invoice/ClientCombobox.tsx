@@ -59,7 +59,7 @@ export function ClientCombobox({ clients, selected, onSelect, onAddNew }: Props)
             )}
             {selected.type === 'B2C' && (
               <div className="text-[10px] text-[#4a9eff] mt-1.5 bg-[#4a9eff]/5 border border-[#4a9eff]/15 rounded px-2 py-1">
-                Facture grand public  TVA simplifiee
+                Facture grand public — TVA simplifiée
               </div>
             )}
           </div>

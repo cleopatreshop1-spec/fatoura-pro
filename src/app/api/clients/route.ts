@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
 
     if (error) return err(error.message, 500)
 
-    await logActivity(supabase as any, company.id, user.id, 'client_created', 'client', (data as any).id, `Client ${(data as any).name} ajoute`)
+    await logActivity(supabase as any, company.id, user.id, 'client_created', 'client', (data as any).id, `Client ${(data as any).name} ajouté`)
     return success({ client: data }, 201)
   } catch (e: any) { return err(e.message, e.status ?? 500) }
 }

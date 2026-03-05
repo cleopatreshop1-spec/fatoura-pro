@@ -8,10 +8,10 @@ import { Copy, X } from 'lucide-react'
 type ApiKey = { id: string; name: string; key_prefix: string; permissions: string[]; last_used_at: string | null; expires_at: string | null; is_active: boolean; created_at: string }
 
 const ALL_PERMS = [
-  { key: 'invoices:write', label: 'Creer et soumettre des factures', default: true },
+  { key: 'invoices:write', label: 'Créer et soumettre des factures', default: true },
   { key: 'invoices:read',  label: 'Lire les factures', default: true },
-  { key: 'tva:read',       label: 'Acceder aux donnees TVA', default: false },
-  { key: 'clients:write',  label: 'Gerer les clients', default: false },
+  { key: 'tva:read',       label: 'Accéder aux données TVA', default: false },
+  { key: 'clients:write',  label: 'Gérer les clients', default: false },
 ]
 
 export function ApiKeysTab() {
@@ -61,11 +61,11 @@ export function ApiKeysTab() {
   async function handleRevoke(id: string) {
     await supabase.from('api_keys').update({ is_active: false }).eq('id', id)
     setKeys(prev => prev.map(k => k.id === id ? { ...k, is_active: false } : k))
-    showToast('Cle revoquee.')
+    showToast('Clé révoquée.')
   }
 
   async function handleCopy(text: string) {
-    await navigator.clipboard.writeText(text); showToast('Copie !')
+    await navigator.clipboard.writeText(text); showToast('Copié !')
   }
 
   const IC = 'w-full bg-[#161b27] border border-[#1a1b22] rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#d4a843] transition-colors'
@@ -81,7 +81,7 @@ export function ApiKeysTab() {
         </div>
         <button onClick={() => { setModalOpen(true); setGeneratedKey(null); setNewKeyName(''); setSelectedPerms(ALL_PERMS.filter(p=>p.default).map(p=>p.key)) }}
           className="px-4 py-2 bg-[#d4a843] hover:bg-[#f0c060] text-black text-xs font-bold rounded-xl transition-colors">
-          Creer une cle API
+          Créer une clé API
         </button>
       </div>
 
@@ -101,7 +101,7 @@ export function ApiKeysTab() {
             ))}
           </div>
         ) : keys.length === 0 ? (
-          <div className="px-5 py-8 text-sm text-gray-600 text-center">Aucune cle API.</div>
+          <div className="px-5 py-8 text-sm text-gray-600 text-center">Aucune clé API.</div>
         ) : (
           <table className="w-full text-sm">
             <thead><tr className="border-b border-[#252830]">
@@ -125,9 +125,9 @@ export function ApiKeysTab() {
                   <td className="px-4 py-3 text-xs text-gray-500">{k.expires_at ? new Date(k.expires_at).toLocaleDateString('fr-FR') : ''}</td>
                   <td className="px-4 py-3">
                     {k.is_active ? (
-                      <button onClick={() => handleRevoke(k.id)} className="text-xs text-red-400 hover:text-red-300 transition-colors">Revoquer</button>
+                      <button onClick={() => handleRevoke(k.id)} className="text-xs text-red-400 hover:text-red-300 transition-colors">Révoquer</button>
                     ) : (
-                      <span className="text-[10px] text-gray-700 font-mono">REVOQUEE</span>
+                      <span className="text-[10px] text-gray-700 font-mono">RÉVOQUÉE</span>
                     )}
                   </td>
                 </tr>
@@ -154,14 +154,14 @@ export function ApiKeysTab() {
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setModalOpen(false)} />
           <div className="relative z-10 w-full max-w-md bg-[#0f1118] border border-[#1a1b22] rounded-2xl shadow-2xl">
             <div className="flex items-center justify-between px-6 py-4 border-b border-[#1a1b22]">
-              <h3 className="text-sm font-bold text-white">{generatedKey ? 'Cle generee' : 'Nouvelle cle API'}</h3>
+              <h3 className="text-sm font-bold text-white">{generatedKey ? 'Clé générée' : 'Nouvelle clé API'}</h3>
               <button onClick={() => setModalOpen(false)} className="text-gray-500 hover:text-white p-1"><X size={16} /></button>
             </div>
             <div className="px-6 py-5 space-y-4">
               {generatedKey ? (
                 <div className="space-y-3">
                   <div className="bg-yellow-950/30 border border-yellow-800/40 rounded-xl p-3 text-xs text-yellow-300 font-bold">
-                    Cette cle ne sera plus affichee. Copiez-la maintenant.
+                    Cette clé ne sera plus affichée. Copiez-la maintenant.
                   </div>
                   <div className="bg-[#0a0b0f] rounded-xl px-4 py-3 font-mono text-xs text-[#d4a843] break-all flex items-start gap-2">
                     <span className="flex-1">{generatedKey}</span>
@@ -172,7 +172,7 @@ export function ApiKeysTab() {
               ) : (
                 <>
                   <div>
-                    <label className="block text-xs text-gray-400 uppercase tracking-wider mb-1.5">Nom de la cle *</label>
+                    <label className="block text-xs text-gray-400 uppercase tracking-wider mb-1.5">Nom de la clé *</label>
                     <input value={newKeyName} onChange={e => setNewKeyName(e.target.value)} placeholder="ERP Sage Production" className={IC} />
                   </div>
                   <div>
@@ -197,7 +197,7 @@ export function ApiKeysTab() {
                     <button onClick={() => setModalOpen(false)} className="flex-1 py-2.5 rounded-xl border border-[#1a1b22] text-sm text-gray-300">Annuler</button>
                     <button onClick={handleCreate} disabled={creating || !newKeyName.trim()}
                       className="flex-1 py-2.5 rounded-xl bg-[#d4a843] hover:bg-[#f0c060] text-black text-sm font-bold disabled:opacity-50">
-                      {creating ? '...' : 'Generer la cle'}
+                      {creating ? '...' : 'Générer la clé'}
                     </button>
                   </div>
                 </>

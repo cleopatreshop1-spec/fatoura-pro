@@ -17,10 +17,10 @@ type TabId = 'company' | 'signature' | 'api-keys' | 'notifications' | 'security'
 const TABS: { id: TabId; label: string; Icon: any; desc: string }[] = [
   { id: 'company',       label: 'Entreprise',             Icon: Building2,  desc: 'Infos, logo, banque' },
   { id: 'billing',       label: 'Abonnement',             Icon: CreditCard, desc: 'Plan, paiements, usage' },
-  { id: 'signature',     label: 'Signature electronique', Icon: Shield,     desc: 'Mandat / certificat ANCE' },
-  { id: 'api-keys',      label: 'Cles API',               Icon: Key,        desc: 'Integrations ERP' },
+  { id: 'signature',     label: 'Signature électronique', Icon: Shield,     desc: 'Mandat / certificat ANCE' },
+  { id: 'api-keys',      label: 'Clés API',               Icon: Key,        desc: 'Intégrations ERP' },
   { id: 'notifications', label: 'Notifications',          Icon: Bell,       desc: 'Alertes et emails' },
-  { id: 'security',      label: 'Securite',               Icon: Lock,       desc: 'Mot de passe, sessions' },
+  { id: 'security',      label: 'Sécurité',               Icon: Lock,       desc: 'Mot de passe, sessions' },
   { id: 'history',       label: 'Historique',             Icon: History,    desc: 'Journal des activités' },
   { id: 'public-profile', label: 'Profil public',          Icon: Globe,      desc: 'Page /c/[slug]' },
 ]
@@ -44,7 +44,7 @@ function SettingsContent() {
     <div className="space-y-4">
       {/* Page header */}
       <div>
-        <h1 className="text-xl font-bold text-white">Parametres</h1>
+        <h1 className="text-xl font-bold text-white">Paramètres</h1>
         <p className="text-gray-500 text-sm">Configuration de votre espace Fatoura Pro</p>
       </div>
 

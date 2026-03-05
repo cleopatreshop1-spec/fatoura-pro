@@ -405,7 +405,7 @@ export default function NewInvoicePage() {
       e.push('Client B2B : matricule fiscal manquant sur la fiche client')
     }
     if (forSubmit && !hasMandate && !hasCert) {
-      e.push('Signature electronique non configuree')
+      e.push('Signature électronique non configurée')
     }
     return e
   }
@@ -523,7 +523,7 @@ export default function NewInvoicePage() {
     setSubmitting(false)
     if (res.ok) {
       setSubmitSuccess(true)
-      showToast('Facture soumise a TTN', 'success')
+      showToast('Facture soumise à TTN', 'success')
       setTimeout(() => router.push(`/dashboard/invoices/${id}`), 2000)
     } else {
       setValidationErrors([data.error ?? 'Erreur lors de la soumission'])
@@ -775,7 +775,7 @@ export default function NewInvoicePage() {
                 <input type="date" value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)} className={IC} />
               </div>
               <div>
-                <label className={LC}>Date d'echeance</label>
+                <label className={LC}>Date d&apos;échéance</label>
                 <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
                   className={IC} placeholder="Optionnel" />
                 <div className="flex gap-1 mt-1.5">
@@ -799,7 +799,7 @@ export default function NewInvoicePage() {
                   placeholder="Bon de commande, projet..." className={IC} />
               </div>
               <div>
-                <label className={LC}>Date livraison estimee</label>
+                <label className={LC}>Date livraison estimée</label>
                 <input type="date" value={deliveryDate} onChange={e => setDeliveryDate(e.target.value)}
                   className={IC} placeholder="Optionnel" />
               </div>
@@ -825,7 +825,7 @@ export default function NewInvoicePage() {
 
           {/* SECTION 2: Client */}
           <div className={SECTION}>
-            <div className="text-xs font-bold text-[#d4a843] uppercase tracking-wider mb-4">Facturer a</div>
+            <div className="text-xs font-bold text-[#d4a843] uppercase tracking-wider mb-4">Facturer à</div>
             <ClientCombobox
               clients={clients}
               selected={selectedClient}
@@ -1149,7 +1149,7 @@ export default function NewInvoicePage() {
 
             {/* Signature status card */}
             <div className={SECTION}>
-              <div className="text-xs font-bold text-[#d4a843] uppercase tracking-wider mb-3">Signature electronique</div>
+              <div className="text-xs font-bold text-[#d4a843] uppercase tracking-wider mb-3">Signature électronique</div>
               {sigStatus === 'mandate' && (
                 <div className="flex items-center gap-2 text-xs text-[#2dd4a0] bg-[#2dd4a0]/10 border border-[#2dd4a0]/20 rounded-lg px-3 py-2">
                   <span className="font-bold"></span> Signature Fatoura Pro active
@@ -1164,7 +1164,7 @@ export default function NewInvoicePage() {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-xs text-[#e05a5a] bg-red-950/20 border border-red-900/30 rounded-lg px-3 py-2">
                     <AlertTriangle size={12} className="shrink-0" />
-                    Signature non configuree
+                    Signature non configurée
                   </div>
                   <Link href="/dashboard/settings?tab=signature"
                     className="block text-xs text-center text-gray-500 hover:text-[#d4a843] transition-colors">
@@ -1240,7 +1240,7 @@ export default function NewInvoicePage() {
               Signature requise
             </div>
             <p className="text-sm text-gray-400">
-              Vous devez configurer une signature electronique pour soumettre des factures a TTN.
+              Vous devez configurer une signature électronique pour soumettre des factures à TTN.
             </p>
             <div className="flex gap-3">
               <button onClick={() => setShowSigWarning(false)}

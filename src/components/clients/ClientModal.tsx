@@ -158,7 +158,7 @@ export function ClientModal({ open, onClose, onSaved, companyId, initial }: Prop
 
             {/* Coordonnées */}
             <section>
-              <div className={SH}>Coordonnees</div>
+              <div className={SH}>Coordonnées</div>
               <div className="space-y-3">
                 <div>
                   <label className={LC}>Adresse</label>

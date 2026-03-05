@@ -181,7 +181,7 @@ export default function ClientsPage() {
     await supabase.from('clients').delete().eq('id', deleteId)
     setDeleteId(null)
     setDeleting(false)
-    showToast('Client supprime.')
+    showToast('Client supprimé.')
     load()
   }
 
@@ -759,7 +759,7 @@ export default function ClientsPage() {
         <ClientModal
           open={modalOpen}
           onClose={() => setModalOpen(false)}
-          onSaved={() => { load(); showToast(editClient?.id ? 'Client modifie.' : 'Client ajoute.') }}
+          onSaved={() => { load(); showToast(editClient?.id ? 'Client modifié.' : 'Client ajouté.') }}
           companyId={activeCompany.id}
           initial={editClient}
         />
@@ -768,7 +768,7 @@ export default function ClientsPage() {
       <ConfirmDialog
         open={!!deleteId}
         title="Supprimer ce client ?"
-        description="Cette action est irreversible. Les factures associees ne seront pas supprimees."
+        description="Cette action est irréversible. Les factures associées ne seront pas supprimées."
         confirmLabel="Supprimer"
         dangerous
         loading={deleting}

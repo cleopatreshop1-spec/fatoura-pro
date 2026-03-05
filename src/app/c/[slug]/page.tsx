@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Building2, Phone, Mail, MapPin, Globe, CheckCircle } from 'lucide-react'
 
@@ -36,7 +37,7 @@ export default async function CompanyProfilePage({ params }: Ctx) {
     <div className="min-h-screen bg-[#080a0f]">
       {/* Top bar */}
       <div className="border-b border-[#1a1b22] px-6 py-3 flex items-center justify-between">
-        <a href="/" className="text-[#d4a843] font-black text-lg tracking-tight">Fatoura Pro</a>
+        <Link href="/" className="text-[#d4a843] font-black text-lg tracking-tight">Fatoura Pro</Link>
         <span className="text-xs text-gray-600">Profil vérifié</span>
       </div>
 
@@ -130,10 +131,10 @@ export default async function CompanyProfilePage({ params }: Ctx) {
         {/* Footer CTA */}
         <div className="text-center py-6">
           <p className="text-xs text-gray-700 mb-3">Profil généré par</p>
-          <a href="/" className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#d4a843] hover:bg-[#f0c060] text-black font-bold text-sm rounded-xl transition-colors">
+          <Link href="/" className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#d4a843] hover:bg-[#f0c060] text-black font-bold text-sm rounded-xl transition-colors">
             <Building2 size={14} />
             Créer mon profil sur Fatoura Pro
-          </a>
+          </Link>
         </div>
       </div>
     </div>

@@ -56,8 +56,8 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
       .eq('id', id)
 
     if (error) return err(error.message, 500)
-    await logActivity(supabase as any, company.id, user.id, 'client_updated', 'client', id, `Client ${(existing as any).name} modifie`)
-    return success({ message: 'Client mis a jour' })
+    await logActivity(supabase as any, company.id, user.id, 'client_updated', 'client', id, `Client ${(existing as any).name} modifié`)
+    return success({ message: 'Client mis à jour' })
   } catch (e: any) { return err(e.message, e.status ?? 500) }
 }
 
@@ -80,7 +80,7 @@ export async function DELETE(req: NextRequest, { params }: Ctx) {
 
     const { error } = await (supabase as any).from('clients').delete().eq('id', id)
     if (error) return err(error.message, 500)
-    await logActivity(supabase as any, company.id, user.id, 'client_deleted', 'client', id, `Client ${(existing as any).name} supprime`)
-    return success({ message: 'Client supprime' })
+    await logActivity(supabase as any, company.id, user.id, 'client_deleted', 'client', id, `Client ${(existing as any).name} supprimé`)
+    return success({ message: 'Client supprimé' })
   } catch (e: any) { return err(e.message, e.status ?? 500) }
 }

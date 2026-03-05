@@ -74,7 +74,7 @@ export function InvoiceDetailPanel({ invoice: initial, companyPrefix }: Props) {
   async function copyTTN() {
     if (!inv.ttn_id) return
     await navigator.clipboard.writeText(inv.ttn_id)
-    showToast('TTN_ID copie !')
+    showToast('TTN_ID copié !')
   }
 
   async function handleSubmitTTN() {
@@ -85,7 +85,7 @@ export function InvoiceDetailPanel({ invoice: initial, companyPrefix }: Props) {
     })
     const d = await res.json()
     setSubmitting(false)
-    if (res.ok) showToast('Facture soumise a TTN')
+    if (res.ok) showToast('Facture soumise à TTN')
     else showToast(d.error ?? 'Erreur soumission', 'err')
   }
 
@@ -127,7 +127,7 @@ export function InvoiceDetailPanel({ invoice: initial, companyPrefix }: Props) {
     setDownloadingPdf(true)
     try {
       const res = await fetch(`/api/invoices/${inv.id}/pdf`)
-      if (!res.ok) { const e = await res.json().catch(() => ({})); showToast(e.error ?? 'Erreur generation PDF', 'err'); return }
+      if (!res.ok) { const e = await res.json().catch(() => ({})); showToast(e.error ?? 'Erreur génération PDF', 'err'); return }
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -179,15 +179,15 @@ export function InvoiceDetailPanel({ invoice: initial, companyPrefix }: Props) {
       paid_at: s === 'paid' ? new Date().toISOString() : null,
     }).eq('id', inv.id)
     setSavingPay(false)
-    showToast('Statut paiement mis a jour')
+    showToast('Statut paiement mis à jour')
   }
 
   // Timeline events
   const timeline = [
-    inv.created_at   && { label: 'Facture creee',      date: inv.created_at,   color: 'text-gray-400',  dot: 'bg-gray-500' },
-    inv.submitted_at && { label: 'Soumise a TTN',       date: inv.submitted_at, color: 'text-[#4a9eff]', dot: 'bg-[#4a9eff]' },
-    inv.status === 'valid'    && inv.validated_at && { label: 'Validee par TTN',  date: inv.validated_at, color: 'text-[#2dd4a0]', dot: 'bg-[#2dd4a0]' },
-    inv.status === 'rejected' && inv.validated_at && { label: 'Rejetee par TTN', date: inv.validated_at, color: 'text-[#e05a5a]',  dot: 'bg-[#e05a5a]' },
+    inv.created_at   && { label: 'Facture créée',      date: inv.created_at,   color: 'text-gray-400',  dot: 'bg-gray-500' },
+    inv.submitted_at && { label: 'Soumise à TTN',       date: inv.submitted_at, color: 'text-[#4a9eff]', dot: 'bg-[#4a9eff]' },
+    inv.status === 'valid'    && inv.validated_at && { label: 'Validée par TTN',  date: inv.validated_at, color: 'text-[#2dd4a0]', dot: 'bg-[#2dd4a0]' },
+    inv.status === 'rejected' && inv.validated_at && { label: 'Rejetée par TTN', date: inv.validated_at, color: 'text-[#e05a5a]',  dot: 'bg-[#e05a5a]' },
   ].filter(Boolean) as { label: string; date: string; color: string; dot: string }[]
 
   const fmtDate = (d: string) => new Date(d).toLocaleString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })
@@ -237,7 +237,7 @@ export function InvoiceDetailPanel({ invoice: initial, companyPrefix }: Props) {
         {inv.status === 'queued' && (
           <div className="flex items-center gap-2 text-xs text-gray-400 bg-[#161b27] rounded-xl px-3 py-2.5 mb-3">
             <Clock size={13} />
-            Nouvelle tentative programmee
+            Nouvelle tentative programmée
           </div>
         )}
 
@@ -269,7 +269,7 @@ export function InvoiceDetailPanel({ invoice: initial, companyPrefix }: Props) {
       <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-5">
         <div className="text-xs font-bold text-[#d4a843] uppercase tracking-wider mb-3">Statut paiement</div>
         <div className="grid grid-cols-3 gap-1.5">
-          {([['unpaid','Non payee','border-[#1a1b22] text-gray-400'],['partial','Partielle','border-yellow-700/50 text-yellow-400'],['paid','Payee','border-[#2dd4a0]/50 text-[#2dd4a0]']] as [PayStatus,string,string][]).map(([s, label, cls]) => (
+          {([['unpaid','Non payée','border-[#1a1b22] text-gray-400'],['partial','Partielle','border-yellow-700/50 text-yellow-400'],['paid','Payée','border-[#2dd4a0]/50 text-[#2dd4a0]']] as [PayStatus,string,string][]).map(([s, label, cls]) => (
             <button key={s} onClick={() => handlePayStatus(s)} disabled={savingPay}
               className={`py-2 rounded-xl border text-xs font-bold transition-all ${payStatus===s ? cls + ' bg-opacity-10 ' + cls.replace('border-','bg-').replace(' text-',' bg-').split(' bg-')[0] : 'border-[#1a1b22] text-gray-600 hover:border-[#252830]'}`}>
               {label}
@@ -278,7 +278,7 @@ export function InvoiceDetailPanel({ invoice: initial, companyPrefix }: Props) {
         </div>
         {payStatus === 'paid' && inv.paid_at && (
           <div className="mt-2 text-[10px] text-gray-600">
-            Payee le {new Date(inv.paid_at).toLocaleDateString('fr-FR')}
+            Payée le {new Date(inv.paid_at).toLocaleDateString('fr-FR')}
           </div>
         )}
       </div>
@@ -303,7 +303,7 @@ export function InvoiceDetailPanel({ invoice: initial, companyPrefix }: Props) {
 
         <button onClick={handleDownloadPDF} disabled={downloadingPdf}
           className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#d4a843]/40 bg-[#d4a843]/5 text-sm text-[#d4a843] hover:bg-[#d4a843]/10 transition-colors disabled:opacity-50">
-          {downloadingPdf ? <><div className="w-3.5 h-3.5 border-2 border-[#d4a843]/30 border-t-[#d4a843] rounded-full animate-spin" />Generation...</> : <><FileDown size={14} />Telecharger PDF</>}
+          {downloadingPdf ? <><div className="w-3.5 h-3.5 border-2 border-[#d4a843]/30 border-t-[#d4a843] rounded-full animate-spin" />Génération...</> : <><FileDown size={14} />Télécharger PDF</>}
         </button>
 
         <button onClick={handleDuplicate}

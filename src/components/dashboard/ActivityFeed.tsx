@@ -31,12 +31,12 @@ export function ActivityFeed({ items }: { items: ActivityItem[] }) {
   return (
     <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl overflow-hidden flex flex-col h-full">
       <div className="px-5 py-4 border-b border-[#1a1b22] shrink-0">
-        <h2 className="text-sm font-bold text-gray-200">Activite recente</h2>
+        <h2 className="text-sm font-bold text-gray-200">Activité récente</h2>
       </div>
 
       {items.length === 0 ? (
         <div className="flex-1 flex items-center justify-center py-12 text-sm text-gray-600">
-          Aucune activite recente
+          Aucune activité récente
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto divide-y divide-[#1a1b22]">

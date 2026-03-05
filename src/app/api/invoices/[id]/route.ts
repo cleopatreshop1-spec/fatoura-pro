@@ -75,8 +75,8 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
       }))
     )
 
-    await logActivity(supabase as any, company.id, user.id, 'invoice_updated', 'invoice', id, `Facture ${invoice.number} modifiee`)
-    return success({ message: 'Facture mise a jour', totals, total_in_words: totalInWords })
+    await logActivity(supabase as any, company.id, user.id, 'invoice_updated', 'invoice', id, `Facture ${invoice.number} modifiée`)
+    return success({ message: 'Facture mise à jour', totals, total_in_words: totalInWords })
   } catch (e: any) { return err(e.message, e.status ?? 500) }
 }
 
@@ -86,13 +86,13 @@ export async function DELETE(req: NextRequest, { params }: Ctx) {
     const { user, company, supabase } = await getAuthenticatedCompany(req)
     const invoice = await getOwnedInvoice(supabase as any, id, company.id)
 
-    if (invoice.status !== 'draft') return err('Seules les factures brouillon peuvent etre supprimees', 409)
+    if (invoice.status !== 'draft') return err('Seules les factures brouillon peuvent être supprimées', 409)
 
     const { error } = await (supabase as any).from('invoices')
       .update({ deleted_at: new Date().toISOString() }).eq('id', id)
     if (error) return err(error.message, 500)
 
-    await logActivity(supabase as any, company.id, user.id, 'invoice_deleted', 'invoice', id, `Facture ${invoice.number} supprimee`)
-    return success({ message: 'Facture supprimee' })
+    await logActivity(supabase as any, company.id, user.id, 'invoice_deleted', 'invoice', id, `Facture ${invoice.number} supprimée`)
+    return success({ message: 'Facture supprimée' })
   } catch (e: any) { return err(e.message, e.status ?? 500) }
 }

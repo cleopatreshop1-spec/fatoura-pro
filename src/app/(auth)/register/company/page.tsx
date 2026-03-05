@@ -86,7 +86,7 @@ function RegisterCompanyForm() {
     setServerError('')
     const supabase = createClient()
     const { data: { user }, error: authErr } = await supabase.auth.getUser()
-    if (authErr || !user) { setServerError('Session expiree. Reconnectez-vous.'); return }
+    if (authErr || !user) { setServerError('Session expirée. Reconnectez-vous.'); return }
 
     const { error } = await supabase.from('companies').insert({
       owner_id: user.id,
@@ -211,7 +211,7 @@ function RegisterCompanyForm() {
             <button type="button" onClick={() => setShowBank(b => !b)}
               className="text-xs text-gray-400 hover:text-gray-200 flex items-center gap-1.5 transition-colors">
               <span className="text-[#d4a843]">{showBank ? '' : ''}</span>
-              Coordonnees bancaires (optionnel)
+              Coordonnées bancaires (optionnel)
             </button>
 
             {showBank && (

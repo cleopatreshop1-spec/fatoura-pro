@@ -16,7 +16,7 @@ export async function DELETE(req: NextRequest, { params }: Ctx) {
       .from('api_keys').update({ is_active: false, revoked_at: new Date().toISOString() }).eq('id', id)
     if (error) return err(error.message, 500)
 
-    await logActivity(supabase as any, company.id, user.id, 'api_key_revoked', 'api_key', id, `Cle API "${(key as any).name}" revoquee`)
-    return success({ message: 'Cle revoquee' })
+    await logActivity(supabase as any, company.id, user.id, 'api_key_revoked', 'api_key', id, `Clé API "${(key as any).name}" révoquée`)
+    return success({ message: 'Clé révoquée' })
   } catch (e: any) { return err(e.message, e.status ?? 500) }
 }

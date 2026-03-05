@@ -86,10 +86,10 @@ export async function POST(request: NextRequest) {
       await (supabase as any).from('ttn_queue').delete().eq('invoice_id', invoiceId)
 
       await insertNotification(supabase as any, company.id, 'invoice_validated',
-        `Facture ${(invoice as any).number} validee par TTN`, `TTN_ID: ${ttnId}`)
+        `Facture ${(invoice as any).number} validée par TTN`, `TTN_ID: ${ttnId}`)
       await logActivity(supabase as any, company.id, user.id,
         'invoice_validated', 'invoice', invoiceId,
-        `Facture ${(invoice as any).number} validee  TTN_ID: ${ttnId}`)
+        `Facture ${(invoice as any).number} validée — TTN_ID: ${ttnId}`)
 
       // Email notification
       if (await shouldSendEmail(supabase as any, company.id, 'invoice_validated_email')) {
@@ -136,10 +136,10 @@ export async function POST(request: NextRequest) {
         }).eq('id', invoiceId)
 
         await insertNotification(supabase as any, company.id, 'invoice_rejected',
-          `Facture ${(invoice as any).number} rejetee par TTN`, humanReason)
+          `Facture ${(invoice as any).number} rejetée par TTN`, humanReason)
         await logActivity(supabase as any, company.id, user.id,
           'invoice_rejected', 'invoice', invoiceId,
-          `Facture ${(invoice as any).number} rejetee: ${humanReason}`)
+          `Facture ${(invoice as any).number} rejetée : ${humanReason}`)
 
         // Email notification
         if (await shouldSendEmail(supabase as any, company.id, 'invoice_rejected_email')) {

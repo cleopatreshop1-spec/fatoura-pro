@@ -112,14 +112,14 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                 )}
                 <div className="mt-3 space-y-0.5 text-xs text-gray-500">
                   <div><span className="text-gray-400">Date:</span> {i.issue_date ? new Date(i.issue_date).toLocaleDateString('fr-FR') : ''}</div>
-                  {i.due_date && <div><span className="text-gray-400">Echeance:</span> {new Date(i.due_date).toLocaleDateString('fr-FR')}</div>}
+                  {i.due_date && <div><span className="text-gray-400">Échéance:</span> {new Date(i.due_date).toLocaleDateString('fr-FR')}</div>}
                 </div>
               </div>
             </div>
 
             {/* Client Block */}
             <div className="px-8 py-5 border-b border-gray-100 bg-gray-50">
-              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Facturer a</div>
+              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Facturer à</div>
               {cl ? (
                 <div>
                   <div className="font-bold text-gray-900 text-sm">{cl.name}</div>
@@ -198,7 +198,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
               {i.status === 'valid' && i.ttn_id && (
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-green-500" />
-                  <span className="text-[10px] font-bold text-green-700 uppercase tracking-wider">Facture validee TTN</span>
+                  <span className="text-[10px] font-bold text-green-700 uppercase tracking-wider">Facture validée TTN</span>
                   <span className="text-[10px] font-mono text-green-600">ID: {i.ttn_id}</span>
                 </div>
               )}

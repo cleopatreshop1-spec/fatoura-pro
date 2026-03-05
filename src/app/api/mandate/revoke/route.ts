@@ -19,8 +19,8 @@ export async function PATCH(request: NextRequest) {
     }).eq('id', (mandate as any).id)
 
     if (error) return err(error.message, 500)
-    await logActivity(supabase as any, company.id, user.id, 'mandate_revoked', 'mandate', (mandate as any).id, 'Mandat de signature revoque')
-    return success({ message: 'Mandat revoque' })
+    await logActivity(supabase as any, company.id, user.id, 'mandate_revoked', 'mandate', (mandate as any).id, 'Mandat de signature révoqué')
+    return success({ message: 'Mandat révoqué' })
   } catch (e: any) { return err(e.message, e.status ?? 500) }
 }
 

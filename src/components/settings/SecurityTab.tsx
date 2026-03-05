@@ -27,7 +27,7 @@ export function SecurityTab() {
     setPwdLoading(true); setPwdMsg(null)
     const { error } = await supabase.auth.updateUser({ password: newPwd })
     if (error) setPwdMsg({ text: error.message, ok: false })
-    else { setPwdMsg({ text: 'Mot de passe modifie avec succes', ok: true }); setOldPwd(''); setNewPwd(''); setConfirmPwd('') }
+    else { setPwdMsg({ text: 'Mot de passe modifié avec succès', ok: true }); setOldPwd(''); setNewPwd(''); setConfirmPwd('') }
     setPwdLoading(false)
   }
 
@@ -75,26 +75,26 @@ export function SecurityTab() {
       {/* Sessions */}
       <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-5 space-y-4">
         <h2 className="text-sm font-bold text-white">Sessions actives</h2>
-        <p className="text-xs text-gray-500">Deconnectez tous les appareils si vous suspectez un acces non autorise.</p>
+        <p className="text-xs text-gray-500">Déconnectez tous les appareils si vous suspectez un accès non autorisé.</p>
         <button onClick={handleSignOutAll} disabled={signOutLoading}
           className="flex items-center gap-2 px-4 py-2.5 border border-[#252830] text-sm text-gray-300 hover:text-white hover:bg-[#161b27] rounded-xl transition-colors disabled:opacity-50">
-          {signOutLoading ? 'Deconnexion...' : 'Deconnecter tous les appareils'}
+          {signOutLoading ? 'Déconnexion...' : 'Déconnecter tous les appareils'}
         </button>
       </div>
 
       {/* Export data */}
       <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-5 space-y-3">
-        <h2 className="text-sm font-bold text-white">Mes donnees (RGPD)</h2>
-        <p className="text-xs text-gray-500">Telechargez une copie de toutes vos donnees.</p>
+        <h2 className="text-sm font-bold text-white">Mes données (RGPD)</h2>
+        <p className="text-xs text-gray-500">Téléchargez une copie de toutes vos données.</p>
         <button className="px-4 py-2.5 border border-[#252830] text-sm text-gray-300 hover:text-white hover:bg-[#161b27] rounded-xl transition-colors opacity-60 cursor-not-allowed" disabled>
-          Telecharger mes donnees (bientot disponible)
+          Télécharger mes données (bientôt disponible)
         </button>
       </div>
 
       {/* Danger zone */}
       <div className="bg-red-950/20 border border-red-900/40 rounded-2xl p-5 space-y-4">
         <h2 className="text-sm font-bold text-red-400">Zone dangereuse</h2>
-        <p className="text-xs text-gray-500">La suppression de votre compte est irreversible. Toutes vos donnees seront perdues.</p>
+        <p className="text-xs text-gray-500">La suppression de votre compte est irréversible. Toutes vos données seront perdues.</p>
         <button onClick={() => setConfirmDelete(true)}
           className="px-4 py-2.5 border border-red-600/50 text-sm text-red-400 hover:bg-red-950/30 rounded-xl transition-colors">
           Supprimer mon compte
@@ -104,7 +104,7 @@ export function SecurityTab() {
       {/* Step 1 */}
       <ConfirmDialog open={confirmDelete && !confirmDelete2}
         title="Supprimer votre compte ?" dangerous
-        description="Cette action est irreversible. Toutes vos factures, clients et donnees seront definitivement supprimes."
+        description="Cette action est irréversible. Toutes vos factures, clients et données seront définitivement supprimés."
         confirmLabel="Continuer" cancelLabel="Annuler"
         onConfirm={() => { setConfirmDelete2(true) }}
         onCancel={() => setConfirmDelete(false)} />
@@ -123,7 +123,7 @@ export function SecurityTab() {
                 className="flex-1 py-2.5 rounded-xl border border-[#1a1b22] text-sm text-gray-300">Annuler</button>
               <button onClick={handleDeleteAccount} disabled={deleting || deleteConfirmText !== 'SUPPRIMER'}
                 className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-bold disabled:opacity-40">
-                {deleting ? '...' : 'Supprimer definitivement'}
+                {deleting ? '...' : 'Supprimer définitivement'}
               </button>
             </div>
           </div>

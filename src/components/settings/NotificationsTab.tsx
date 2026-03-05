@@ -5,11 +5,11 @@ import { createClient } from '@/lib/supabase/client'
 import { useCompany } from '@/contexts/CompanyContext'
 
 const TOGGLES = [
-  { key: 'invoice_validated', label: 'Facture validee par TTN',       channels: 'Email + In-app', urgent: false },
-  { key: 'invoice_rejected',  label: 'Facture rejetee par TTN',       channels: 'Email + In-app', urgent: true },
-  { key: 'mandate_expiring',  label: 'Mandat expirant (-60 jours)',    channels: 'Email', urgent: false },
-  { key: 'cert_expiring',     label: 'Certificat expirant (-60 jours)',channels: 'Email', urgent: false },
-  { key: 'monthly_tva',       label: 'Resume TVA mensuel',             channels: 'Email (1er du mois)', urgent: false },
+  { key: 'invoice_validated', label: 'Facture validée par TTN',        channels: 'Email + In-app', urgent: false },
+  { key: 'invoice_rejected',  label: 'Facture rejetée par TTN',        channels: 'Email + In-app', urgent: true },
+  { key: 'mandate_expiring',  label: 'Mandat expirant (-60 jours)',     channels: 'Email', urgent: false },
+  { key: 'cert_expiring',     label: 'Certificat expirant (-60 jours)', channels: 'Email', urgent: false },
+  { key: 'monthly_tva',       label: 'Résumé TVA mensuel',               channels: 'Email (1er du mois)', urgent: false },
   { key: 'weekly_report',     label: 'Rapport hebdomadaire',           channels: 'Email (lundi matin)', urgent: false },
   { key: 'overdue_reminder', label: 'Rappel factures en retard',      channels: 'Email (J+1, J+3, J+7, J+14, J+30)', urgent: false },
 ]
@@ -58,8 +58,8 @@ export function NotificationsTab() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-sm font-bold text-white mb-1">Preferences de notification</h2>
-        <p className="text-xs text-gray-500">Choisissez quand et comment vous souhaitez etre notifie.</p>
+        <h2 className="text-sm font-bold text-white mb-1">Préférences de notification</h2>
+        <p className="text-xs text-gray-500">Choisissez quand et comment vous souhaitez être notifié.</p>
       </div>
 
       <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl overflow-hidden divide-y divide-[#1a1b22]">
@@ -84,10 +84,10 @@ export function NotificationsTab() {
           className="w-full bg-[#161b27] border border-[#1a1b22] rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none focus:border-[#d4a843] transition-colors max-w-sm" />
       </div>
 
-      {saved && <div className="text-sm text-[#2dd4a0] bg-[#2dd4a0]/10 border border-[#2dd4a0]/20 rounded-xl px-4 py-3">Preferences enregistrees.</div>}
+      {saved && <div className="text-sm text-[#2dd4a0] bg-[#2dd4a0]/10 border border-[#2dd4a0]/20 rounded-xl px-4 py-3">Préférences enregistrées.</div>}
       <button onClick={handleSave} disabled={saving}
         className="px-6 py-2.5 bg-[#d4a843] hover:bg-[#f0c060] text-black font-bold rounded-xl text-sm transition-colors disabled:opacity-50">
-        {saving ? 'Enregistrement...' : 'Enregistrer les preferences'}
+        {saving ? 'Enregistrement...' : 'Enregistrer les préférences'}
       </button>
     </div>
   )

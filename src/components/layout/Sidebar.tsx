@@ -31,13 +31,13 @@ const NAV: NavItem[] = [
   { href: '/dashboard/invoices',  label: 'Factures',               Icon: FileText,         badge: true },
   { href: '/dashboard/clients',   label: 'Clients',                Icon: Users },
   { href: '/dashboard/recurring', label: 'Factures récurrentes',   Icon: RefreshCw },
-  { href: '/dashboard/tva',       label: 'TVA & Declarations',     Icon: Calculator },
+  { href: '/dashboard/tva',       label: 'TVA & Déclarations',     Icon: Calculator },
   { href: '/dashboard/expenses',  label: 'Dépenses',               Icon: TrendingDown },
   { href: '/dashboard/financing', label: 'Flash Financing',        Icon: Zap, soon: true },
 ]
 
 const SECONDARY: NavItem[] = [
-  { href: '/dashboard/settings', label: 'Parametres', Icon: Settings },
+  { href: '/dashboard/settings', label: 'Paramètres', Icon: Settings },
 ]
 
 interface Props {
@@ -268,7 +268,7 @@ export function Sidebar({ userEmail, userName, userInitials, onClose }: Props) {
           className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-500 hover:bg-red-950/25 hover:text-red-400 transition-colors disabled:opacity-50"
         >
           <LogOut size={14} className="shrink-0" />
-          <span>{signingOut ? 'Deconnexion...' : 'Se deconnecter'}</span>
+          <span>{signingOut ? 'Déconnexion...' : 'Se déconnecter'}</span>
         </button>
       </div>
     </aside>

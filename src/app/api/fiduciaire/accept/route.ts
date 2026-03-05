@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
       .maybeSingle()
 
     if (findErr) return err(findErr.message, 500)
-    if (!invite) return err('Invitation introuvable ou deja acceptee', 404)
+    if (!invite) return err('Invitation introuvable ou déjà acceptée', 404)
 
     // Link this company to the fiduciaire
     const { error: updateErr } = await (supabase as any)
@@ -33,8 +33,8 @@ export async function POST(request: NextRequest) {
 
     await logActivity(supabase as any, company.id, user.id,
       'fiduciaire_invite_accepted', 'fiduciaire_client', (invite as any).id,
-      `Invitation acceptee depuis ${(invite as any).fiduciaire_company_id}`)
+      `Invitation acceptée depuis ${(invite as any).fiduciaire_company_id}`)
 
-    return success({ message: 'Lien fiduciaire etabli avec succes' })
+    return success({ message: 'Lien fiduciaire établi avec succès' })
   } catch (e: any) { return err(e.message, e.status ?? 500) }
 }

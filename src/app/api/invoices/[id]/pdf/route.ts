@@ -14,12 +14,12 @@ export async function GET(req: NextRequest, { params }: Ctx) {
     const { id } = await params
     const supabase = await createClient()
     const { data: { user }, error: authErr } = await supabase.auth.getUser()
-    if (authErr || !user) return err('Non authentifie', 401)
+    if (authErr || !user) return err('Non authentifié', 401)
 
     // Get company for ownership check
     const { data: company } = await (supabase as any)
       .from('companies').select('*').eq('owner_id', user.id).order('created_at', { ascending: true }).limit(1).single()
-    if (!company) return err('Societe introuvable', 404)
+    if (!company) return err('Soci\u00e9t\u00e9 introuvable', 404)
 
     // Fetch full invoice
     const { data: invoice, error: invErr } = await (supabase as any)
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
       .eq('company_id', (company as any).id)
       .single()
 
-    if (invErr || !invoice) return err('Facture introuvable ou acces refuse', 404)
+    if (invErr || !invoice) return err('Facture introuvable ou accès refusé', 404)
 
     const inv   = invoice as any
     const cl    = inv.clients as any
@@ -116,6 +116,6 @@ export async function GET(req: NextRequest, { params }: Ctx) {
   } catch (e: any) {
     console.error('[PDF] Error:', e?.message)
     captureError(e, { action: 'pdf_generate' })
-    return err(e?.message ?? 'Erreur generation PDF', 500)
+    return err(e?.message ?? 'Erreur génération PDF', 500)
   }
 }

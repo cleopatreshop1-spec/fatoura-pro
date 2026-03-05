@@ -1,6 +1,7 @@
 ﻿export const dynamic = 'force-dynamic'
 
 import { Suspense } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { RealtimeProvider } from '@/components/dashboard/RealtimeProvider'
 import { PaymentSuccessToast } from '@/components/billing/PaymentSuccessToast'
@@ -43,7 +44,7 @@ export default async function DashboardPage() {
         <div className="text-center space-y-3">
           <div className="text-4xl">🏢</div>
           <p className="text-gray-400 text-sm">Aucune société configurée.</p>
-          <a href="/register/company" className="text-[#d4a843] hover:underline text-sm">Créer mon entreprise</a>
+          <Link href="/register/company" className="text-[#d4a843] hover:underline text-sm">Créer mon entreprise</Link>
         </div>
       </div>
     )
@@ -784,7 +785,7 @@ export default async function DashboardPage() {
                         'text-gray-500 bg-[#1a1b22] border-[#252830]'
                       }`}>{trend > 0 ? '+' : ''}{trend}% vs T{qtr}</span>
                     )}
-                    <a href="/dashboard/tva" className="text-[10px] text-gray-600 hover:text-[#d4a843] transition-colors">Détail →</a>
+                    <Link href="/dashboard/tva" className="text-[10px] text-gray-600 hover:text-[#d4a843] transition-colors">Détail →</Link>
                   </div>
                 </div>
                 <div className="flex items-end gap-3 mb-3">
@@ -1666,7 +1667,7 @@ export default async function DashboardPage() {
 
           {/* Overdue client alert */}
           {worstOverdue && (
-            <a href={`/dashboard/clients/${worstOverdue.id}`}
+            <Link href={`/dashboard/clients/${worstOverdue.id}`}
               className="block bg-[#0f1118] border border-red-900/40 rounded-2xl px-4 py-4 hover:border-red-700/60 transition-colors group">
               <div className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-lg bg-red-950/40 border border-red-900/40 flex items-center justify-center shrink-0">
@@ -1682,7 +1683,7 @@ export default async function DashboardPage() {
                 </div>
                 <span className="text-gray-600 group-hover:text-red-400 transition-colors text-sm">→</span>
               </div>
-            </a>
+            </Link>
           )}
 
           {/* Overdue escalation breakdown */}
@@ -1742,7 +1743,7 @@ export default async function DashboardPage() {
             <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-xs font-bold text-[#d4a843] uppercase tracking-wider">À encaisser en priorité</h2>
-                <a href="/dashboard/invoices?payment=unpaid" className="text-[10px] text-gray-600 hover:text-[#d4a843] transition-colors">Tout voir →</a>
+                <Link href="/dashboard/invoices?payment=unpaid" className="text-[10px] text-gray-600 hover:text-[#d4a843] transition-colors">Tout voir →</Link>
               </div>
               <ul className="space-y-2">
                 {top3Pending.map((inv: any) => {
@@ -1752,7 +1753,7 @@ export default async function DashboardPage() {
                   const isOver = daysOverdue !== null && daysOverdue > 0
                   return (
                     <li key={inv.id}>
-                      <a href={`/dashboard/invoices/${inv.id}`}
+                      <Link href={`/dashboard/invoices/${inv.id}`}
                         className="flex items-center gap-3 px-3 py-2 rounded-xl border border-[#1a1b22] hover:border-[#d4a843]/20 hover:bg-[#161b27] transition-all group">
                         <div className={`w-1.5 h-8 rounded-full shrink-0 ${isOver ? 'bg-red-500' : 'bg-[#f59e0b]'}`} />
                         <div className="flex-1 min-w-0">
@@ -1770,7 +1771,7 @@ export default async function DashboardPage() {
                         <span className="text-xs font-mono font-bold text-gray-300 shrink-0">
                           {new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Number(inv.ttc_amount ?? 0))}
                         </span>
-                      </a>
+                      </Link>
                     </li>
                   )
                 })}
@@ -1816,10 +1817,10 @@ export default async function DashboardPage() {
                   </div>
                 </div>
               ))}
-              <a href="/dashboard/invoices?payment=unpaid"
+              <Link href="/dashboard/invoices?payment=unpaid"
                 className="block text-center text-[10px] text-gray-600 hover:text-[#d4a843] transition-colors pt-1">
                 Voir les impayées →
-              </a>
+              </Link>
             </div>
             )
           })()}
@@ -1875,7 +1876,7 @@ export default async function DashboardPage() {
                     const daysLeft = Math.ceil((new Date(inv.due_date).getTime() - Date.now()) / 86400000)
                     return (
                       <li key={inv.id}>
-                        <a href={`/dashboard/invoices/${inv.id}`}
+                        <Link href={`/dashboard/invoices/${inv.id}`}
                           className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg border border-[#1a1b22] hover:border-[#f59e0b]/30 hover:bg-[#161b27] transition-all group">
                           <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border shrink-0 ${
                             daysLeft <= 1 ? 'text-red-400 bg-red-950/30 border-red-900/30' :
@@ -1886,7 +1887,7 @@ export default async function DashboardPage() {
                           <span className="text-[10px] font-mono font-bold text-gray-300 shrink-0">
                             {new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Number(inv.ttc_amount ?? 0))}
                           </span>
-                        </a>
+                        </Link>
                       </li>
                     )
                   })}

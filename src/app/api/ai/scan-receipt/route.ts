@@ -42,14 +42,14 @@ export async function POST(request: NextRequest) {
     const genAI = getGeminiClient()
     const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL ?? 'gemini-2.5-flash' })
 
-    const prompt = `Analyse ce recu ou ticket de caisse tunisien.
-Extrais exactement ces donnees en JSON :
+    const prompt = `Analyse ce reçu ou ticket de caisse tunisien.
+Extrais exactement ces données en JSON :
 {
   "date": "YYYY-MM-DD ou null si illisible",
   "merchant": "nom du commerce ou null",
   "amount": montant total TND (nombre),
-  "category": une de ces categories exactement : "Fournitures de bureau" | "Transport et carburant" | "Restauration client" | "Telecommunications" | "Loyer et charges" | "Equipement informatique" | "Formation et documentation" | "Publicite et marketing" | "Services professionnels" | "Autre",
-  "tva_rate": taux TVA si visible sur le recu (19, 7, ou 0) ou null,
+  "category": une de ces catégories exactement : "Fournitures de bureau" | "Transport et carburant" | "Restauration client" | "Télécommunications" | "Loyer et charges" | "Équipement informatique" | "Formation et documentation" | "Publicité et marketing" | "Services professionnels" | "Autre",
+  "tva_rate": taux TVA si visible sur le reçu (19, 7, ou 0) ou null,
   "tva_amount": montant TVA si visible ou null
 }
 Retourne uniquement le JSON. Pas d'explication. Pas de markdown.`
@@ -79,9 +79,9 @@ Retourne uniquement le JSON. Pas d'explication. Pas de markdown.`
       return err(error.message, error.status)
     }
     if (error instanceof SyntaxError) {
-      return err('Impossible d\'analyser le recu. Vérifiez la qualité de l\'image.', 422)
+      return err('Impossible d\'analyser le reçu. Vérifiez la qualité de l\'image.', 422)
     }
     captureError(error, { action: 'scan_receipt' })
-    return err('Impossible d\'analyser le recu. Réessayez.', 422)
+    return err('Impossible d\'analyser le reçu. Réessayez.', 422)
   }
 }

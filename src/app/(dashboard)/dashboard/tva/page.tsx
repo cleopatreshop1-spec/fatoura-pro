@@ -1,12 +1,13 @@
 ﻿'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { createClient } from '@/lib/supabase/client'
 import { useCompany } from '@/contexts/CompanyContext'
 import { fmtTND, STAMP_DUTY } from '@/lib/utils/tva-calculator'
 
-const MONTHS_FR = ['Jan','Fev','Mar','Avr','Mai','Jun','Jul','Aou','Sep','Oct','Nov','Dec']
+const MONTHS_FR = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc']
 
 type Quarter = { label: string; period: string; from: string; to: string; year: number; q: number }
 type InvWithLines = {
@@ -147,7 +148,7 @@ export default function TVAPage() {
       `  CA HT total: ${fmtTND(totalHT)} TND`,
     ].join('\n')
     await navigator.clipboard.writeText(lines)
-    showToast('Totaux copies !')
+    showToast('Totaux copiés !')
   }
 
   function handleCSV() {
@@ -187,7 +188,7 @@ export default function TVAPage() {
     doc.setTextColor(0,0,0)
 
     doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.setTextColor(...darkBlue)
-    doc.text('Ventilation TVA  Pour declaration DGI', 14, 52)
+    doc.text('Ventilation TVA — Pour déclaration DGI', 14, 52)
 
     autoTable(doc, {
       startY: 58,
@@ -206,8 +207,8 @@ export default function TVAPage() {
 
     const finalY = (doc as any).lastAutoTable.finalY + 10
     doc.setFontSize(8); doc.setTextColor(120,120,120); doc.setFont('helvetica','italic')
-    doc.text('Ces donnees sont basees sur les factures validees par la plateforme TTN/ElFatoora.', 14, finalY)
-    doc.text('Consultez votre expert-comptable pour votre declaration officielle.', 14, finalY + 5)
+    doc.text('Ces données sont basées sur les factures validées par la plateforme TTN/ElFatoora.', 14, finalY)
+    doc.text('Consultez votre expert-comptable pour votre déclaration officielle.', 14, finalY + 5)
 
     doc.save(`TVA_${periodLabel.replace(/ /g,'_')}.pdf`)
   }
@@ -220,8 +221,8 @@ export default function TVAPage() {
 
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-white">TVA & Declarations</h1>
-        <p className="text-gray-500 text-sm">Preparation de votre declaration DGI</p>
+        <h1 className="text-xl font-bold text-white">TVA &amp; Déclarations</h1>
+        <p className="text-gray-500 text-sm">Préparation de votre déclaration DGI</p>
       </div>
 
       {/* SECTION 1: Period tabs */}
@@ -253,7 +254,7 @@ export default function TVAPage() {
           </div>
         )}
         <p className="text-[10px] text-gray-600 mt-3">
-          Donnees basees sur les factures validees TTN uniquement
+          Données basées sur les factures validées TTN uniquement
         </p>
       </div>
 
@@ -286,8 +287,8 @@ export default function TVAPage() {
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
             {[
               { label: 'CA HT Total', value: fmtTND(totalHT), suffix: 'TND', accent: '#d4a843' },
-              { label: 'TVA Collectee', value: fmtTND(totalTVA), suffix: 'TND', accent: '#2dd4a0' },
-              { label: 'Factures Validees', value: String(invoices.length), suffix: 'factures', accent: '#4a9eff' },
+              { label: 'TVA Collectée', value: fmtTND(totalTVA), suffix: 'TND', accent: '#2dd4a0' },
+              { label: 'Factures Validées', value: String(invoices.length), suffix: 'factures', accent: '#4a9eff' },
               { label: 'Droit de timbre total', value: fmtTND(stampTotal), suffix: 'TND', accent: '#a78bfa' },
             ].map(({ label, value, suffix, accent }) => (
               <div key={label} className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-5 relative overflow-hidden">
@@ -302,9 +303,9 @@ export default function TVAPage() {
           {/* SECTION 3: TVA Breakdown Table */}
           <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl overflow-hidden">
             <div className="px-5 py-4 border-b border-[#1a1b22]">
-              <h2 className="text-sm font-bold text-white">Ventilation TVA  A reporter sur votre declaration</h2>
+              <h2 className="text-sm font-bold text-white">Ventilation TVA — À reporter sur votre déclaration</h2>
               <p className="text-[10px] text-gray-600 mt-0.5">
-                Tableau de synthese {custom ? `du ${customFrom} au ${customTo}` : selectedQ.label}
+                Tableau de synthèse {custom ? `du ${customFrom} au ${customTo}` : selectedQ.label}
               </p>
             </div>
             <div className="overflow-x-auto">
@@ -412,9 +413,9 @@ export default function TVAPage() {
                     {filteredInvoices.map(inv => (
                       <tr key={inv.id} className="hover:bg-[#161b27] transition-colors">
                         <td className="px-4 py-2.5">
-                          <a href={`/dashboard/invoices/${inv.id}`} className="font-mono text-xs text-[#d4a843] hover:text-[#f0c060]">
+                          <Link href={`/dashboard/invoices/${inv.id}`} className="font-mono text-xs text-[#d4a843] hover:text-[#f0c060]">
                             {inv.number ?? ''}
-                          </a>
+                          </Link>
                         </td>
                         <td className="px-4 py-2.5 text-xs text-gray-400 max-w-[140px] truncate">
                           {(inv.clients as any)?.name ?? 'Particulier'}
@@ -435,7 +436,7 @@ export default function TVAPage() {
 
           {/* SECTION 6: Export Actions */}
           <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-5">
-            <h2 className="text-sm font-bold text-gray-200 mb-4">Export & Declaration</h2>
+            <h2 className="text-sm font-bold text-gray-200 mb-4">Export &amp; Déclaration</h2>
             <div className="flex flex-wrap gap-3">
               <button onClick={handleCopy}
                 className="flex items-center gap-2 px-4 py-2.5 border border-[#252830] bg-[#161b27] rounded-xl text-sm text-gray-300 hover:text-white hover:bg-[#252830] transition-colors">
@@ -447,15 +448,15 @@ export default function TVAPage() {
               </button>
               <button onClick={handlePDF} disabled={invoices.length === 0}
                 className="flex items-center gap-2 px-4 py-2.5 bg-[#d4a843] hover:bg-[#f0c060] text-black rounded-xl text-sm font-bold transition-colors disabled:opacity-40">
-                Telecharger PDF
+                Télécharger PDF
               </button>
             </div>
           </div>
 
           {/* Legal note */}
           <div className="text-[11px] text-gray-600 leading-relaxed border-t border-[#1a1b22] pt-4">
-            Ces donnees sont basees sur les factures validees par la plateforme TTN/ElFatoora.
-            Consultez votre expert-comptable pour votre declaration officielle a la DGI.
+            Ces données sont basées sur les factures validées par la plateforme TTN/ElFatoora.
+            Consultez votre expert-comptable pour votre déclaration officielle à la DGI.
           </div>
         </>
       )}
