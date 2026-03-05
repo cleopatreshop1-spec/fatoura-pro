@@ -536,6 +536,11 @@ export default async function DashboardPage() {
     ? (recentPaid30 as any[]).reduce((best: any, i: any) => Number(i.ttc_amount ?? 0) > Number(best?.ttc_amount ?? 0) ? i : best, null)
     : null
 
+  // ── Tax burden rate (TVA collected / HT revenue last 90d) ────────────
+  const ht90 = (allInvoices90 as any[]).filter(i => i.status !== 'draft').reduce((s: number, i: any) => s + Number(i.ht_amount ?? 0), 0)
+  const tva90 = (allInvoices90 as any[]).filter(i => i.status !== 'draft').reduce((s: number, i: any) => s + Number(i.tva_amount ?? 0), 0)
+  const taxBurdenRate = ht90 > 0 ? Math.round((tva90 / ht90) * 100) : null
+
   // ── Avg invoice size trend (this month vs prev month) ────────────────
   const thisMonthPrefix = todayStr.slice(0, 7)
   const prevMonthDate   = new Date(now.getFullYear(), now.getMonth() - 1, 1)
@@ -1039,6 +1044,25 @@ export default async function DashboardPage() {
                   {new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 0 }).format(Math.round(thisWeekTTC))} TND TTC
                 </p>
               )}
+            </div>
+          )}
+
+          {/* WIDGET: Tax burden rate */}
+          {taxBurdenRate !== null && tva90 > 0 && (
+            <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Charge TVA — 90j</p>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-2xl font-mono font-black text-white">{taxBurdenRate}%</span>
+                  <span className="text-xs text-gray-500">du CA HT</span>
+                </div>
+                <p className="text-[9px] text-gray-600 mt-0.5">TVA collectée : {new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 0 }).format(Math.round(tva90))} TND</p>
+              </div>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                taxBurdenRate >= 19 ? 'text-[#d4a843] bg-[#d4a843]/10 border-[#d4a843]/20' :
+                taxBurdenRate >= 13 ? 'text-amber-400 bg-amber-950/20 border-amber-900/30' :
+                'text-gray-500 bg-[#1a1b22] border-[#252830]'
+              }`}>TVA {taxBurdenRate >= 19 ? '19%' : taxBurdenRate >= 13 ? '13%' : '< 13%'}</span>
             </div>
           )}
 
