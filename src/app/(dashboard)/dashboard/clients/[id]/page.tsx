@@ -79,6 +79,16 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
     return { predictedDate, avgGap, daysUntil }
   })()
 
+  // ── Invoice gap alert (last gap vs avg gap) ───────────────────────────
+  const invoiceGapAlert = (() => {
+    if (!nextInvoicePrediction) return null
+    const { avgGap, daysUntil } = nextInvoicePrediction
+    const overdue = -daysUntil
+    if (overdue <= 0) return null
+    const overduePct = Math.round((overdue / avgGap) * 100)
+    return { overdue, avgGap, overduePct }
+  })()
+
   // ── Aging buckets (unpaid invoices by days overdue) ────────────────────
   const agingBuckets = (() => {
     const buckets = [
@@ -297,6 +307,21 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
           }`}>
             {nextInvoicePrediction.daysUntil < 0 ? `${Math.abs(nextInvoicePrediction.daysUntil)}j dépassé` : `dans ${nextInvoicePrediction.daysUntil}j`}
           </span>
+        </div>
+      )}
+
+      {/* Invoice gap alert badge */}
+      {invoiceGapAlert && invoiceGapAlert.overdue >= 7 && (
+        <div className="bg-[#0f1118] border border-orange-900/30 rounded-2xl px-4 py-3 flex items-center justify-between">
+          <div>
+            <p className="text-[10px] text-orange-400 uppercase tracking-wider font-bold mb-0.5">Facture en retard</p>
+            <p className="text-sm font-mono font-black text-orange-300">{invoiceGapAlert.overdue}j de retard</p>
+            <p className="text-[9px] text-gray-600 mt-0.5">Intervalle habituel : {invoiceGapAlert.avgGap}j</p>
+          </div>
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
+            invoiceGapAlert.overduePct >= 100 ? 'text-red-400 bg-red-950/30 border-red-900/30' :
+            'text-orange-400 bg-orange-950/20 border-orange-900/30'
+          }`}>+{invoiceGapAlert.overduePct}% du cycle</span>
         </div>
       )}
 
