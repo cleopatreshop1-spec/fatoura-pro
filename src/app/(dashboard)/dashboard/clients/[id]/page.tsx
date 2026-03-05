@@ -89,6 +89,14 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
     return { overdue, avgGap, overduePct }
   })()
 
+  // ── Payment reliability score (% paid on time) ───────────────────────
+  const reliabilityScore = (() => {
+    const paidOnTime = paidInvs.filter((i: any) => i.paid_at && i.due_date && i.paid_at <= i.due_date).length
+    const total = validInvs.filter((i: any) => i.status !== 'draft').length
+    if (total < 2) return null
+    return { score: Math.round((paidOnTime / total) * 100), paidOnTime, total }
+  })()
+
   // ── Aging buckets (unpaid invoices by days overdue) ────────────────────
   const agingBuckets = (() => {
     const buckets = [
@@ -322,6 +330,30 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
             invoiceGapAlert.overduePct >= 100 ? 'text-red-400 bg-red-950/30 border-red-900/30' :
             'text-orange-400 bg-orange-950/20 border-orange-900/30'
           }`}>+{invoiceGapAlert.overduePct}% du cycle</span>
+        </div>
+      )}
+
+      {/* Payment reliability score badge */}
+      {reliabilityScore && (
+        <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl px-4 py-3 flex items-center justify-between">
+          <div>
+            <p className="text-[10px] text-gray-600 uppercase tracking-wider mb-0.5">Fiabilité paiement</p>
+            <div className="flex items-baseline gap-1.5">
+              <span className={`text-xl font-mono font-black ${
+                reliabilityScore.score >= 80 ? 'text-[#2dd4a0]' :
+                reliabilityScore.score >= 50 ? 'text-[#d4a843]' : 'text-red-400'
+              }`}>{reliabilityScore.score}%</span>
+              <span className="text-xs text-gray-600">à temps</span>
+            </div>
+            <p className="text-[9px] text-gray-600 mt-0.5">{reliabilityScore.paidOnTime} / {reliabilityScore.total} factures payées avant échéance</p>
+          </div>
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
+            reliabilityScore.score >= 80 ? 'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20' :
+            reliabilityScore.score >= 50 ? 'text-[#d4a843] bg-[#d4a843]/10 border-[#d4a843]/20' :
+            'text-red-400 bg-red-950/30 border-red-900/30'
+          }`}>
+            {reliabilityScore.score >= 80 ? 'Excellent' : reliabilityScore.score >= 50 ? 'Moyen' : 'Faible'}
+          </span>
         </div>
       )}
 
