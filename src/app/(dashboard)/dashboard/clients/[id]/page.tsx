@@ -380,6 +380,46 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
         )
       })()}
 
+      {/* Invoice value trend sparkline */}
+      {validInvs.length >= 4 && (() => {
+        const sorted = [...validInvs]
+          .filter((i: any) => i.issue_date && Number(i.ttc_amount) > 0)
+          .sort((a: any, b: any) => (a.issue_date as string).localeCompare(b.issue_date as string))
+          .slice(-8)
+        if (sorted.length < 4) return null
+        const amounts = sorted.map((i: any) => Number(i.ttc_amount))
+        const minAmt = Math.min(...amounts)
+        const maxAmt = Math.max(...amounts)
+        const range = maxAmt - minAmt || 1
+        const W = 120, H = 28, pad = 3
+        const pts = amounts.map((v, idx) => {
+          const x = pad + (idx / (amounts.length - 1)) * (W - pad * 2)
+          const y = H - pad - ((v - minAmt) / range) * (H - pad * 2)
+          return `${x.toFixed(1)},${y.toFixed(1)}`
+        }).join(' ')
+        const last = amounts[amounts.length - 1]
+        const prev = amounts[amounts.length - 2]
+        const trend = last > prev * 1.02 ? 'up' : last < prev * 0.98 ? 'down' : 'flat'
+        const lastPtParts = pts.split(' ').pop()!.split(',')
+        return (
+          <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl px-4 py-3 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] text-gray-600 uppercase tracking-wider mb-0.5">Évolution montants</p>
+              <p className="text-[9px] text-gray-700">{sorted.length} dernières factures</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <svg width={W} height={H} className="shrink-0">
+                <polyline points={pts} fill="none" stroke="#d4a843" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" opacity="0.8" />
+                <circle cx={lastPtParts[0]} cy={lastPtParts[1]} r="2.5" fill="#d4a843" />
+              </svg>
+              <span className={`text-sm font-bold ${trend === 'up' ? 'text-[#2dd4a0]' : trend === 'down' ? 'text-red-400' : 'text-gray-500'}`}>
+                {trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→'}
+              </span>
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Risk score breakdown */}
       {riskResult?.level && validInvs.length >= 2 && (
         <div className={`bg-[#0f1118] border rounded-2xl p-4 ${
