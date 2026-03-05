@@ -893,6 +893,18 @@ export default function NewInvoicePage() {
                     ∑ {fmtTND(totals.total_ht)} HT
                   </span>
                 )}
+                {(() => {
+                  const discountedLines = lines.filter(l => l.discount && l.discount > 0)
+                  if (discountedLines.length === 0) return null
+                  const discountAmt = discountedLines.reduce((s, l) => {
+                    return s + round3(l.quantity * l.unit_price * (l.discount! / 100))
+                  }, 0)
+                  return (
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20">
+                      -{fmtTND(discountAmt)} TND remise
+                    </span>
+                  )
+                })()}
               </div>
               <button type="button" onClick={addLine}
                 className="flex items-center gap-1.5 text-xs font-bold text-[#d4a843] hover:text-[#f0c060] transition-colors">
