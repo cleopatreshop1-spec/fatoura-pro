@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
         .eq('company_id', cid).gte('created_at', ago90).is('deleted_at', null),
 
       db.from('clients')
-        .select('id, name').eq('company_id', cid).is('deleted_at', null),
+        .select('id, name').eq('company_id', cid),
 
       db.from('invoices')
         .select('id, number, ttc_amount, due_date, clients(name)')
