@@ -23,7 +23,7 @@ function Sparkline({ data, color }: { data: SparkPoint[]; color: string }) {
   const max = Math.max(...data.map(d => d.amount), 1)
   const W = 80, H = 28
   const pts = data.map((d, i) => {
-    const x = (i / (data.length - 1)) * W
+    const x = data.length > 1 ? (i / (data.length - 1)) * W : W / 2
     const y = H - (d.amount / max) * H
     return `${x},${y}`
   }).join(' ')
@@ -31,7 +31,7 @@ function Sparkline({ data, color }: { data: SparkPoint[]; color: string }) {
     <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="overflow-visible">
       <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" opacity="0.8" />
       {data.map((d, i) => d.amount > 0 && (
-        <circle key={i} cx={(i / (data.length - 1)) * W} cy={H - (d.amount / max) * H} r="2" fill={color} opacity="0.9" />
+        <circle key={i} cx={data.length > 1 ? (i / (data.length - 1)) * W : W / 2} cy={H - (d.amount / max) * H} r="2" fill={color} opacity="0.9" />
       ))}
     </svg>
   )

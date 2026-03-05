@@ -20,7 +20,7 @@ function ExpenseSparkline({ data }: { data: MonthPoint[] }) {
   const max = Math.max(...data.map(d => d.amount), 1)
   const W = 120, H = 24
   const pts = data.map((d, i) => {
-    const x = (i / (data.length - 1)) * W
+    const x = data.length > 1 ? (i / (data.length - 1)) * W : W / 2
     const y = H - (d.amount / max) * H
     return `${x},${y}`
   }).join(' ')
@@ -30,7 +30,7 @@ function ExpenseSparkline({ data }: { data: MonthPoint[] }) {
         <polyline points={pts} fill="none" stroke="#ef4444" strokeWidth="1.5"
           strokeLinejoin="round" strokeLinecap="round" opacity="0.7" />
         {data.map((d, i) => {
-          const x = (i / (data.length - 1)) * W
+          const x = data.length > 1 ? (i / (data.length - 1)) * W : W / 2
           const y = H - (d.amount / max) * H
           return <circle key={i} cx={x} cy={y} r="2" fill="#ef4444" opacity="0.6" />
         })}

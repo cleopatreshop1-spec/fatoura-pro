@@ -60,7 +60,7 @@ function MiniSparkline({ data, color }: { data: SparkPoint[]; color: string }) {
   const max = Math.max(...data.map(d => d.amount), 1)
   const W = 56, H = 18
   const pts = data.map((d, i) => {
-    const x = (i / (data.length - 1)) * W
+    const x = data.length > 1 ? (i / (data.length - 1)) * W : W / 2
     const y = H - (d.amount / max) * H
     return `${x},${y}`
   }).join(' ')
