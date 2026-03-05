@@ -1,6 +1,7 @@
 ﻿import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { getAuthenticatedCompany, success, err, logActivity } from '@/lib/api-helpers'
+import { awardPoints } from '@/lib/gamification/award-points'
 import { calcInvoiceTotals } from '@/lib/utils/tva-calculator'
 import { amountToWords } from '@/lib/utils/amount-to-words'
 import { nextInvoiceNumber } from '@/lib/utils/invoice-number'
@@ -199,6 +200,7 @@ export async function POST(request: NextRequest) {
 
     const actionLabel = source === 'ai' ? 'invoice.created_by_ai' : 'invoice_created'
     await logActivity(supabase as any, company.id, user.id, actionLabel, 'invoice', (invoice as any).id, `Facture ${(invoice as any).number} créée`)
+    awardPoints(supabase as any, company.id, 'invoice_created', `Facture ${(invoice as any).number} créée`).catch(() => {})
 
     invalidateUserContext(company.id)
 

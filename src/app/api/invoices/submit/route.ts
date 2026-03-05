@@ -1,5 +1,6 @@
 ﻿import { NextRequest } from 'next/server'
 import { getAuthenticatedCompany, success, err, logActivity, insertNotification } from '@/lib/api-helpers'
+import { awardPoints } from '@/lib/gamification/award-points'
 import { captureError, captureMessage } from '@/lib/monitoring/sentry'
 import { applyRateLimit, rateLimiters, getClientIp } from '@/lib/rate-limiter'
 import { sendEmail } from '@/lib/email/resend'
@@ -90,6 +91,7 @@ export async function POST(request: NextRequest) {
       await logActivity(supabase as any, company.id, user.id,
         'invoice_validated', 'invoice', invoiceId,
         `Facture ${(invoice as any).number} validée — TTN_ID: ${ttnId}`)
+      awardPoints(supabase as any, company.id, 'invoice_validated', `Facture ${(invoice as any).number} validée TTN`).catch(() => {})
 
       // Email notification
       if (await shouldSendEmail(supabase as any, company.id, 'invoice_validated_email')) {

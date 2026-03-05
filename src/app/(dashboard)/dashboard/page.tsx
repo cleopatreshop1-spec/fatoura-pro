@@ -23,6 +23,8 @@ import { PendingActionsWidget } from '@/components/dashboard/PendingActionsWidge
 import { InvoiceStatusDonut } from '@/components/dashboard/InvoiceStatusDonut'
 import { RecentActivityFeed } from '@/components/dashboard/RecentActivityFeed'
 import type { ActivityItem } from '@/components/dashboard/RecentActivityFeed'
+import { GamificationBadge } from '@/components/dashboard/GamificationBadge'
+import { ReferralCard } from '@/components/dashboard/ReferralCard'
 import { format, subDays, addDays, parseISO, endOfWeek, eachWeekOfInterval } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
@@ -33,7 +35,7 @@ export default async function DashboardPage() {
 
   const { data: companies } = await supabase
     .from('companies')
-    .select('id, name, matricule_fiscal, address, logo_url, bank_rib, monthly_revenue_goal, annual_revenue_goal')
+    .select('id, name, matricule_fiscal, address, logo_url, bank_rib, monthly_revenue_goal, annual_revenue_goal, streak_days, total_points, level')
     .eq('owner_id', user.id).order('created_at', { ascending: true }).limit(1)
   const company: any = (companies as any)?.[0]
   const companyId: string | undefined = company?.id
@@ -1970,6 +1972,12 @@ export default async function DashboardPage() {
           )}
 
           <TopClientsWidget clients={topClients} />
+          <GamificationBadge
+            level={company?.level ?? 'bronze'}
+            streakDays={company?.streak_days ?? 0}
+            totalPoints={company?.total_points ?? 0}
+          />
+          <ReferralCard />
           <AIInsightsPanel />
           <RemindersPanel />
         </div>
