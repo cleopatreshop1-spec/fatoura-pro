@@ -604,6 +604,11 @@ export default async function DashboardPage() {
     return sorted.map(c => ({ ...c, pct: Math.round((c.ttc / totalAll) * 100) }))
   })()
 
+  // ── Collection efficiency (paid TTC / billed TTC in 90d) ────────────
+  const billed90TTC = validatedInvs90.reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
+  const paid90TTC   = (recentPaid30 as any[]).reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
+  const collectionEff = billed90TTC > 0 ? Math.round((paid90TTC / billed90TTC) * 100) : null
+
   // ── Avg invoice size trend (this month vs prev month) ────────────────
   const thisMonthPrefix = todayStr.slice(0, 7)
   const prevMonthDate   = new Date(now.getFullYear(), now.getMonth() - 1, 1)
@@ -1281,6 +1286,27 @@ export default async function DashboardPage() {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* WIDGET: Collection efficiency */}
+          {collectionEff !== null && validatedInvs90.length >= 3 && (
+            <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Efficacité de recouvrement — 90j</p>
+                <div className="flex items-baseline gap-1.5">
+                  <span className={`text-2xl font-mono font-black ${collectionEff >= 80 ? 'text-[#2dd4a0]' : collectionEff >= 50 ? 'text-[#d4a843]' : 'text-red-400'}`}>
+                    {collectionEff}%
+                  </span>
+                  <span className="text-xs text-gray-500">collecté</span>
+                </div>
+                <p className="text-[9px] text-gray-600 mt-0.5">{new Intl.NumberFormat('fr-TN').format(Math.round(paid90TTC))} / {new Intl.NumberFormat('fr-TN').format(Math.round(billed90TTC))} TND</p>
+              </div>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
+                collectionEff >= 80 ? 'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20' :
+                collectionEff >= 50 ? 'text-[#d4a843] bg-[#d4a843]/10 border-[#d4a843]/20' :
+                'text-red-400 bg-red-950/30 border-red-900/30'
+              }`}>{collectionEff >= 80 ? 'Bon' : collectionEff >= 50 ? 'Moyen' : 'Faible'}</span>
             </div>
           )}
 
