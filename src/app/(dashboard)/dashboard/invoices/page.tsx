@@ -484,6 +484,12 @@ export default function InvoicesPage() {
                 ⚠ {n} en retard
               </span>
             ) : null })()}
+            {(() => { const n = invoices.filter(i => i.status === 'draft').length; return n > 0 ? (
+              <button onClick={() => { setStatusFilter('draft'); setPage(1) }}
+                className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-[#1a1b22] text-gray-500 border-[#252830] hover:text-[#d4a843] hover:border-[#d4a843]/30 transition-colors">
+                {n} brouillon{n > 1 ? 's' : ''}
+              </button>
+            ) : null })()}
           </h1>
           <p className="text-gray-500 text-sm">Gestion et suivi de vos factures</p>
         </div>
