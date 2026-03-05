@@ -420,6 +420,48 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
         )
       })()}
 
+      {/* Paid vs unpaid donut */}
+      {validInvs.length >= 2 && totalTTC > 0 && (() => {
+        const paidTTC   = paidInvs.reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
+        const unpaidTTC = totalTTC - paidTTC
+        if (paidTTC <= 0 && unpaidTTC <= 0) return null
+        const paidPct   = Math.round((paidTTC / totalTTC) * 100)
+        const R = 28, cx = 36, cy = 36, stroke = 10
+        const circumference = 2 * Math.PI * R
+        const paidDash  = (paidPct / 100) * circumference
+        const unpaidDash = circumference - paidDash
+        return (
+          <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl px-4 py-3 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] text-gray-600 uppercase tracking-wider mb-1">Payé vs Impayé</p>
+              <div className="flex items-center gap-3 mt-1">
+                <div className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-[#2dd4a0] inline-block" />
+                  <span className="text-[9px] text-gray-500">Payé <span className="text-[#2dd4a0] font-mono font-bold">{paidPct}%</span></span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-[#f59e0b] inline-block" />
+                  <span className="text-[9px] text-gray-500">Dû <span className="text-[#f59e0b] font-mono font-bold">{100 - paidPct}%</span></span>
+                </div>
+              </div>
+              <p className="text-[9px] text-gray-700 mt-1">{fmtTND(paidTTC)} / {fmtTND(totalTTC)} TND</p>
+            </div>
+            <svg width={72} height={72} className="shrink-0 -rotate-90">
+              <circle cx={cx} cy={cy} r={R} fill="none" stroke="#1a1b22" strokeWidth={stroke} />
+              {paidDash > 0 && (
+                <circle cx={cx} cy={cy} r={R} fill="none" stroke="#2dd4a0" strokeWidth={stroke}
+                  strokeDasharray={`${paidDash} ${circumference}`} strokeLinecap="round" />
+              )}
+              {unpaidDash > 0 && paidDash > 0 && (
+                <circle cx={cx} cy={cy} r={R} fill="none" stroke="#f59e0b" strokeWidth={stroke}
+                  strokeDasharray={`${unpaidDash} ${circumference}`}
+                  strokeDashoffset={-paidDash} strokeLinecap="round" />
+              )}
+            </svg>
+          </div>
+        )
+      })()}
+
       {/* Risk score breakdown */}
       {riskResult?.level && validInvs.length >= 2 && (
         <div className={`bg-[#0f1118] border rounded-2xl p-4 ${
