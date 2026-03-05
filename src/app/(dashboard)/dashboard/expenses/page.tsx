@@ -999,26 +999,35 @@ export default function ExpensesPage() {
             }`}>
             Tout
           </button>
-          {CATEGORIES.filter(c => (totals.byCat[c.value] ?? 0) > 0).map(c => {
-            const curr = totals.byCat[c.value] ?? 0
-            const prev = totals.byCatPrev[c.value] ?? 0
-            const delta = prev > 0 ? Math.round(((curr - prev) / prev) * 100) : null
-            return (
-              <button key={c.value} onClick={() => setCatFilter(catFilter === c.value ? 'all' : c.value)}
-                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
-                  catFilter === c.value
-                    ? 'bg-[#d4a843]/15 border-[#d4a843]/40 text-[#d4a843]'
-                    : 'border-[#1a1b22] text-gray-600 hover:text-gray-300'
-                }`}>
-                {c.label.split(' ')[0]}
-                {delta !== null && delta !== 0 && (
-                  <span className={`text-[8px] font-bold ${delta > 0 ? 'text-red-400' : 'text-[#2dd4a0]'}`}>
-                    {delta > 0 ? '▲' : '▼'}{Math.abs(delta)}%
-                  </span>
-                )}
-              </button>
-            )
-          })}
+          {(() => {
+            const ranked = CATEGORIES.filter(c => (totals.byCat[c.value] ?? 0) > 0)
+              .sort((a, b) => (totals.byCat[b.value] ?? 0) - (totals.byCat[a.value] ?? 0))
+            const rankMap: Record<string, number> = {}
+            ranked.forEach((c, i) => { rankMap[c.value] = i })
+            const medals = ['🥇', '🥈', '🥉']
+            return ranked.map(c => {
+              const curr = totals.byCat[c.value] ?? 0
+              const prev = totals.byCatPrev[c.value] ?? 0
+              const delta = prev > 0 ? Math.round(((curr - prev) / prev) * 100) : null
+              const rank = rankMap[c.value]
+              return (
+                <button key={c.value} onClick={() => setCatFilter(catFilter === c.value ? 'all' : c.value)}
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
+                    catFilter === c.value
+                      ? 'bg-[#d4a843]/15 border-[#d4a843]/40 text-[#d4a843]'
+                      : 'border-[#1a1b22] text-gray-600 hover:text-gray-300'
+                  }`}>
+                  {rank < 3 && <span className="text-[10px]">{medals[rank]}</span>}
+                  {c.label.split(' ')[0]}
+                  {delta !== null && delta !== 0 && (
+                    <span className={`text-[8px] font-bold ${delta > 0 ? 'text-red-400' : 'text-[#2dd4a0]'}`}>
+                      {delta > 0 ? '▲' : '▼'}{Math.abs(delta)}%
+                    </span>
+                  )}
+                </button>
+              )
+            })
+          })()}
         </div>
         <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
           title="Date de début"
