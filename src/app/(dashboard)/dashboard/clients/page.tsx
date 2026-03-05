@@ -554,12 +554,24 @@ export default function ClientsPage() {
                             )}
                             {count > 0 && lastInvDate && (() => {
                               const daysSince = Math.floor((Date.now() - new Date(lastInvDate).getTime()) / 86400000)
-                              return daysSince > 90 ? (
+                              if (daysSince <= 90) return null
+                              const hadRecent = c.invoices.some(i => {
+                                const d = i.issue_date ?? ''
+                                return d >= new Date(Date.now() - 180 * 86400000).toISOString().slice(0, 10) &&
+                                       d <  new Date(Date.now() - 90  * 86400000).toISOString().slice(0, 10)
+                              })
+                              if (hadRecent) return (
+                                <span title={`Risque churn : aucune facture depuis ${daysSince} jours (actif avant)`}
+                                  className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-orange-950/40 text-orange-400 border border-orange-900/30">
+                                  ⚠ churn {daysSince}j
+                                </span>
+                              )
+                              return (
                                 <span title={`Aucune facture depuis ${daysSince} jours`}
                                   className="shrink-0 text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-gray-800/60 text-gray-500 border border-gray-700/40">
                                   inactif
                                 </span>
-                              ) : null
+                              )
                             })()}
                           </div>
                           <div className="flex items-center gap-2 mt-0.5">
