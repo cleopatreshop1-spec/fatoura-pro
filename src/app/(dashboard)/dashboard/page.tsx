@@ -26,7 +26,6 @@ import { format, subDays, addDays, parseISO, endOfWeek, eachWeekOfInterval } fro
 import { fr } from 'date-fns/locale'
 
 export default async function DashboardPage() {
-  try {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
@@ -1976,8 +1975,4 @@ export default async function DashboardPage() {
       </div>
     </div>
   )
-  } catch (e: any) {
-    console.error('[DashboardPage CRASH]', e?.message, e?.stack)
-    throw e
-  }
 }

@@ -18,9 +18,6 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
         <p className="text-sm text-gray-500 leading-relaxed">
           Une erreur inattendue s&apos;est produite. Nos équipes ont été notifiées.
         </p>
-        {error?.message && (
-          <p className="font-mono text-[11px] text-red-400 bg-red-950/20 border border-red-900/30 rounded p-2 text-left break-all">{error.message}</p>
-        )}
         {error?.digest && (
           <p className="font-mono text-[10px] text-gray-700">Ref: {error.digest}</p>
         )}
