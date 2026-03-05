@@ -558,6 +558,10 @@ export default async function DashboardPage() {
   const expenseMonthTotal = (expensesMonth as any[]).reduce((s: number, e: any) => s + Number(e.amount ?? 0), 0)
   const expenseRatio = caHT > 0 ? Math.round((expenseMonthTotal / caHT) * 100) : null
 
+  // ── Net profit estimate this month (CA HT - expenses) ───────────────
+  const netProfitEstimate = caHT > 0 || expenseMonthTotal > 0 ? caHT - expenseMonthTotal : null
+  const netProfitMargin = caHT > 0 ? Math.round(((caHT - expenseMonthTotal) / caHT) * 100) : null
+
   // ── Avg invoice size trend (this month vs prev month) ────────────────
   const thisMonthPrefix = todayStr.slice(0, 7)
   const prevMonthDate   = new Date(now.getFullYear(), now.getMonth() - 1, 1)
@@ -1124,6 +1128,29 @@ export default async function DashboardPage() {
                 expenseRatio > 50 ? 'text-amber-400 bg-amber-950/20 border-amber-900/30' :
                 'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20'
               }`}>{expenseRatio > 80 ? 'Élevé' : expenseRatio > 50 ? 'Modéré' : 'Sain'}</span>
+            </div>
+          )}
+
+          {/* WIDGET: Net profit estimate this month */}
+          {netProfitEstimate !== null && (
+            <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Résultat net estimé — ce mois</p>
+                {netProfitMargin !== null && (
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                    netProfitMargin >= 30 ? 'text-[#2dd4a0] bg-[#2dd4a0]/10 border-[#2dd4a0]/20' :
+                    netProfitMargin >= 0  ? 'text-[#d4a843] bg-[#d4a843]/10 border-[#d4a843]/20' :
+                    'text-red-400 bg-red-950/30 border-red-900/30'
+                  }`}>marge {netProfitMargin}%</span>
+                )}
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className={`text-2xl font-mono font-black ${netProfitEstimate >= 0 ? 'text-[#2dd4a0]' : 'text-red-400'}`}>
+                  {netProfitEstimate >= 0 ? '+' : ''}{new Intl.NumberFormat('fr-TN').format(Math.round(netProfitEstimate))}
+                </span>
+                <span className="text-xs text-gray-500">TND</span>
+              </div>
+              <p className="text-[9px] text-gray-600 mt-0.5">CA HT {new Intl.NumberFormat('fr-TN').format(Math.round(caHT))} − Dépenses {new Intl.NumberFormat('fr-TN').format(Math.round(expenseMonthTotal))} TND</p>
             </div>
           )}
 
