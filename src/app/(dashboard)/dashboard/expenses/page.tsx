@@ -512,6 +512,28 @@ export default function ExpensesPage() {
         )
       })()}
 
+      {/* Recurring expense total badge */}
+      {recurringList.length > 0 && (() => {
+        const activeRec = recurringList.filter(r => r.active)
+        if (activeRec.length === 0) return null
+        const monthlyTotal = activeRec.reduce((s, r) => s + Number(r.amount ?? 0), 0)
+        const topRec = activeRec.reduce((best, r) => Number(r.amount) > Number(best.amount) ? r : best, activeRec[0])
+        return (
+          <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl px-4 py-3">
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Charges récurrentes actives</p>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border text-purple-400 bg-purple-950/20 border-purple-900/30">
+                {activeRec.length} actif{activeRec.length > 1 ? 's' : ''}
+              </span>
+            </div>
+            <p className="text-xl font-mono font-black text-purple-400">{fmtTND(monthlyTotal)} TND<span className="text-xs text-gray-600 font-normal ml-1">/mois</span></p>
+            <p className="text-[9px] text-gray-600 mt-0.5">
+              Plus élevée : <span className="text-gray-400">{topRec.description}</span> — {fmtTND(topRec.amount)} TND
+            </p>
+          </div>
+        )
+      })()}
+
       {/* Top expense day of week */}
       {expenses.length >= 5 && (() => {
         const DOW = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
