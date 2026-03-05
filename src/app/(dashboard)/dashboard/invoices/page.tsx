@@ -904,6 +904,49 @@ export default function InvoicesPage() {
         )
       })()}
 
+      {/* Overdue aging breakdown */}
+      {filtered.length > 0 && (() => {
+        const today = new Date().toISOString().slice(0, 10)
+        const overdue = filtered.filter(i => i.status !== 'draft' && i.payment_status !== 'paid' && i.due_date && i.due_date < today)
+        if (overdue.length === 0) return null
+        const buckets = [
+          { label: '0–30j',  min: 0,  max: 30,  color: 'bg-amber-500/70',  text: 'text-amber-400' },
+          { label: '31–60j', min: 31, max: 60,  color: 'bg-orange-500/70', text: 'text-orange-400' },
+          { label: '61–90j', min: 61, max: 90,  color: 'bg-red-500/70',    text: 'text-red-400' },
+          { label: '>90j',   min: 91, max: Infinity, color: 'bg-red-900/80', text: 'text-red-600' },
+        ]
+        const now = new Date()
+        const bData = buckets.map(b => {
+          const items = overdue.filter(i => {
+            const days = Math.floor((now.getTime() - new Date(i.due_date!).getTime()) / 86400000)
+            return days >= b.min && days <= b.max
+          })
+          return { ...b, count: items.length, amount: items.reduce((s, i) => s + Number(i.ttc_amount ?? 0), 0) }
+        }).filter(b => b.count > 0)
+        if (bData.length === 0) return null
+        const maxAmt = Math.max(...bData.map(b => b.amount), 1)
+        return (
+          <div className="bg-[#0f1118] border border-red-900/20 rounded-xl px-4 py-3">
+            <div className="flex items-center justify-between mb-2.5">
+              <p className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">Ancienneté des retards</p>
+              <span className="text-[10px] font-mono text-red-400 font-bold">{overdue.length} facture{overdue.length > 1 ? 's' : ''} · {fmtTND(overdue.reduce((s, i) => s + Number(i.ttc_amount ?? 0), 0))} TND</span>
+            </div>
+            <div className="space-y-1.5">
+              {bData.map(b => (
+                <div key={b.label} className="flex items-center gap-2">
+                  <span className={`text-[9px] font-bold w-10 shrink-0 ${b.text}`}>{b.label}</span>
+                  <div className="flex-1 h-1.5 bg-[#1a1b22] rounded-full overflow-hidden">
+                    <div className={`h-full ${b.color} rounded-full`} style={{ width: `${Math.round((b.amount / maxAmt) * 100)}%` }} />
+                  </div>
+                  <span className={`text-[9px] font-mono shrink-0 w-20 text-right ${b.text}`}>{fmtTND(b.amount)} TND</span>
+                  <span className="text-[9px] text-gray-600 shrink-0 w-6 text-right">{b.count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Per-client revenue summary (top 5) */}
       {filtered.length > 1 && (() => {
         const byClient: Record<string, { name: string; ttc: number; count: number; unpaid: number }> = {}
