@@ -829,6 +829,25 @@ export default function InvoicesPage() {
               </>
             )
           })()}
+          {(() => {
+            const byCur: Record<string, number> = {}
+            for (const i of filtered) {
+              const cur = i.currency ?? 'TND'
+              byCur[cur] = (byCur[cur] ?? 0) + 1
+            }
+            const currencies = Object.entries(byCur).filter(([c]) => c !== 'TND')
+            if (currencies.length === 0) return null
+            return (
+              <>
+                <span className="text-gray-600">·</span>
+                {currencies.map(([cur, cnt]) => (
+                  <span key={cur} className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-blue-400 bg-blue-950/20 border-blue-900/30">
+                    {cur} ×{cnt}
+                  </span>
+                ))}
+              </>
+            )
+          })()}
           {summary.unpaid > 0 && (
             <span className="ml-auto text-[#f59e0b] font-semibold">
               Impayé: <span className="font-mono">{fmtTND(summary.unpaid)}</span>
