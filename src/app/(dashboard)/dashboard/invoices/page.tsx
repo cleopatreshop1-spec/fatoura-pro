@@ -912,9 +912,16 @@ export default function InvoicesPage() {
         const top5 = Object.values(byClient).sort((a, b) => b.ttc - a.ttc).slice(0, 5)
         if (top5.length < 2) return null
         const maxTTC = top5[0].ttc
+        const totalTTC = Object.values(byClient).reduce((s, c) => s + c.ttc, 0)
+        const topShare = totalTTC > 0 ? Math.round((top5[0].ttc / totalTTC) * 100) : 0
         return (
           <div className="bg-[#0f1118] border border-[#1a1b22] rounded-xl px-4 py-3">
-            <p className="text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-2.5">CA par client (filtre actuel)</p>
+            <div className="flex items-center justify-between mb-2.5">
+              <p className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">CA par client (filtre actuel)</p>
+              <span className="flex items-center gap-1 text-[10px] font-bold text-[#d4a843]">
+                👑 {top5[0].name} <span className="text-gray-600 font-normal">— {topShare}% du CA</span>
+              </span>
+            </div>
             <div className="space-y-1.5">
               {top5.map(cl => (
                 <div key={cl.name} className="flex items-center gap-2">
