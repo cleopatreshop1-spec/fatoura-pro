@@ -589,6 +589,21 @@ export default async function DashboardPage() {
   const unpaidAmt90 = validatedInvs90.filter((i: any) => i.payment_status !== 'paid')
     .reduce((s: number, i: any) => s + Number(i.ttc_amount ?? 0), 0)
 
+  // ── Top 3 clients by CA (all time from clientInvRaw) ────────────────
+  const top3Clients = (() => {
+    const map: Record<string, { name: string; ttc: number }> = {}
+    for (const inv of clientInvRaw as any[]) {
+      const cid  = inv.client_id ?? '__none__'
+      const name = (inv.clients as any)?.name ?? '—'
+      const amt  = Number(inv.ttc_amount ?? 0)
+      if (!map[cid]) map[cid] = { name, ttc: 0 }
+      map[cid].ttc += amt
+    }
+    const sorted = Object.values(map).sort((a, b) => b.ttc - a.ttc).slice(0, 3)
+    const totalAll = sorted.reduce((s, c) => s + c.ttc, 0) || 1
+    return sorted.map(c => ({ ...c, pct: Math.round((c.ttc / totalAll) * 100) }))
+  })()
+
   // ── Avg invoice size trend (this month vs prev month) ────────────────
   const thisMonthPrefix = todayStr.slice(0, 7)
   const prevMonthDate   = new Date(now.getFullYear(), now.getMonth() - 1, 1)
@@ -1247,6 +1262,25 @@ export default async function DashboardPage() {
                 <p className="text-[9px] text-gray-600 mt-0.5">{new Intl.NumberFormat('fr-TN').format(Math.round(bestMonthEntry[1]))} TND HT</p>
               </div>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border text-[#d4a843] bg-[#d4a843]/10 border-[#d4a843]/20 shrink-0">🏆 Record</span>
+            </div>
+          )}
+
+          {/* WIDGET: Top 3 clients CA */}
+          {top3Clients.length >= 2 && (
+            <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-4">
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Top clients — CA total</p>
+              <div className="space-y-2">
+                {top3Clients.map((c, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <span className={`text-[9px] font-bold w-3 shrink-0 ${i === 0 ? 'text-[#d4a843]' : 'text-gray-600'}`}>{i + 1}</span>
+                    <span className="text-[10px] text-gray-400 truncate w-24 shrink-0">{c.name}</span>
+                    <div className="flex-1 h-1.5 bg-[#1a1b22] rounded-full overflow-hidden">
+                      <div className="h-full bg-[#d4a843]/60 rounded-full" style={{ width: `${c.pct}%` }} />
+                    </div>
+                    <span className="text-[9px] font-mono text-gray-500 shrink-0 w-16 text-right">{new Intl.NumberFormat('fr-TN').format(Math.round(c.ttc))} TND</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
