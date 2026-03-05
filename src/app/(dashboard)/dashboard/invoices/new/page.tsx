@@ -853,7 +853,17 @@ export default function NewInvoicePage() {
           {/* SECTION 3: Line items */}
           <div className={SECTION}>
             <div className="flex items-center justify-between mb-4">
-              <div className="text-xs font-bold text-[#d4a843] uppercase tracking-wider">Lignes de facturation</div>
+              <div className="flex items-center gap-2">
+                <div className="text-xs font-bold text-[#d4a843] uppercase tracking-wider">Lignes de facturation</div>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-gray-500 bg-[#1a1b22] border-[#252830]">
+                  {lines.length} ligne{lines.length > 1 ? 's' : ''}
+                </span>
+                {lines.length > 1 && totals.total_ht > 0 && (
+                  <span className="text-[10px] font-mono text-gray-600">
+                    ∑ {fmtTND(totals.total_ht)} HT
+                  </span>
+                )}
+              </div>
               <button type="button" onClick={addLine}
                 className="flex items-center gap-1.5 text-xs font-bold text-[#d4a843] hover:text-[#f0c060] transition-colors">
                 <Plus size={13} strokeWidth={2.5} />
