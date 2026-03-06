@@ -1,62 +1,38 @@
 import { Ratelimit } from '@upstash/ratelimit'
 import { Redis }     from '@upstash/redis'
 
-let redis: Redis | null = null
+// ── Lazy Redis singleton ──────────────────────────────────────────────────────
+let _redis: Redis | null = null
 
-function getRedis(): Redis {
-  if (!redis) {
-    if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
-      throw new Error('UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are required')
-    }
-    redis = new Redis({
-      url:   process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN,
-    })
+function getRedis(): Redis | null {
+  if (_redis) return _redis
+  const url   = process.env.UPSTASH_REDIS_REST_URL
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN
+  if (!url || !token) {
+    console.warn('[RateLimit] UPSTASH credentials missing — rate limiting disabled')
+    return null
   }
-  return redis
+  _redis = new Redis({ url, token })
+  return _redis
 }
 
+// ── Lazy rate limiter factory ─────────────────────────────────────────────────
+function makeLimiter(limiter: Ratelimit['limiter'], prefix: string): Ratelimit | null {
+  const redis = getRedis()
+  if (!redis) return null
+  return new Ratelimit({ redis, limiter, prefix })
+}
+
+// ── Rate limiters (lazy, null-safe) ──────────────────────────────────────────
 export const rateLimiters = {
-  auth: new Ratelimit({
-    redis: Redis.fromEnv(),
-    limiter: Ratelimit.slidingWindow(10, '15 m'),
-    prefix: 'fp:auth',
-  }),
-  ttnSubmit: new Ratelimit({
-    redis: Redis.fromEnv(),
-    limiter: Ratelimit.slidingWindow(30, '1 h'),
-    prefix: 'fp:ttn',
-  }),
-  api: new Ratelimit({
-    redis: Redis.fromEnv(),
-    limiter: Ratelimit.slidingWindow(100, '1 m'),
-    prefix: 'fp:api',
-  }),
-  export: new Ratelimit({
-    redis: Redis.fromEnv(),
-    limiter: Ratelimit.slidingWindow(20, '10 m'),
-    prefix: 'fp:export',
-  }),
-  ai: new Ratelimit({
-    redis: Redis.fromEnv(),
-    limiter: Ratelimit.slidingWindow(20, '1 h'),
-    prefix: 'fp:ai',
-  }),
-  ocr: new Ratelimit({
-    redis: Redis.fromEnv(),
-    limiter: Ratelimit.slidingWindow(20, '1 h'),
-    prefix: 'fp:ocr',
-  }),
-  letters: new Ratelimit({
-    redis: Redis.fromEnv(),
-    limiter: Ratelimit.slidingWindow(30, '1 h'),
-    prefix: 'fp:letters',
-  }),
-  summaries: new Ratelimit({
-    redis: Redis.fromEnv(),
-    limiter: Ratelimit.slidingWindow(50, '1 h'),
-    prefix: 'fp:summaries',
-  }),
+  get auth()      { return makeLimiter(Ratelimit.slidingWindow(10,  '15 m'), 'fp:auth')      },
+  get ttnSubmit() { return makeLimiter(Ratelimit.slidingWindow(30,  '1 h'),  'fp:ttn')       },
+  get api()       { return makeLimiter(Ratelimit.slidingWindow(100, '1 m'),  'fp:api')       },
+  get export()    { return makeLimiter(Ratelimit.slidingWindow(20,  '10 m'), 'fp:export')    },
+  get ai()        { return makeLimiter(Ratelimit.slidingWindow(20,  '1 h'),  'fp:ai')        },
+  get ocr()       { return makeLimiter(Ratelimit.slidingWindow(20,  '1 h'),  'fp:ocr')       },
+  get letters()   { return makeLimiter(Ratelimit.slidingWindow(30,  '1 h'),  'fp:letters')   },
+  get summaries() { return makeLimiter(Ratelimit.slidingWindow(50,  '1 h'),  'fp:summaries') },
 }
 
 export function getClientIp(request: Request): string {
@@ -68,9 +44,10 @@ export function getClientIp(request: Request): string {
 }
 
 export async function applyRateLimit(
-  limiter: Ratelimit,
+  limiter: Ratelimit | null | undefined,
   identifier: string
 ): Promise<Response | null> {
+  if (!limiter) return null   // Upstash not configured — skip silently
   try {
     const { success, limit, remaining, reset } = await limiter.limit(identifier)
     if (!success) {
@@ -80,7 +57,7 @@ export async function applyRateLimit(
           status: 429,
           headers: {
             'X-RateLimit-Limit':     limit.toString(),
-            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Remaining': String(remaining),
             'X-RateLimit-Reset':     reset.toString(),
             'Retry-After':           Math.ceil((reset - Date.now()) / 1000).toString(),
           },

@@ -46,13 +46,13 @@ export async function POST(request: NextRequest) {
 
     // Try to load TTN modules (they may not be implemented yet)
     let getSigningStrategy: ((company: any) => Promise<any>) | null = null
-    let buildTEIF: ((invoice: any, company: any, client: any) => Promise<string>) | null = null
+    let buildTEIF: ((invoice: any, company: any, client: any) => string) | null = null
     let submitToTTN: ((xml: string, signer: any, company: any) => Promise<{ ttnId: string; rawResponse: string }>) | null = null
 
     try {
       const mandateSigner = await import('@/lib/ttn/mandate-signer' as any)
       getSigningStrategy = mandateSigner.getSigningStrategy
-      const teifBuilder = await import('@/lib/ttn/teif-builder' as any)
+      const teifBuilder = await import('@/lib/teif/teif-builder')
       buildTEIF = teifBuilder.buildTEIF
       const ttnGateway = await import('@/lib/ttn/ttn-gateway' as any)
       submitToTTN = ttnGateway.submitToTTN
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     try {
       // Build TEIF XML
       const signer = await getSigningStrategy!(company)
-      const xml = await buildTEIF!(invoice, company, (invoice as any).clients)
+      const xml = buildTEIF!(invoice, company, (invoice as any).clients ?? null)
       const { ttnId, rawResponse } = await submitToTTN!(xml, signer, company)
 
       // TTN success

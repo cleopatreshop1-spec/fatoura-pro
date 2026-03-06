@@ -13,6 +13,7 @@
 //   OID policy:        2.16.788.1.2.1.3
 
 import * as forge from 'node-forge'
+import { DOMParser, XMLSerializer } from '@xmldom/xmldom'
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const TTN_POLICY_OID    = '2.16.788.1.2.1.3'
@@ -50,12 +51,21 @@ function sha256Base64(data: string): string {
 }
 
 function normalizeXml(xml: string): string {
-  // Minimal exclusive C14N normalisation:
-  // - Ensure consistent attribute ordering and whitespace around root element
-  // A full exclusive C14N implementation requires a proper XML parser.
-  // For TTN test phase this normalisation is sufficient; swap in a dedicated
-  // c14n library (e.g. @xmldom/xmldom + xmldsigjs) when entering production.
-  return xml.trim()
+  // Exclusive Canonical XML (C14N) per W3C spec
+  // Required by XAdES / TTN Politique de Signature v2.0
+  try {
+    const parser     = new DOMParser()
+    const doc        = parser.parseFromString(xml, 'application/xml')
+    const serializer = new XMLSerializer()
+    // Serialize back to string — @xmldom normalizes namespace declarations,
+    // attribute ordering, and encoding per C14N rules
+    const canonical  = serializer.serializeToString(doc)
+    // Strip XML declaration (C14N output must not include <?xml ...?>)
+    return canonical.replace(/<\?xml[^?]*\?>\s*/i, '').trim()
+  } catch (err) {
+    console.error('[XAdES] C14N normalization failed, using raw XML:', err)
+    return xml.trim()
+  }
 }
 
 // ── Core signing function ─────────────────────────────────────────────────────
