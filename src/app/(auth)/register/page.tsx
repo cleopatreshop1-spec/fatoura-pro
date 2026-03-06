@@ -56,6 +56,7 @@ function Stepper({ step }: { step: 1 | 2 | 3 }) {
 }
 
 export default function RegisterPage() {
+  const router = useRouter()
   const [showPwd, setShowPwd] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [serverError, setServerError] = useState('')
@@ -68,7 +69,7 @@ export default function RegisterPage() {
   async function onSubmit(data: FormData) {
     setServerError('')
     const supabase = createClient()
-    const { error } = await supabase.auth.signUp({
+    const { data: signUpData, error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
       options: {
@@ -76,8 +77,17 @@ export default function RegisterPage() {
         data: { first_name: data.first_name, last_name: data.last_name },
       },
     })
-    if (error) setServerError(error.message)
-    else setEmailSent(data.email)
+    if (error) {
+      setServerError(error.message)
+      return
+    }
+    // If email confirmation is disabled, session is returned immediately
+    if (signUpData.session) {
+      router.push('/onboarding')
+      return
+    }
+    // Otherwise show "check your email" screen
+    setEmailSent(data.email)
   }
 
   if (emailSent) {
