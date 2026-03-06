@@ -716,6 +716,9 @@ export default async function DashboardPage() {
             hasAlert={hasAlert}
             alertMessage={alertMessage}
             alertInvoiceId={alertInvoiceId}
+            streakDays={company?.streak_days ?? 0}
+            level={company?.level ?? 'bronze'}
+            totalPoints={company?.total_points ?? 0}
           />
 
           {/* Quick-action row */}

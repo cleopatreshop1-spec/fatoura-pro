@@ -14,6 +14,9 @@ type Props = {
   hasAlert: boolean
   alertMessage?: string
   alertInvoiceId?: string
+  streakDays?: number
+  level?: string
+  totalPoints?: number
 }
 
 const DAYS_FR = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi']
@@ -43,6 +46,7 @@ function AnimatedTND({ value, className }: { value: number; className: string })
 export function HeroWidget({
   firstName, unpaidTotal, unpaidCount, treasury30,
   isNewUser, hasAlert, alertMessage, alertInvoiceId,
+  streakDays = 0, level = 'bronze', totalPoints = 0,
 }: Props) {
   const greeting = getGreeting()
 
@@ -104,7 +108,7 @@ export function HeroWidget({
       )}
 
       {/* Metric cards */}
-      <div className="relative grid grid-cols-3 gap-3">
+      <div className="relative grid grid-cols-4 gap-3">
         {/* Unpaid amount */}
         <div className="col-span-1 bg-[#161b27]/80 border border-[#1a1b22] rounded-xl p-4 group hover:border-[#252830] transition-colors">
           <p className="text-[9px] text-gray-600 uppercase tracking-wider mb-2 font-semibold">À ENCAISSER</p>
@@ -124,6 +128,24 @@ export function HeroWidget({
           <p className="text-[9px] text-gray-600 uppercase tracking-wider mb-2 font-semibold">TRÉSO. 30J</p>
           <AnimatedTND value={treasury30} className="text-xl font-mono font-black text-[#2dd4a0] leading-none" />
           <p className="text-[10px] text-gray-600 mt-1.5">TND estimé</p>
+        </div>
+
+        {/* Streak */}
+        <div className={`col-span-1 border rounded-xl p-4 transition-colors ${
+          streakDays >= 7
+            ? 'bg-gradient-to-br from-orange-950/30 to-transparent border-orange-800/30 hover:border-orange-700/40'
+            : streakDays >= 1
+            ? 'bg-[#161b27]/80 border-orange-900/20 hover:border-orange-800/30'
+            : 'bg-[#161b27]/80 border-[#1a1b22] hover:border-[#252830]'
+        }`}>
+          <p className="text-[9px] text-gray-600 uppercase tracking-wider mb-2 font-semibold">SÉRIE TTN</p>
+          <div className="flex items-baseline gap-1">
+            <span className={`text-xl font-mono font-black leading-none ${
+              streakDays >= 7 ? 'text-orange-400' : streakDays >= 1 ? 'text-orange-500' : 'text-gray-600'
+            }`}>{streakDays}</span>
+            {streakDays >= 1 && <span className="text-sm">🔥</span>}
+          </div>
+          <p className="text-[10px] text-gray-600 mt-1.5">jour{streakDays !== 1 ? 's' : ''} sans retard</p>
         </div>
       </div>
     </div>
