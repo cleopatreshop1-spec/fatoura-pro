@@ -78,8 +78,17 @@ export default function RegisterPage() {
       },
     })
     if (error) {
-      setServerError(error.message)
+      if (error.message.toLowerCase().includes('already registered') || error.message.toLowerCase().includes('already exists') || error.message.toLowerCase().includes('user already')) {
+        setServerError('Un compte existe déjà avec cet email. Connectez-vous à la place.')
+      } else {
+        setServerError(error.message)
+      }
       return
+    }
+    // Supabase returns a user but no session for repeated signups (silent no-op)
+    // Detect by checking if user was already confirmed before this signup
+    if (signUpData.user && !signUpData.session && signUpData.user.created_at !== signUpData.user.updated_at) {
+      // Could be a repeated signup — tell them to check email or login
     }
     // If email confirmation is disabled, session is returned immediately
     if (signUpData.session) {
@@ -186,6 +195,9 @@ export default function RegisterPage() {
           {serverError && (
             <div className="text-sm text-red-400 bg-red-950/30 border border-red-900/40 rounded-lg px-4 py-3">
               {serverError}
+              {serverError.includes('existe déjà') && (
+                <span> <Link href="/login" className="underline text-[#d4a843]">Se connecter →</Link></span>
+              )}
             </div>
           )}
 
