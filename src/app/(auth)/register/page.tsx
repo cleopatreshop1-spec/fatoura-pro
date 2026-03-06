@@ -56,10 +56,10 @@ function Stepper({ step }: { step: 1 | 2 | 3 }) {
 }
 
 export default function RegisterPage() {
-  const router = useRouter()
   const [showPwd, setShowPwd] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [serverError, setServerError] = useState('')
+  const [emailSent, setEmailSent] = useState('')
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -77,7 +77,37 @@ export default function RegisterPage() {
       },
     })
     if (error) setServerError(error.message)
-    else router.push('/register/company')
+    else setEmailSent(data.email)
+  }
+
+  if (emailSent) {
+    return (
+      <div className="w-full max-w-[420px]">
+        <div className="text-center mb-6">
+          <div className="inline-flex items-baseline">
+            <span className="text-[#d4a843] font-mono text-xl font-bold tracking-wide">FATOURA</span>
+            <span className="text-gray-500 font-mono text-xl font-bold">PRO</span>
+          </div>
+        </div>
+        <div className="bg-[#0f1118] border border-[#1a1b22] rounded-2xl p-8 text-center">
+          <div className="text-5xl mb-4">📧</div>
+          <h1 className="text-lg font-bold text-white mb-2">Vérifiez votre email</h1>
+          <p className="text-gray-400 text-sm mb-4 leading-relaxed">
+            Un lien de confirmation a été envoyé à<br />
+            <span className="text-[#d4a843] font-semibold">{emailSent}</span>
+          </p>
+          <p className="text-gray-600 text-xs leading-relaxed">
+            Cliquez sur le lien dans l&apos;email pour activer votre compte et configurer votre entreprise.
+            Vérifiez vos spams si vous ne le trouvez pas.
+          </p>
+          <div className="mt-6 pt-5 border-t border-[#1a1b22]">
+            <Link href="/login" className="text-[#d4a843] text-sm hover:underline">
+              ← Retour à la connexion
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
